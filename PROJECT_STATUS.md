@@ -17,6 +17,14 @@
 | 6 — AI Features | ⏳ Pending |
 | 7 — Polish & Launch | ⏳ Pending |
 
+## Stats
+
+- **Source files:** 51
+- **Lines of code:** ~4,500
+- **UI Components:** 13 design system + 13 landing + 6 dashboard
+- **Pages:** 9 (1 landing + 8 dashboard)
+- **Commits:** 5 (well-structured)
+
 ## Tech Stack (Current)
 
 - **Frontend:** Next.js 16 (App Router), React 19, TypeScript 5 (Strict)
@@ -25,17 +33,9 @@
 - **Quality:** ESLint 9, Prettier 3, Husky 9, lint-staged
 - **Infra:** Docker, docker-compose, PostgreSQL 16 (config ready)
 
-## Key Decisions
-
-1. App Router with React Server Components by default
-2. CVA for component variants
-3. Tailwind v4 with CSS-first configuration
-4. Route groups for landing vs dashboard separation
-5. Standalone output for Docker production builds
-
 ## Health
 
 - Build: ✅ Passing
-- TypeScript: ✅ No errors
-- Lint: ✅ Passing
+- TypeScript: ✅ No errors (strict mode)
+- Lint: ✅ No errors, no warnings
 - Format: ✅ Passing
