@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Growth Platform
+
+**End-to-End AI Business Automation Platform**
+
+A production-grade SaaS platform that integrates AI-powered lead qualification, appointment booking, multi-channel automation, and CRM capabilities into a unified dashboard experience.
+
+## Tech Stack
+
+| Category         | Technology                    |
+| ---------------- | ----------------------------- |
+| Framework        | Next.js 16 (App Router)       |
+| Language         | TypeScript (Strict Mode)      |
+| Styling          | Tailwind CSS v4               |
+| UI Components    | Custom Design System + CVA    |
+| Icons            | Lucide React                  |
+| Animations       | Framer Motion + CSS           |
+| Database         | PostgreSQL 16                 |
+| Containerization | Docker + docker-compose       |
+| Code Quality     | ESLint + Prettier + Husky     |
+
+## Architecture
+
+- `src/components/ui/` — Design System primitives
+- `src/components/landing/` — Landing page components
+- `src/components/dashboard/` — Dashboard components
+- `src/components/shared/` — Cross-cutting components
+- `src/lib/` — Utilities, helpers, constants
+- `src/hooks/` — Custom React hooks
+- `src/types/` — TypeScript type definitions
+- `src/app/(landing)/` — Landing page route group
+- `src/app/(dashboard)/` — Dashboard route group
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command          | Description              |
+| ---------------- | ------------------------ |
+| `npm run dev`    | Start development server |
+| `npm run build`  | Production build         |
+| `npm run lint`   | Run ESLint               |
+| `npm run format` | Format with Prettier     |
+| `npm run typecheck` | TypeScript check       |
 
-## Learn More
+## Docker
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+# Development
+docker compose -f docker-compose.dev.yml up
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Production
+docker compose up -d
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Environment Variables
 
-## Deploy on Vercel
+See `.env.example` for all required environment variables.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [PROJECT_STATUS.md](./PROJECT_STATUS.md) for current status.
+
+## License
+
+Private — All rights reserved.
