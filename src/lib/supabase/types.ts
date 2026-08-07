@@ -481,6 +481,63 @@
         };
         Relationships: [];
       };
+      automation_executions: {
+        Row: {
+          id: string;
+          organization_id: string;
+          event_type: string;
+          event_id: string;
+          lead_id: string | null;
+          provider: string;
+          action: string;
+          status: "pending" | "processing" | "success" | "failed";
+          attempts: number;
+          error_message: string | null;
+          response_metadata: Record<string, unknown>;
+          started_at: string | null;
+          completed_at: string | null;
+          next_retry_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          event_type: string;
+          event_id: string;
+          lead_id?: string | null;
+          provider: string;
+          action: string;
+          status?: "pending" | "processing" | "success" | "failed";
+          attempts?: number;
+          error_message?: string | null;
+          response_metadata?: Record<string, unknown>;
+          started_at?: string | null;
+          completed_at?: string | null;
+          next_retry_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          event_type?: string;
+          event_id?: string;
+          lead_id?: string | null;
+          provider?: string;
+          action?: string;
+          status?: "pending" | "processing" | "success" | "failed";
+          attempts?: number;
+          error_message?: string | null;
+          response_metadata?: Record<string, unknown>;
+          started_at?: string | null;
+          completed_at?: string | null;
+          next_retry_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
