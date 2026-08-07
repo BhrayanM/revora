@@ -1,5 +1,6 @@
 export interface LeadCreatedEvent {
   event: "lead.created";
+  version: 1;
   event_id: string;
   timestamp: string;
   organization_id: string;
@@ -12,6 +13,8 @@ export interface LeadCreatedEvent {
     phone: string | null;
     company: string | null;
     source: string;
+    source_external_id: string | null;
+    message: string | null;
     status: string;
     score: number;
   };
@@ -19,6 +22,7 @@ export interface LeadCreatedEvent {
 
 export interface LeadUpdatedEvent {
   event: "lead.updated";
+  version: 1;
   event_id: string;
   timestamp: string;
   organization_id: string;

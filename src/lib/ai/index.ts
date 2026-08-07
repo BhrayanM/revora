@@ -30,6 +30,7 @@ export {
   validateQualificationResult,
 } from "@/lib/ai/qualification";
 export { qualifyLead } from "@/lib/ai/lead-qualification";
+export { qualifyLeadForOrg } from "@/lib/ai/lead-qualification-service";
 
 function logAIError(
   operation: string,

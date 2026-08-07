@@ -158,6 +158,7 @@ export async function POST(request: NextRequest) {
 
   emitLeadEvent({
     event: "lead.created",
+    version: 1,
     event_id: eventId,
     timestamp: new Date().toISOString(),
     organization_id: orgId,
@@ -170,6 +171,8 @@ export async function POST(request: NextRequest) {
       phone: lead.phone,
       company: lead.company,
       source: keySource,
+      source_external_id: normalized.source_external_id,
+      message: normalized.message,
       status: lead.status,
       score: lead.score,
     },
