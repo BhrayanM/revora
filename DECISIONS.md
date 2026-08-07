@@ -194,5 +194,17 @@
 - Qualification is explicitly triggered (not automatic) — prevents unnecessary API costs
 - Tenant isolation: `getLeadById()` + RLs verifies lead belongs to user's org before qualification
 - When qualification produces HOT result and lead is "new", an AI conversation summary is auto-created for the activity timeline
-- Redirect parameters validated against `startsWith("/")` to prevent open redirect attacks
-- Middleware migrated to `proxy.ts` (Next.js 16 convention); `getUser()` only called on protected routes, not public pages
+
+### DR-019: External Lead Ingestion with API Key Authentication
+**Date:** 2026-08-07
+**Decision:** Use `source_api_keys` table for API key authentication on `POST /api/leads`. Service role bypasses RLS for unauthenticated insertion. `source_external_id` provides idempotency.
+**Rationale:**
+- API keys use format `ag_live_<random-hex>` — SHA-256 hash stored in `source_api_keys.key_hash`. Raw key never stored.
+- `x-api-key` header resolves to organization_id server-side. Request body never contains organization_id.
+- Source from API key ("website"|"tally"|"n8n"|"api") mapped to leads.source constraint values ("tally"/"n8n"/"api" → "other")
+- Service role client needed because RLS `is_org_member()` requires `auth.uid()` — API requests have no authenticated user
+- `source_external_id` column + partial unique index WHERE NOT NULL provides database-level idempotency
+- Duplicate submissions return 200 with existing lead (idempotent), not 409 conflict
+- Rate limiting: in-memory per IP (30/min window). Production requires Redis/Upstash
+- n8n webhook delivery: non-blocking, 5s timeout, HMAC-SHA256 signature header. Lead persists even if webhook fails
+- AI qualification NOT triggered from API — ingestion and qualification are separate concerns

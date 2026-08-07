@@ -204,6 +204,7 @@
           score: number;
           tags: string[] | null;
           metadata: Record<string, unknown>;
+          source_external_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -238,6 +239,7 @@
           score?: number;
           tags?: string[] | null;
           metadata?: Record<string, unknown>;
+          source_external_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -272,6 +274,7 @@
           score?: number;
           tags?: string[] | null;
           metadata?: Record<string, unknown>;
+          source_external_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -287,6 +290,7 @@
           subject: string | null;
           content: string;
           metadata: Record<string, unknown>;
+          source_external_id: string | null;
           created_at: string;
         };
         Insert: {
@@ -298,6 +302,7 @@
           subject?: string | null;
           content: string;
           metadata?: Record<string, unknown>;
+          source_external_id?: string | null;
           created_at?: string;
         };
         Update: {
@@ -309,6 +314,7 @@
           subject?: string | null;
           content?: string;
           metadata?: Record<string, unknown>;
+          source_external_id?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -439,6 +445,39 @@
           is_active?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      source_api_keys: {
+        Row: {
+          id: string;
+          organization_id: string;
+          source: "website" | "tally" | "n8n" | "api";
+          label: string;
+          key_hash: string;
+          is_active: boolean;
+          last_used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          source: "website" | "tally" | "n8n" | "api";
+          label: string;
+          key_hash: string;
+          is_active?: boolean;
+          last_used_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          source?: "website" | "tally" | "n8n" | "api";
+          label?: string;
+          key_hash?: string;
+          is_active?: boolean;
+          last_used_at?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
