@@ -1,7 +1,7 @@
 # PROJECT STATUS
 
 **Last Updated:** 2026-08-07
-**Current Phase:** Phase 4.4 (CRM Data Layer) — Completed
+**Current Phase:** Phase 4.4.1 (Data Layer Hardening) — Completed
 **Next Phase:** Phase 4.5 (Connect UI to Data Layer)
 
 ## Overall Progress
@@ -18,6 +18,7 @@
 | 4.3 — Auth + RLS | ✅ Complete |
 | 4.3.1 — Security Hardening | ✅ Complete |
 | 4.4 — CRM Data Layer | ✅ Complete |
+| 4.4.1 — Data Layer Hardening | ✅ Complete |
 | 4.5 — Connect UI to Data Layer | ⏳ Pending |
 | 4 — Backend & Database | ⏳ Pending |
 | 5 — API & Integrations | ⏳ Pending |

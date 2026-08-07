@@ -1,3 +1,4 @@
+import type { QueryResult } from "@/lib/queries/types";
 import { createClient } from "@/lib/supabase/server";
 
 export interface LeadMetrics {
@@ -11,11 +12,7 @@ export interface LeadMetrics {
 export interface PipelineMetrics {
   pipelineId: string;
   pipelineName: string;
-  stages: {
-    stageId: string;
-    stageName: string;
-    count: number;
-  }[];
+  stages: { stageId: string; stageName: string; count: number }[];
 }
 
 export interface RecentActivity {
@@ -26,14 +23,9 @@ export interface RecentActivity {
   timestamp: string;
 }
 
-export interface MetricsResult<T> {
-  data: T | null;
-  error: string | null;
-}
-
 export async function getLeadMetrics(
   organizationId: string,
-): Promise<MetricsResult<LeadMetrics>> {
+): Promise<QueryResult<LeadMetrics>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -47,13 +39,7 @@ export async function getLeadMetrics(
 
   if (!data || data.length === 0) {
     return {
-      data: {
-        total: 0,
-        qualified: 0,
-        won: 0,
-        conversionRate: 0,
-        avgScore: 0,
-      },
+      data: { total: 0, qualified: 0, won: 0, conversionRate: 0, avgScore: 0 },
       error: null,
     };
   }
@@ -79,7 +65,7 @@ export async function getLeadMetrics(
 
 export async function getPipelineMetrics(
   organizationId: string,
-): Promise<MetricsResult<PipelineMetrics | null>> {
+): Promise<QueryResult<PipelineMetrics | null>> {
   const supabase = await createClient();
 
   const { data: pipelines, error: pipelineError } = await supabase
@@ -99,17 +85,30 @@ export async function getPipelineMetrics(
 
   const pipeline = pipelines[0]!;
 
-  const { data: stages, error: stagesError } = await supabase
-    .from("pipeline_stages")
-    .select("id, name")
-    .eq("pipeline_id", pipeline.id)
-    .order("order_index", { ascending: true });
+  const [stagesResult, leadCountsResult] = await Promise.all([
+    supabase
+      .from("pipeline_stages")
+      .select("id, name")
+      .eq("pipeline_id", pipeline.id)
+      .order("order_index", { ascending: true }),
+    supabase
+      .from("leads")
+      .select("pipeline_stage_id")
+      .eq("organization_id", organizationId),
+  ]);
 
-  if (stagesError) {
-    return { data: null, error: stagesError.message };
+  if (stagesResult.error) {
+    return { data: null, error: stagesResult.error.message };
   }
 
-  if (!stages || stages.length === 0) {
+  if (leadCountsResult.error) {
+    return { data: null, error: leadCountsResult.error.message };
+  }
+
+  const stages = stagesResult.data ?? [];
+  const leadCounts = leadCountsResult.data ?? [];
+
+  if (stages.length === 0) {
     return {
       data: {
         pipelineId: pipeline.id,
@@ -121,20 +120,9 @@ export async function getPipelineMetrics(
   }
 
   const stageIds = stages.map((s) => s.id);
-
-  const { data: leadCounts, error: countError } = await supabase
-    .from("leads")
-    .select("pipeline_stage_id")
-    .eq("organization_id", organizationId)
-    .in("pipeline_stage_id", stageIds);
-
-  if (countError) {
-    return { data: null, error: countError.message };
-  }
-
   const countByStage = new Map<string, number>();
-  for (const lead of leadCounts ?? []) {
-    if (lead.pipeline_stage_id) {
+  for (const lead of leadCounts) {
+    if (lead.pipeline_stage_id && stageIds.includes(lead.pipeline_stage_id)) {
       countByStage.set(
         lead.pipeline_stage_id,
         (countByStage.get(lead.pipeline_stage_id) ?? 0) + 1,
@@ -159,7 +147,7 @@ export async function getPipelineMetrics(
 export async function getRecentActivity(
   organizationId: string,
   limit = 10,
-): Promise<MetricsResult<RecentActivity[]>> {
+): Promise<QueryResult<RecentActivity[]>> {
   const supabase = await createClient();
 
   const { data: leads, error: leadsError } = await supabase

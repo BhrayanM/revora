@@ -1,3 +1,4 @@
+import type { QueryResult } from "@/lib/queries/types";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -7,19 +8,9 @@ type ConversationInsert =
 
 export type Conversation = ConversationRow;
 
-export interface ConversationsResult {
-  data: Conversation[] | null;
-  error: string | null;
-}
-
-export interface ConversationResult {
-  data: Conversation | null;
-  error: string | null;
-}
-
 export async function getLeadConversations(
   leadId: string,
-): Promise<ConversationsResult> {
+): Promise<QueryResult<Conversation[]>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -39,7 +30,7 @@ export async function createConversation(
   input: Omit<ConversationInsert, "organization_id"> & {
     organization_id: string;
   },
-): Promise<ConversationResult> {
+): Promise<QueryResult<Conversation>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase

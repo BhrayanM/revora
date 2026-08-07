@@ -1,3 +1,4 @@
+import type { MutationResult, QueryResult } from "@/lib/queries/types";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -7,17 +8,9 @@ type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 
 export type Lead = LeadRow;
 
-export interface LeadsResult {
-  data: Lead[] | null;
-  error: string | null;
-}
-
-export interface LeadResult {
-  data: Lead | null;
-  error: string | null;
-}
-
-export async function getLeads(organizationId: string): Promise<LeadsResult> {
+export async function getLeads(
+  organizationId: string,
+): Promise<QueryResult<Lead[]>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -34,13 +27,15 @@ export async function getLeads(organizationId: string): Promise<LeadsResult> {
 }
 
 export async function getLeadsByWorkspace(
+  organizationId: string,
   workspaceId: string,
-): Promise<LeadsResult> {
+): Promise<QueryResult<Lead[]>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("leads")
     .select("*")
+    .eq("organization_id", organizationId)
     .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
 
@@ -51,7 +46,7 @@ export async function getLeadsByWorkspace(
   return { data, error: null };
 }
 
-export async function getLeadById(id: string): Promise<LeadResult> {
+export async function getLeadById(id: string): Promise<QueryResult<Lead>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -61,6 +56,9 @@ export async function getLeadById(id: string): Promise<LeadResult> {
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return { data: null, error: null };
+    }
     return { data: null, error: error.message };
   }
 
@@ -69,7 +67,7 @@ export async function getLeadById(id: string): Promise<LeadResult> {
 
 export async function createLead(
   input: Omit<LeadInsert, "organization_id"> & { organization_id: string },
-): Promise<LeadResult> {
+): Promise<QueryResult<Lead>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -88,7 +86,7 @@ export async function createLead(
 export async function updateLead(
   id: string,
   input: LeadUpdate,
-): Promise<LeadResult> {
+): Promise<QueryResult<Lead>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -105,9 +103,7 @@ export async function updateLead(
   return { data, error: null };
 }
 
-export async function deleteLead(
-  id: string,
-): Promise<{ error: string | null }> {
+export async function deleteLead(id: string): Promise<MutationResult> {
   const supabase = await createClient();
 
   const { error } = await supabase.from("leads").delete().eq("id", id);
