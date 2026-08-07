@@ -5,6 +5,7 @@ const protectedPaths = [
   "/dashboard",
   "/leads",
   "/pipeline",
+  "/automation",
   "/analytics",
   "/settings",
   "/profile",
