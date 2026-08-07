@@ -1,0 +1,13 @@
+export { Navbar } from "./navbar";
+export { Hero } from "./hero";
+export { TrustedBy } from "./trusted-by";
+export { Features } from "./features";
+export { Benefits } from "./benefits";
+export { AIWorkflow } from "./ai-workflow";
+export { Integrations } from "./integrations";
+export { Demo } from "./demo";
+export { Testimonials } from "./testimonials";
+export { Pricing } from "./pricing";
+export { FAQ } from "./faq";
+export { CTA } from "./cta";
+export { Footer } from "./footer";

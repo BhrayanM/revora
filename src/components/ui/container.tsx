@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 interface ContainerProps {
   children: ReactNode;
   className?: string;
-  as?: "div" | "section" | "main" | "header" | "footer";
+  as?: "div" | "section" | "main" | "header" | "footer" | "nav";
 }
 
 export function Container({
