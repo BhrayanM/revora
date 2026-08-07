@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,6 +25,12 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setMessage(null);
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClient();
@@ -128,6 +135,17 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Create a password (min 6 characters)"
+                inputSize="lg"
+                required
+                minLength={6}
+              />
+
+              <Input
+                label="Confirm Password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password"
                 inputSize="lg"
                 required
                 minLength={6}

@@ -151,3 +151,8 @@
 - User metadata from signup (`full_name`) flows through to dashboard greeting, sidebar, and topnav via server-side session
 - Logout clears session client-side and redirects to `/login`
 - RLS policies on all 10 tables enforce tenant isolation transparently without application-level authorization checks
+- `onboard_user` PostgreSQL function wraps org + membership + workspace creation in a single atomic transaction, preventing orphan records
+- Organization slugs include a random 4-char suffix to prevent collisions between users sharing email domains
+- All `SECURITY DEFINER` functions set `search_path = ''` to prevent function hijacking attacks
+- Redirect parameters validated against `startsWith("/")` to prevent open redirect attacks
+- Middleware migrated to `proxy.ts` (Next.js 16 convention); `getUser()` only called on protected routes, not public pages

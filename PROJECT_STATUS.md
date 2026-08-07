@@ -16,6 +16,7 @@
 | 4.1 — Supabase Infrastructure | ✅ Complete |
 | 4.2 — Database Schema | ✅ Complete |
 | 4.3 — Auth + RLS | ✅ Complete |
+| 4.3.1 — Security Hardening | ✅ Complete |
 | 5 — API & Integrations | ⏳ Pending |
 | 4 — Backend & Database | ⏳ Pending |
 | 5 — API & Integrations | ⏳ Pending |
