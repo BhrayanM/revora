@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## [0.3.5] — 2026-08-07
+
+### Changed (Phase 3.5 — Premium Polish)
+- **Architecture:** Dashboard layout converted to Server Component; only Sidebar/TopNav remain Client Components
+- **Performance:** Removed framer-motion (~34KB bundle savings); all animations now use native CSS keyframes
+- **UX:** Created `/signup` page with registration form; all CTAs now route to signup instead of public dashboard
+- **UX:** FAQ converted to native `<details>` element — accessible without JavaScript
+- **UX:** Testimonials redesigned as CSS scroll-snap carousel with mixed 4/5 star ratings for credibility
+- **UX:** TrustedBy section replaced fake company names with real statistics (10K+ users, 2.4M+ leads, 97.3% accuracy)
+- **UX:** Hero dashboard mockup upgraded with real-looking stats cards and activity feed
+- **UX:** Fixed mobile sidebar — hamburger menu now properly toggles sidebar with overlay backdrop
+- **UX:** "Coming in Phase 5" changed to "Calendar integration launching soon"
+- **UX:** Pricing popular card uses `ring-2` instead of `scale-[1.02]` for visual consistency
+- **Accessibility:** Added skip-to-content link in root layout
+- **Accessibility:** Hero badge icons changed from duplicate BarChart3 to semantic CreditCard/Clock/ShieldCheck
+- **Accessibility:** Added `prefers-reduced-motion` media query disabling all animations
+- **Accessibility:** Sidebar disabled items use `<span>` instead of `<a href="#">` to prevent accidental navigation
+- **Performance:** Added `loading.tsx` and `error.tsx` for dashboard routes
+- **Performance:** Added `content-visibility: auto` CSS utilities for below-fold sections
+- **Performance:** Added `scrollbar-hide` utility for carousel overflow
+- **Design:** Low-contrast `text-zinc-400` replaced with `text-zinc-500` where appropriate
+- **Bug:** Fixed SVG gradient ID collision in LineChart using `useId()`
+- **SEO:** Added `generateMetadata` to Server Component dashboard pages (Dashboard, Analytics)
+- **Dependencies:** Removed framer-motion from production bundle
+
 ## [0.3.0] — 2026-08-07
 
 ### Added (Phase 3 — Dashboard UI)

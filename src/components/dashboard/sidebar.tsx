@@ -12,6 +12,7 @@ import {
   Settings,
   User,
   Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,34 +24,18 @@ const navigation = [
   {
     section: "Main",
     items: [
-      {
-        label: "Dashboard",
-        href: "/dashboard",
-        icon: LayoutDashboard,
-      },
-      {
-        label: "Analytics",
-        href: "/analytics",
-        icon: BarChart3,
-      },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Analytics", href: "/analytics", icon: BarChart3 },
     ],
   },
   {
     section: "Sales",
     items: [
-      {
-        label: "Leads",
-        href: "/leads",
-        icon: Users,
-      },
-      {
-        label: "Pipeline",
-        href: "/pipeline",
-        icon: Layers,
-      },
+      { label: "Leads", href: "/leads", icon: Users },
+      { label: "Pipeline", href: "/pipeline", icon: Layers },
       {
         label: "Calendar",
-        href: "#",
+        href: "/dashboard#calendar",
         icon: Calendar,
         disabled: true,
       },
@@ -59,15 +44,10 @@ const navigation = [
   {
     section: "AI",
     items: [
-      {
-        label: "AI Insights",
-        href: "#",
-        icon: Bot,
-        badge: "Soon",
-      },
+      { label: "AI Insights", href: "/dashboard#ai", icon: Bot, badge: "Soon" },
       {
         label: "Chat",
-        href: "#",
+        href: "/dashboard#chat",
         icon: MessageSquare,
         disabled: true,
       },
@@ -76,31 +56,23 @@ const navigation = [
   {
     section: "Settings",
     items: [
-      {
-        label: "Settings",
-        href: "/settings",
-        icon: Settings,
-      },
-      {
-        label: "Profile",
-        href: "/profile",
-        icon: User,
-      },
+      { label: "Settings", href: "/settings", icon: Settings },
+      { label: "Profile", href: "/profile", icon: User },
     ],
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
 
-  return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border bg-surface transition-all duration-300",
-        collapsed ? "w-[68px]" : "w-60",
-      )}
-    >
+  const sidebarContent = (
+    <>
       <div className="flex h-14 items-center justify-between border-b border-border px-4">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2 font-bold">
@@ -122,27 +94,36 @@ export function Sidebar() {
             <span className="text-sm">AI Growth</span>
           </Link>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            "rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-surface-secondary hover:text-foreground",
-            collapsed && "mx-auto",
-          )}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronRight className="size-4" />
-          ) : (
-            <ChevronLeft className="size-4" />
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onMobileClose}
+            className="rounded-md p-1.5 text-zinc-400 hover:bg-surface-secondary hover:text-foreground lg:hidden"
+            aria-label="Close sidebar"
+          >
+            <X className="size-4" />
+          </button>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={cn(
+              "rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-surface-secondary hover:text-foreground",
+              collapsed && "mx-auto",
+            )}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <ChevronRight className="size-4" />
+            ) : (
+              <ChevronLeft className="size-4" />
+            )}
+          </button>
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {navigation.map((group) => (
           <div key={group.section} className="mb-6">
             {!collapsed && (
-              <h3 className="mb-2 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-zinc-400">
+              <h3 className="mb-2 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-zinc-500">
                 {group.section}
               </h3>
             )}
@@ -156,10 +137,9 @@ export function Sidebar() {
                     <span
                       key={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-400/50 cursor-not-allowed",
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-500/50 cursor-not-allowed",
                         collapsed && "justify-center px-2",
                       )}
-                      title={item.label}
                     >
                       <item.icon className="size-4 shrink-0" />
                       {!collapsed && <span>{item.label}</span>}
@@ -171,6 +151,7 @@ export function Sidebar() {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={onMobileClose}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
@@ -178,7 +159,6 @@ export function Sidebar() {
                         : "text-zinc-600 hover:bg-surface-secondary hover:text-foreground",
                       collapsed && "justify-center px-2",
                     )}
-                    title={collapsed ? item.label : undefined}
                   >
                     <item.icon className="size-4 shrink-0" />
                     {!collapsed && (
@@ -220,6 +200,27 @@ export function Sidebar() {
           </div>
         )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={onMobileClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border bg-surface transition-transform duration-300 lg:translate-x-0",
+          collapsed ? "w-[68px]" : "w-60",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

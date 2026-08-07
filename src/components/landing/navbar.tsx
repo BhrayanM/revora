@@ -72,10 +72,14 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" size="sm">
-            Sign In
-          </Button>
-          <Button size="sm">Get Started Free</Button>
+          <Link href="/signup">
+            <Button variant="ghost" size="sm">
+              Sign In
+            </Button>
+          </Link>
+          <Link href="/signup">
+            <Button size="sm">Get Started Free</Button>
+          </Link>
         </div>
 
         <button
@@ -105,12 +109,20 @@ export function Navbar() {
               </Link>
             ))}
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <Button variant="ghost" size="sm" className="justify-start">
-                Sign In
-              </Button>
-              <Button size="sm" className="justify-start">
-                Get Started Free
-              </Button>
+              <Link href="/signup">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="justify-start w-full"
+                >
+                  Sign In
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="sm" className="justify-start w-full">
+                  Get Started Free
+                </Button>
+              </Link>
             </div>
           </Container>
         </div>

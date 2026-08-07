@@ -11,7 +11,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { StaggerChildren, SlideUp } from "@/components/ui/motion";
 
 const integrations = [
   { icon: Workflow, name: "GoHighLevel", category: "CRM" },
@@ -47,10 +46,16 @@ export function Integrations() {
             click setup, zero maintenance.
           </p>
         </div>
-
-        <StaggerChildren className="mt-16 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          {integrations.map((integration) => (
-            <SlideUp key={integration.name}>
+        <div className="mt-16 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {integrations.map((integration, i) => (
+            <div
+              key={integration.name}
+              className="animate-scale-in"
+              style={{
+                animationDelay: `${i * 0.04}s`,
+                animationFillMode: "both",
+              }}
+            >
               <Card
                 variant="ghost"
                 className="group cursor-pointer transition-all hover:border-primary/30 hover:shadow-md"
@@ -63,16 +68,15 @@ export function Integrations() {
                     <p className="text-sm font-medium text-foreground">
                       {integration.name}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-zinc-500">
                       {integration.category}
                     </p>
                   </div>
                 </CardContent>
               </Card>
-            </SlideUp>
+            </div>
           ))}
-        </StaggerChildren>
-
+        </div>
         <div className="mt-12 text-center">
           <p className="text-sm text-zinc-500">
             100+ integrations available.{" "}

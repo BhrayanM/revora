@@ -1,4 +1,11 @@
-import { ArrowRight, BarChart3, Brain, Play } from "lucide-react";
+import {
+  ArrowRight,
+  Brain,
+  Play,
+  ShieldCheck,
+  Clock,
+  CreditCard,
+} from "lucide-react";
 import Link from "next/link";
 
 import { BackgroundPattern } from "@/components/shared/background-pattern";
@@ -33,7 +40,7 @@ export function Hero() {
           </p>
 
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link href="/dashboard">
+            <Link href="/signup">
               <Button size="xl" className="shadow-lg shadow-primary/25">
                 Start Automating Free
                 <ArrowRight className="size-5" />
@@ -47,15 +54,15 @@ export function Hero() {
 
           <div className="mt-12 flex items-center justify-center gap-8 text-sm text-zinc-500">
             <div className="flex items-center gap-2">
-              <BarChart3 className="size-4 text-success" />
+              <CreditCard className="size-4 text-success" />
               No credit card required
             </div>
             <div className="flex items-center gap-2">
-              <BarChart3 className="size-4 text-success" />
+              <Clock className="size-4 text-success" />
               14-day free trial
             </div>
             <div className="flex items-center gap-2">
-              <BarChart3 className="size-4 text-success" />
+              <ShieldCheck className="size-4 text-success" />
               Cancel anytime
             </div>
           </div>
@@ -69,30 +76,104 @@ export function Hero() {
                 <div className="size-2.5 rounded-full bg-error/60" />
                 <div className="size-2.5 rounded-full bg-warning/60" />
                 <div className="size-2.5 rounded-full bg-success/60" />
-                <span className="ml-2 text-xs text-zinc-400">
+                <span className="ml-2 text-xs text-zinc-500">
                   AI Growth Platform — Dashboard
                 </span>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-3 gap-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
+                  {[
+                    {
+                      label: "Total Leads",
+                      value: "2,847",
+                      trend: "+12.5%",
+                      color: "#6366f1",
+                    },
+                    {
+                      label: "Qualified",
+                      value: "1,423",
+                      trend: "+23.1%",
+                      color: "#10b981",
+                    },
+                    {
+                      label: "Conv. Rate",
+                      value: "24.8%",
+                      trend: "+8.7%",
+                      color: "#8b5cf6",
+                    },
+                  ].map((stat) => (
                     <div
-                      key={i}
+                      key={stat.label}
                       className="rounded-lg border border-border bg-surface-secondary p-4"
                     >
-                      <div className="h-3 w-1/3 rounded bg-surface-tertiary" />
-                      <div className="mt-3 h-6 w-1/2 rounded bg-surface-tertiary" />
-                      <div className="mt-3 flex items-end gap-1">
-                        {[40, 60, 35, 75, 50].map((h, j) => (
-                          <div
-                            key={j}
-                            className="flex-1 rounded-sm bg-primary/30"
-                            style={{ height: `${h * 0.5}px` }}
-                          />
-                        ))}
+                      <p className="text-xs text-zinc-500">{stat.label}</p>
+                      <p className="mt-1 text-xl font-bold text-foreground">
+                        {stat.value}
+                      </p>
+                      <p
+                        className="mt-1 text-xs font-medium"
+                        style={{ color: stat.color }}
+                      >
+                        {stat.trend}
+                      </p>
+                      <div
+                        className="mt-2 flex items-end gap-[2px]"
+                        style={{ height: 28 }}
+                      >
+                        {[14, 22, 10, 30, 18, 26, 8, 28, 16, 24, 12, 20].map(
+                          (h, j) => (
+                            <div
+                              key={j}
+                              className="flex-1 rounded-[1px]"
+                              style={{
+                                height: `${h}px`,
+                                backgroundColor: stat.color,
+                                opacity: 0.25 + j * 0.04,
+                              }}
+                            />
+                          ),
+                        )}
                       </div>
                     </div>
                   ))}
+                </div>
+                <div className="mt-4 rounded-lg border border-border bg-surface-secondary p-3">
+                  <p className="text-xs text-zinc-500">Recent Activity</p>
+                  <div className="mt-2 space-y-1.5">
+                    {[
+                      {
+                        text: "Sarah Johnson qualified as lead",
+                        time: "2m ago",
+                        dot: "#10b981",
+                      },
+                      {
+                        text: "Email sequence sent to Marcus Lee",
+                        time: "15m ago",
+                        dot: "#6366f1",
+                      },
+                      {
+                        text: "Meeting booked with David Park",
+                        time: "1h ago",
+                        dot: "#f59e0b",
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.text}
+                        className="flex items-center gap-2 text-xs"
+                      >
+                        <div
+                          className="size-1.5 rounded-full shrink-0"
+                          style={{ backgroundColor: item.dot }}
+                        />
+                        <span className="text-zinc-600 truncate">
+                          {item.text}
+                        </span>
+                        <span className="text-zinc-400 shrink-0 ml-auto">
+                          {item.time}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

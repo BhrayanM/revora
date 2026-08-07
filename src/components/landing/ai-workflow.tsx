@@ -10,7 +10,6 @@ import {
 import { BackgroundPattern } from "@/components/shared/background-pattern";
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
-import { SlideUp } from "@/components/ui/motion";
 
 const steps = [
   {
@@ -70,13 +69,18 @@ export function AIWorkflow() {
             every step of your sales process.
           </p>
         </div>
-
         <div className="mt-16 relative">
           <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-accent to-secondary/50 hidden lg:block" />
-
           <div className="space-y-12">
             {steps.map((step, index) => (
-              <SlideUp key={step.title} delay={index * 0.1}>
+              <div
+                key={step.title}
+                className="animate-slide-up"
+                style={{
+                  animationDelay: `${index * 0.1}s`,
+                  animationFillMode: "both",
+                }}
+              >
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-12">
                   <div className="flex lg:w-1/2 lg:justify-end">
                     <div className="flex items-start gap-4 lg:gap-6">
@@ -100,12 +104,12 @@ export function AIWorkflow() {
                   </div>
                   <div className="hidden lg:flex lg:w-1/2 lg:items-center">
                     <div className="h-px w-12 bg-gradient-to-r from-primary/30 to-transparent" />
-                    <span className="mx-3 text-xs font-medium text-zinc-400">
+                    <span className="mx-3 text-xs font-medium text-zinc-500">
                       STEP {index + 1}
                     </span>
                   </div>
                 </div>
-              </SlideUp>
+              </div>
             ))}
           </div>
         </div>

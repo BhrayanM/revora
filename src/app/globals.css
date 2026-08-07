@@ -109,7 +109,6 @@
   --animate-scale-in: scale-in 0.3s ease-out;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
 }
-
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
@@ -192,4 +191,35 @@ body {
 
 * {
   border-color: var(--border);
+}
+
+@utility scrollbar-hide {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.animate-fade-in,
+.animate-slide-up,
+.animate-scale-in {
+  animation-fill-mode: both;
+}
+
+.landing-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 600px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-scale-in,
+  .animate-pulse-glow {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
 }

@@ -1,0 +1,121 @@
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
+
+import { BackgroundPattern } from "@/components/shared/background-pattern";
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
+import { Input } from "@/components/ui/input";
+
+export default function SignupPage() {
+  return (
+    <div className="relative flex min-h-screen flex-col bg-background">
+      <BackgroundPattern variant="gradient" />
+
+      <div className="flex items-center p-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" />
+          Back to Home
+        </Link>
+      </div>
+
+      <main className="flex flex-1 items-center justify-center px-4 pb-16">
+        <Container className="w-full max-w-md">
+          <div className="text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 font-bold text-xl mb-8"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <svg
+                  className="h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+                  />
+                </svg>
+              </div>
+              <span className="text-foreground">AI Growth</span>
+            </Link>
+
+            <h1 className="text-2xl font-bold text-foreground">
+              Start Your Free Trial
+            </h1>
+            <p className="mt-2 text-sm text-zinc-500">
+              14-day free trial. No credit card required.
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-4">
+            <Input label="Full Name" placeholder="John Smith" inputSize="lg" />
+            <Input
+              label="Work Email"
+              placeholder="john@company.com"
+              inputSize="lg"
+              type="email"
+            />
+            <Input
+              label="Password"
+              placeholder="Create a password"
+              inputSize="lg"
+              type="password"
+            />
+
+            <Button size="xl" className="w-full shadow-lg shadow-primary/25">
+              Create Free Account
+              <ArrowRight className="size-5" />
+            </Button>
+
+            <p className="text-center text-xs text-zinc-500">
+              By signing up, you agree to our Terms of Service and Privacy
+              Policy.
+            </p>
+          </div>
+
+          <div className="mt-8 rounded-xl border border-border bg-surface-secondary p-5">
+            <h3 className="text-sm font-semibold text-foreground">
+              Your free trial includes:
+            </h3>
+            <ul className="mt-3 space-y-2">
+              {[
+                "Up to 500 leads with AI qualification",
+                "Email automation with pre-built sequences",
+                "GoHighLevel & HubSpot integration",
+                "Basic analytics and reporting",
+                "Email support within 24 hours",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2 text-sm text-zinc-600"
+                >
+                  <Check className="mt-0.5 size-4 shrink-0 text-success" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-zinc-500">
+              Already have an account?{" "}
+              <Link
+                href="/signup"
+                className="font-medium text-primary hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </Container>
+      </main>
+    </div>
+  );
+}

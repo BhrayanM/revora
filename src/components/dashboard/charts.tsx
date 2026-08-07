@@ -1,3 +1,7 @@
+"use client";
+
+import { useId } from "react";
+
 import { cn } from "@/lib/utils";
 
 interface BarChartProps {
@@ -47,6 +51,7 @@ export function LineChart({
   color = "rgb(99 102 241)",
   className,
 }: LineChartProps) {
+  const gradientId = useId();
   const maxValue = Math.max(...data.map((d) => d.value), 1);
   const minValue = Math.min(...data.map((d) => d.value), 0);
   const range = maxValue - minValue || 1;
@@ -67,12 +72,15 @@ export function LineChart({
         style={{ height, width: "100%" }}
       >
         <defs>
-          <linearGradient id="line-grad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.2" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
-        <polygon points={`0,100 ${points} 100,100`} fill="url(#line-grad)" />
+        <polygon
+          points={`0,100 ${points} 100,100`}
+          fill={`url(#${gradientId})`}
+        />
         <polyline
           points={points}
           fill="none"

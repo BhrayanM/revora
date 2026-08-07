@@ -8,7 +8,6 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
-import { SlideUp } from "@/components/ui/motion";
 
 const benefits = [
   {
@@ -57,10 +56,16 @@ export function Benefits() {
             for Themselves
           </h2>
         </div>
-
         <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {benefits.map((benefit, index) => (
-            <SlideUp key={benefit.label} delay={index * 0.1}>
+            <div
+              key={benefit.label}
+              className="animate-slide-up"
+              style={{
+                animationDelay: `${index * 0.1}s`,
+                animationFillMode: "both",
+              }}
+            >
               <div className="group text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary/20">
                   <benefit.icon className="size-6 text-primary" />
@@ -76,7 +81,7 @@ export function Benefits() {
                   {benefit.description}
                 </p>
               </div>
-            </SlideUp>
+            </div>
           ))}
         </div>
       </Container>

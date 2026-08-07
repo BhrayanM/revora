@@ -10,8 +10,8 @@ const footerLinks = {
     { label: "Features", href: "#features" },
     { label: "Integrations", href: "#integrations" },
     { label: "Pricing", href: "#pricing" },
-    { label: "Changelog", href: "#" },
-    { label: "Roadmap", href: "#" },
+    { label: "Sign Up", href: "/signup" },
+    { label: "Dashboard", href: "/dashboard" },
   ],
   Resources: [
     { label: "Documentation", href: "#" },

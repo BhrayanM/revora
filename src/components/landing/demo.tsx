@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { SlideUp } from "@/components/ui/motion";
 
 const stats = [
   { label: "Leads Processed", value: "2.4M+", icon: BarChart3 },
@@ -26,7 +25,10 @@ export function Demo() {
       <BackgroundPattern variant="gradient" />
       <Container>
         <div className="grid items-center gap-12 lg:grid-cols-2">
-          <SlideUp>
+          <div
+            className="animate-slide-up"
+            style={{ animationFillMode: "both" }}
+          >
             <Badge variant="default" className="mb-4">
               See It In Action
             </Badge>
@@ -41,7 +43,6 @@ export function Demo() {
               See how our AI automatically qualifies leads, sends personalized
               outreach, and books meetings — all without human intervention.
             </p>
-
             <ul className="mt-6 space-y-3">
               {[
                 "AI lead scoring in real-time",
@@ -59,7 +60,6 @@ export function Demo() {
                 </li>
               ))}
             </ul>
-
             <div className="mt-8 flex gap-3">
               <Button>
                 Try Live Demo
@@ -70,9 +70,11 @@ export function Demo() {
                 Watch Overview
               </Button>
             </div>
-          </SlideUp>
-
-          <SlideUp delay={0.2}>
+          </div>
+          <div
+            className="animate-slide-up"
+            style={{ animationDelay: "0.2s", animationFillMode: "both" }}
+          >
             <div className="relative">
               <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 blur-2xl" />
               <Card className="relative overflow-hidden">
@@ -117,7 +119,7 @@ export function Demo() {
                 </CardContent>
               </Card>
             </div>
-          </SlideUp>
+          </div>
         </div>
       </Container>
     </section>
