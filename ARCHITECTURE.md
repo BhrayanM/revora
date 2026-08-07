@@ -53,6 +53,9 @@ ai-growth-platform/
 │   │   └── utils.ts           # cn() helper
 │   ├── types/                 # TypeScript definitions
 │   └── styles/                # Additional styles (if needed)
+├── supabase/                  # Supabase configuration
+│   ├── migrations/            # SQL migration files
+│   └── seed.sql               # Development seed data
 ├── public/                    # Static assets
 ├── .husky/                    # Git hooks
 ├── docker-compose.yml         # Production Docker
@@ -89,6 +92,24 @@ Server (Server Component / Route Handler)
 ```
 
 No Prisma ORM — direct Supabase JS client with generated TypeScript types.
+
+### Database Schema
+
+```
+organizations (tenant)
+  ├── memberships (profile ↔ org with role)
+  ├── workspaces (org sub-divisions)
+  ├── leads (CRM core)
+  │     └── conversations (email, SMS, call log, AI notes)
+  ├── pipelines
+  │     └── pipeline_stages
+  ├── automations (trigger + action workflows)
+  └── integrations (external service credentials)
+
+profiles (extends auth.users 1:1 via trigger)
+```
+
+All tables scoped to organization_id for multi-tenancy. UUID v4 primary keys. Auto-updating `updated_at` via triggers.
 
 ## Component Architecture
 
