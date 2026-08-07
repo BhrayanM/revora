@@ -100,3 +100,14 @@ src/components/
 - All mutable tables have auto-updating `updated_at` via trigger
 - `profiles` auto-created on `auth.users` insert via trigger
 - Seed data uses deterministic UUIDs for reproducible dev environments
+
+### Data Layer (Phase 4.4+)
+
+- `src/lib/queries/` — Server-side data access functions
+- All queries use Supabase server client (anon key, RLS-enforced)
+- `leads.ts` — getLeads, getLeadById, createLead, updateLead, deleteLead
+- `pipelines.ts` — getPipelines, getPipelineStages, updateLeadStage
+- `conversations.ts` — getLeadConversations, createConversation
+- `analytics.ts` — getLeadMetrics, getPipelineMetrics, getRecentActivity
+- Returns `{ data, error }` — never throws
+- Designed for Server Components (async/await)
