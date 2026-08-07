@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Bell,
-  Globe,
-  Key,
-  Link2,
-  Palette,
-  Shield,
-  User,
-  Webhook,
-} from "lucide-react";
+import { Bell, Key, Plug, Shield, User } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
@@ -22,16 +13,17 @@ import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
 import { updateOrgSettings } from "./actions";
+import { APIKeysPanel } from "./api-keys-panel";
+import { IntegrationsPanel } from "./integrations-panel";
 
 type Organization = Database["public"]["Tables"]["organizations"]["Row"];
 
 const sections = [
   { id: "general", label: "General", icon: User },
+  { id: "integrations", label: "Integrations", icon: Plug },
+  { id: "api-keys", label: "API Keys", icon: Key },
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "integrations", label: "Integrations", icon: Link2 },
   { id: "security", label: "Security", icon: Shield },
-  { id: "appearance", label: "Appearance", icon: Palette },
-  { id: "api", label: "API & Webhooks", icon: Webhook },
 ];
 
 export function SettingsContent({ org }: { org: Organization | null }) {
@@ -84,92 +76,122 @@ export function SettingsContent({ org }: { org: Organization | null }) {
         </Card>
 
         <Card className="lg:col-span-3">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Globe className="size-4 text-zinc-500" />
-              <h3 className="text-base font-semibold text-foreground">
-                General Settings
-              </h3>
-            </div>
-            <p className="text-sm text-zinc-500">
-              Update your organization information.
-            </p>
-          </CardHeader>
-          <CardContent>
-            {message && (
-              <Alert
-                variant={message === "Settings saved." ? "success" : "error"}
-                className="mb-4"
-              >
-                {message}
-              </Alert>
-            )}
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Organization Name"
-                  name="org_name"
-                  defaultValue={
-                    (orgSettings.org_name as string) ?? org?.name ?? ""
-                  }
-                />
-                <Input
-                  label="Website"
-                  name="website"
-                  defaultValue={(orgSettings.website as string) ?? ""}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Default Timezone"
-                  name="timezone"
-                  defaultValue={
-                    (orgSettings.timezone as string) ?? "America/New_York"
-                  }
-                />
-                <Input
-                  label="Language"
-                  name="language"
-                  defaultValue={
-                    (orgSettings.language as string) ?? "English (US)"
-                  }
-                />
-              </div>
-              <Input
-                label="Contact Email"
-                name="email"
-                defaultValue={(orgSettings.email as string) ?? ""}
-              />
-              <div className="flex justify-end">
-                <Button type="submit" loading={isPending}>
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+          {activeSection === "general" && (
+            <>
+              <CardHeader>
+                <h3 className="text-base font-semibold text-foreground">
+                  General Settings
+                </h3>
+                <p className="text-sm text-zinc-500">
+                  Update your organization information.
+                </p>
+              </CardHeader>
+              <CardContent>
+                {message && (
+                  <Alert
+                    variant={
+                      message === "Settings saved." ? "success" : "error"
+                    }
+                    className="mb-4"
+                  >
+                    {message}
+                  </Alert>
+                )}
+                <form onSubmit={handleSave} className="space-y-6">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Organization Name"
+                      name="org_name"
+                      defaultValue={
+                        (orgSettings.org_name as string) ?? org?.name ?? ""
+                      }
+                    />
+                    <Input
+                      label="Website"
+                      name="website"
+                      defaultValue={(orgSettings.website as string) ?? ""}
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Default Timezone"
+                      name="timezone"
+                      defaultValue={
+                        (orgSettings.timezone as string) ?? "America/New_York"
+                      }
+                    />
+                    <Input
+                      label="Language"
+                      name="language"
+                      defaultValue={
+                        (orgSettings.language as string) ?? "English (US)"
+                      }
+                    />
+                  </div>
+                  <Input
+                    label="Contact Email"
+                    name="email"
+                    defaultValue={(orgSettings.email as string) ?? ""}
+                  />
+                  <div className="flex justify-end">
+                    <Button type="submit" loading={isPending}>
+                      Save Changes
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </>
+          )}
 
-      <div className="mt-6">
-        <Card className="lg:ml-[calc(25%+1.5rem)] lg:w-[75%]">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Key className="size-4 text-zinc-500" />
-              <h3 className="text-base font-semibold text-foreground">
-                API Keys
-              </h3>
-            </div>
-            <p className="text-sm text-zinc-500">
-              Manage API keys for external integrations.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-8 text-center">
+          {activeSection === "integrations" && (
+            <>
+              <CardHeader>
+                <h3 className="text-base font-semibold text-foreground">
+                  Integrations
+                </h3>
+                <p className="text-sm text-zinc-500">
+                  Connect your CRM, Slack, and automation tools.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <IntegrationsPanel />
+              </CardContent>
+            </>
+          )}
+
+          {activeSection === "api-keys" && (
+            <>
+              <CardHeader>
+                <h3 className="text-base font-semibold text-foreground">
+                  API Keys
+                </h3>
+                <p className="text-sm text-zinc-500">
+                  Manage API keys for external lead ingestion.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <APIKeysPanel />
+              </CardContent>
+            </>
+          )}
+
+          {activeSection === "notifications" && (
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <Bell className="size-8 text-zinc-300 mb-3" />
               <p className="text-sm text-zinc-500">
-                API key management will be available in a future update.
+                Notification preferences coming soon
               </p>
-            </div>
-          </CardContent>
+            </CardContent>
+          )}
+
+          {activeSection === "security" && (
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <Shield className="size-8 text-zinc-300 mb-3" />
+              <p className="text-sm text-zinc-500">
+                Security settings coming soon
+              </p>
+            </CardContent>
+          )}
         </Card>
       </div>
     </Container>

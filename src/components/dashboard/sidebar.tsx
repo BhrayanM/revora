@@ -2,6 +2,7 @@
 
 import type { User } from "@supabase/supabase-js";
 import {
+  Activity,
   BarChart3,
   Bot,
   Calendar,
@@ -55,6 +56,10 @@ const navigation = [
         disabled: true,
       },
     ],
+  },
+  {
+    section: "Automation",
+    items: [{ label: "Automation", href: "/automation", icon: Activity }],
   },
   {
     section: "Settings",
