@@ -444,7 +444,26 @@
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      onboard_user: {
+        Args: {
+          p_user_id: string;
+          p_org_name: string;
+          p_org_slug: string;
+          p_workspace_name?: string;
+        };
+        Returns:
+          | {
+              organization_id: string;
+              workspace_id: string;
+              slug: string;
+            }
+          | {
+              error: string;
+              slug: string;
+            };
+      };
+    };
     Enums: Record<string, never>;
   };
 }
