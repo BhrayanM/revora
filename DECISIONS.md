@@ -124,3 +124,17 @@
 - Avoids Prisma's migration overhead during early iterations; Supabase Dashboard provides visual schema management
 - Auto-generated TypeScript types via Supabase CLI eliminate manual type maintenance
 - Free tier sufficient for development and early production; scales to paid plans as needed
+
+### DR-014: Multi-Tenant Schema Design
+**Date:** 2026-08-07
+**Decision:** All business tables scoped to `organization_id` with UUIDv4 primary keys, no schema-per-tenant.
+**Rationale:**
+- Single-database multi-tenancy is simpler to operate than schema-per-tenant or database-per-tenant at this scale
+- `organization_id` column on every business table enables Row Level Security policies to isolate tenants transparently
+- UUIDv4 primary keys prevent ID enumeration attacks and work well with Supabase's `auth.uid()` RLS integration
+- Deterministic seed UUIDs (`00000000-...`) allow reproducible development environments
+- `profiles` table extends `auth.users` via 1:1 FK — Supabase Auth manages credentials, profiles holds app data
+- `memberships` junction enables users to belong to multiple organizations with different roles
+- `automations` and `integrations` use `jsonb` for flexible config — avoids schema migrations for new providers/triggers
+- `conversations` is append-only (no `updated_at`) for immutable audit trail
+- Auto-created profile on signup (`handle_new_user` trigger) eliminates race conditions between auth and app data

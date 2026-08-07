@@ -80,3 +80,23 @@ src/components/
 - **Client pattern:** Browser client via `src/lib/supabase/client.ts`, Server client via `src/lib/supabase/server.ts`
 - **Types:** Auto-generated from Supabase schema in `src/lib/supabase/types.ts`
 - **Auth:** Supabase Auth (Phase 4.2+), not NextAuth.js
+
+### Database Schema (10 tables)
+
+| Table | Purpose | Tenant Scope |
+|-------|---------|-------------|
+| `profiles` | Extends auth.users | — |
+| `organizations` | Top-level tenant | — |
+| `memberships` | profile ↔ org roles | organization_id |
+| `workspaces` | Org sub-divisions | organization_id |
+| `leads` | Core CRM entity | organization_id |
+| `pipelines` | Deal pipelines | organization_id |
+| `pipeline_stages` | Stages within pipeline | pipeline_id → org |
+| `conversations` | Lead interactions | organization_id |
+| `automations` | Workflow triggers+actions | organization_id |
+| `integrations` | External service credentials | organization_id |
+
+- All IDs are UUID v4
+- All mutable tables have auto-updating `updated_at` via trigger
+- `profiles` auto-created on `auth.users` insert via trigger
+- Seed data uses deterministic UUIDs for reproducible dev environments
