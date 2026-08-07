@@ -22,7 +22,8 @@
 | 4.5 — Connect UI to Data Layer | ✅ Complete |
 | 4.6 — Production Readiness | ✅ Complete |
 | 5.1 — OpenAI Infrastructure | ✅ Complete |
-| 5.2 — AI Lead Scoring | ⏳ Pending |
+| 5.2 — AI Lead Qualification | ✅ Complete |
+| 5.3 — Webhook & Automation Hooks | ⏳ Pending |
 | 6 — AI Features | ⏳ Pending |
 | 7 — Polish & Launch | ⏳ Pending |
 
