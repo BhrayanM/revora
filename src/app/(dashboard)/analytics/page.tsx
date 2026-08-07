@@ -38,8 +38,18 @@ export default async function AnalyticsPage() {
   const avgScore = metrics?.avgScore ?? 0;
 
   const sourceCounts = new Map<string, number>();
+  let hotCount = 0;
+  let warmCount = 0;
+  let coldCount = 0;
   for (const lead of leads ?? []) {
     sourceCounts.set(lead.source, (sourceCounts.get(lead.source) ?? 0) + 1);
+    const qual = (lead.metadata as Record<string, unknown> | null)?.[
+      "qualification"
+    ] as Record<string, unknown> | undefined;
+    const temp = qual?.["temperature"] as string | undefined;
+    if (temp === "HOT") hotCount++;
+    else if (temp === "WARM") warmCount++;
+    else if (temp === "COLD") coldCount++;
   }
 
   const sourceData = Array.from(sourceCounts.entries())
@@ -110,6 +120,27 @@ export default async function AnalyticsPage() {
         {stats.map((stat) => (
           <StatWidget key={stat.label} {...stat} />
         ))}
+      </div>
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-xs font-medium text-zinc-500">HOT Leads</p>
+            <p className="mt-1 text-2xl font-bold text-error">{hotCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-xs font-medium text-zinc-500">WARM Leads</p>
+            <p className="mt-1 text-2xl font-bold text-warning">{warmCount}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <p className="text-xs font-medium text-zinc-500">COLD Leads</p>
+            <p className="mt-1 text-2xl font-bold text-primary">{coldCount}</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">

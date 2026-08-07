@@ -26,7 +26,7 @@
 | 5.3 — Lead Intake & Webhook Engine | ✅ Complete |
 | 5.4 — End-to-End Automation + n8n | ✅ Complete |
 | 5.5 — CRM Sync + Slack + n8n | ✅ Complete |
-| 6 — Production Hardening & GHL | ✅ Complete |
+| 6.1 — Hardening Audit & Gap Closure | ✅ Complete |
 | 7 — Polish & Launch | ⏳ Pending |
 | 6 — AI Features | ⏳ Pending |
 | 7 — Polish & Launch | ⏳ Pending |
