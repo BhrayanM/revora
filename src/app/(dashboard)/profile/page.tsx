@@ -4,14 +4,42 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import { getCurrentProfile } from "@/lib/auth";
 
-export default function ProfilePage() {
+function getInitials(name: string): string {
+  const parts = name.split(" ");
+  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+function isOwner(role: string): boolean {
+  return role === "owner" || role === "admin";
+}
+
+export default async function ProfilePage() {
+  const profile = await getCurrentProfile();
+
+  if (!profile) {
+    return (
+      <Container className="max-w-none px-0">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+        </div>
+        <p className="text-sm text-zinc-500">
+          Unable to load profile. Please try again.
+        </p>
+      </Container>
+    );
+  }
+
+  const initials = getInitials(profile.full_name);
+
   return (
     <Container className="max-w-none px-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Profile</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Manage your personal information and preferences.
+          Manage your personal information.
         </p>
       </div>
 
@@ -20,28 +48,39 @@ export default function ProfilePage() {
           <CardContent className="flex flex-col items-center p-6 text-center">
             <div className="relative">
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
-                <span className="text-3xl font-bold text-primary">JS</span>
+                <span className="text-3xl font-bold text-primary">
+                  {initials}
+                </span>
               </div>
               <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-white hover:bg-primary-600 transition-colors">
                 <Camera className="size-4" />
               </button>
             </div>
             <h2 className="mt-4 text-lg font-semibold text-foreground">
-              John Smith
+              {profile.full_name}
             </h2>
-            <p className="text-sm text-zinc-500">Administrator</p>
-            <p className="mt-1 text-xs text-zinc-400">
-              Member since January 2026
+            <p className="text-sm text-zinc-500">
+              {isOwner(profile.role) ? "Administrator" : "Agent"}
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              Joined{" "}
+              {new Date(profile.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+              })}
             </p>
 
             <div className="mt-6 w-full space-y-2">
               <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
-                <Mail className="size-4 text-zinc-400" />
-                <span className="text-zinc-600">john@aigrowth.io</span>
+                <Mail className="size-4 text-zinc-500" />
+                <span className="text-zinc-600 truncate">{profile.email}</span>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
-                <User className="size-4 text-zinc-400" />
-                <span className="text-zinc-600">Admin Role</span>
+                <User className="size-4 text-zinc-500" />
+                <span className="text-zinc-600">
+                  {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}{" "}
+                  Role
+                </span>
               </div>
             </div>
           </CardContent>
@@ -51,18 +90,13 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <h3 className="text-base font-semibold">Personal Information</h3>
-              <p className="text-sm text-zinc-500">
-                Update your personal details.
-              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Input label="First Name" defaultValue="John" />
-                <Input label="Last Name" defaultValue="Smith" />
+                <Input label="Full Name" defaultValue={profile.full_name} />
+                <Input label="Email" defaultValue={profile.email} disabled />
               </div>
-              <Input label="Email" defaultValue="john@aigrowth.io" />
-              <Input label="Phone" defaultValue="+1 (555) 123-4567" />
-              <Input label="Job Title" defaultValue="Sales Director" />
+              <Input label="Phone" placeholder="Add your phone number" />
               <div className="flex justify-end">
                 <Button>Update Profile</Button>
               </div>
@@ -72,25 +106,12 @@ export default function ProfilePage() {
           <Card>
             <CardHeader>
               <h3 className="text-base font-semibold">Preferences</h3>
-              <p className="text-sm text-zinc-500">
-                Customize your experience.
-              </p>
             </CardHeader>
             <CardContent className="space-y-4">
               {[
                 {
                   label: "Email Notifications",
                   desc: "Receive email updates about leads and pipeline changes",
-                  defaultChecked: true,
-                },
-                {
-                  label: "SMS Alerts",
-                  desc: "Get SMS notifications for high-priority leads",
-                  defaultChecked: false,
-                },
-                {
-                  label: "Weekly Reports",
-                  desc: "Receive weekly analytics and performance reports",
                   defaultChecked: true,
                 },
                 {
@@ -116,23 +137,6 @@ export default function ProfilePage() {
                   </div>
                 </label>
               ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-base font-semibold">Change Password</h3>
-              <p className="text-sm text-zinc-500">
-                Update your account password.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Input label="Current Password" type="password" />
-              <Input label="New Password" type="password" />
-              <Input label="Confirm New Password" type="password" />
-              <div className="flex justify-end">
-                <Button variant="outline">Change Password</Button>
-              </div>
             </CardContent>
           </Card>
         </div>
