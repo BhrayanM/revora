@@ -1,3 +1,4 @@
+import type { MutationResult, QueryResult } from "@/lib/queries/types";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
 
@@ -7,19 +8,9 @@ type PipelineStageRow = Database["public"]["Tables"]["pipeline_stages"]["Row"];
 export type Pipeline = PipelineRow;
 export type PipelineStage = PipelineStageRow;
 
-export interface PipelinesResult {
-  data: Pipeline[] | null;
-  error: string | null;
-}
-
-export interface PipelineStagesResult {
-  data: PipelineStage[] | null;
-  error: string | null;
-}
-
 export async function getPipelines(
   organizationId: string,
-): Promise<PipelinesResult> {
+): Promise<QueryResult<Pipeline[]>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -37,7 +28,7 @@ export async function getPipelines(
 
 export async function getPipelineStages(
   pipelineId: string,
-): Promise<PipelineStagesResult> {
+): Promise<QueryResult<PipelineStage[]>> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -57,7 +48,7 @@ export async function updateLeadStage(
   leadId: string,
   pipelineStageId: string,
   pipelineId: string,
-): Promise<{ error: string | null }> {
+): Promise<MutationResult> {
   const supabase = await createClient();
 
   const { error } = await supabase
