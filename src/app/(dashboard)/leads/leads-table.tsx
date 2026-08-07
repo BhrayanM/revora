@@ -113,6 +113,19 @@ interface LeadsTableProps {
 export function LeadsTable({ leads }: LeadsTableProps) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const filtered = leads.filter((lead) => {
+    if (statusFilter !== "all" && lead.status !== statusFilter) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(q) ||
+      (lead.email ?? "").toLowerCase().includes(q) ||
+      (lead.company ?? "").toLowerCase().includes(q)
+    );
+  });
 
   const columns: TableColumn<Lead>[] = [
     {
@@ -154,17 +167,39 @@ export function LeadsTable({ leads }: LeadsTableProps) {
     },
     {
       key: "score",
-      header: "AI Score",
+      header: "Score",
       sortable: true,
-      accessor: (lead) => (
-        <span
-          className={
-            lead.score >= 80 ? "text-success font-medium" : "text-zinc-600"
-          }
-        >
-          {lead.score}/100
-        </span>
-      ),
+      accessor: (lead) => {
+        const qual = (lead.metadata as Record<string, unknown> | null)?.[
+          "qualification"
+        ] as Record<string, unknown> | undefined;
+        const temp = qual?.["temperature"] as string | undefined;
+        return (
+          <div className="flex items-center gap-1.5">
+            <span
+              className={
+                lead.score >= 80 ? "text-success font-medium" : "text-zinc-600"
+              }
+            >
+              {lead.score}/100
+            </span>
+            {temp && (
+              <Badge
+                variant={
+                  temp === "HOT"
+                    ? "error"
+                    : temp === "WARM"
+                      ? "warning"
+                      : "default"
+                }
+                size="sm"
+              >
+                {temp}
+              </Badge>
+            )}
+          </div>
+        );
+      },
     },
     {
       key: "created_at",
@@ -203,11 +238,39 @@ export function LeadsTable({ leads }: LeadsTableProps) {
               placeholder="Search leads..."
               className="pl-9"
               inputSize="sm"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+          >
+            <option value="all">All Status</option>
+            <option value="new">New</option>
+            <option value="contacted">Contacted</option>
+            <option value="qualified">Qualified</option>
+            <option value="proposal">Proposal</option>
+            <option value="negotiation">Negotiation</option>
+            <option value="won">Won</option>
+            <option value="lost">Lost</option>
+          </select>
           <Button size="sm" onClick={() => setShowForm(true)}>
             <Plus className="size-3.5" /> Add Lead
           </Button>
+          {(search || statusFilter !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+              }}
+            >
+              Clear
+            </Button>
+          )}
         </div>
       </div>
 
@@ -215,11 +278,16 @@ export function LeadsTable({ leads }: LeadsTableProps) {
 
       <Table
         columns={columns}
-        data={leads}
+        data={filtered}
         keyField="id"
         onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
         showPagination
         pageSize={8}
+        emptyMessage={
+          search || statusFilter !== "all"
+            ? "No leads match your filters"
+            : "No leads yet"
+        }
       />
     </Container>
   );
