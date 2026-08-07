@@ -8,7 +8,7 @@ import { checkRateLimit } from "@/lib/lead-ingestion/rate-limit";
 import { validateInboundPayload } from "@/lib/lead-ingestion/validate";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
-import { emitLeadEvent } from "@/lib/webhooks/emit";
+import { emitLeadEventReliable } from "@/lib/webhooks/reliable-emit";
 
 type LeadSource = Database["public"]["Tables"]["leads"]["Insert"]["source"];
 
@@ -156,27 +156,31 @@ export async function POST(request: NextRequest) {
     .digest("hex")
     .slice(0, 16);
 
-  emitLeadEvent({
-    event: "lead.created",
-    version: 1,
-    event_id: eventId,
-    timestamp: new Date().toISOString(),
-    organization_id: orgId,
-    source: keySource,
-    lead: {
-      id: lead.id,
-      first_name: lead.first_name,
-      last_name: lead.last_name,
-      email: lead.email,
-      phone: lead.phone,
-      company: lead.company,
+  emitLeadEventReliable(
+    {
+      event: "lead.created",
+      version: 1,
+      event_id: eventId,
+      timestamp: new Date().toISOString(),
+      organization_id: orgId,
       source: keySource,
-      source_external_id: normalized.source_external_id,
-      message: normalized.message,
-      status: lead.status,
-      score: lead.score,
+      lead: {
+        id: lead.id,
+        first_name: lead.first_name,
+        last_name: lead.last_name,
+        email: lead.email,
+        phone: lead.phone,
+        company: lead.company,
+        source: keySource,
+        source_external_id: normalized.source_external_id,
+        message: normalized.message,
+        status: lead.status,
+        score: lead.score,
+      },
     },
-  }).catch((err) => {
+    orgId,
+    lead.id,
+  ).catch((err) => {
     console.error("[Webhook] emitLeadEvent failed:", err);
   });
 
