@@ -1,4 +1,4 @@
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Container } from "@/components/ui/container";
 import { getCurrentOrganization } from "@/lib/auth";
 import { getLeads } from "@/lib/queries/leads";
 import { getPipelines, getPipelineStages } from "@/lib/queries/pipelines";
+
+import { MoveStageButton } from "./move-stage-button";
 
 const stageColors: Record<string, string> = {
   "New Lead": "border-l-primary",
@@ -58,9 +60,6 @@ export default async function PipelinePage() {
         </div>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <p className="text-sm text-zinc-500">No pipeline configured.</p>
-          <p className="text-xs text-zinc-400 mt-1">
-            Create a pipeline to get started.
-          </p>
         </div>
       </Container>
     );
@@ -126,9 +125,12 @@ export default async function PipelinePage() {
                               {lead.company ?? "—"}
                             </p>
                           </div>
-                          <button className="text-zinc-500 hover:text-foreground">
-                            <MoreHorizontal className="size-4" />
-                          </button>
+                          <MoveStageButton
+                            leadId={lead.id}
+                            currentStageId={lead.pipeline_stage_id ?? ""}
+                            pipelineId={defaultPipeline.id}
+                            stages={stages ?? []}
+                          />
                         </div>
                         <div className="mt-3 flex items-center justify-between">
                           <Badge

@@ -1,65 +1,102 @@
-import { ArrowUp, BarChart3, TrendingUp, Users } from "lucide-react";
+import { BarChart3, TrendingUp, Users } from "lucide-react";
 import type { Metadata } from "next";
 
-import { BarChart, LineChart } from "@/components/dashboard/charts";
+import { BarChart, DonutChart } from "@/components/dashboard/charts";
 import { StatWidget } from "@/components/dashboard/stat-widget";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-
-const stats = [
-  {
-    label: "Lead Conversion",
-    value: "24.8%",
-    change: 8.7,
-    icon: <TrendingUp className="size-5 text-success" />,
-  },
-  {
-    label: "Avg. Response Time",
-    value: "3.2m",
-    change: -15.3,
-    changeLabel: "faster",
-    icon: <BarChart3 className="size-5 text-primary" />,
-  },
-  {
-    label: "Meetings/Lead",
-    value: "0.42",
-    change: 5.1,
-    icon: <Users className="size-5 text-secondary" />,
-  },
-];
-
-const monthlyLeads = [
-  { label: "Jan", value: 420 },
-  { label: "Feb", value: 380 },
-  { label: "Mar", value: 510 },
-  { label: "Apr", value: 480 },
-  { label: "May", value: 560 },
-  { label: "Jun", value: 620 },
-  { label: "Jul", value: 720 },
-];
-
-const sources = [
-  { label: "Website", value: 520, color: "rgb(99 102 241)" },
-  { label: "Referral", value: 280, color: "rgb(16 185 129)" },
-  { label: "LinkedIn", value: 180, color: "rgb(6 182 212)" },
-  { label: "Email", value: 140, color: "rgb(139 92 246)" },
-  { label: "Events", value: 80, color: "rgb(245 158 11)" },
-];
-
-const conversionData = [
-  { label: "New", value: 420, color: "rgb(99 102 241)" },
-  { label: "Contacted", value: 380, color: "rgb(6 182 212)" },
-  { label: "Qualified", value: 240, color: "rgb(16 185 129)" },
-  { label: "Proposal", value: 120, color: "rgb(245 158 11)" },
-  { label: "Won", value: 85, color: "rgb(139 92 246)" },
-];
+import { getCurrentOrganization } from "@/lib/auth";
+import { getLeadMetrics, getPipelineMetrics } from "@/lib/queries/analytics";
+import { getLeads } from "@/lib/queries/leads";
 
 export const metadata: Metadata = {
   title: "Analytics — AI Growth Platform",
 };
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const org = await getCurrentOrganization();
+
+  if (!org) {
+    return (
+      <Container className="max-w-none px-0">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
+        </div>
+        <p className="text-sm text-zinc-500">No organization found.</p>
+      </Container>
+    );
+  }
+
+  const { data: metrics } = await getLeadMetrics(org.id);
+  const { data: pipeline } = await getPipelineMetrics(org.id);
+  const { data: leads } = await getLeads(org.id);
+
+  const totalLeads = metrics?.total ?? 0;
+  const qualified = metrics?.qualified ?? 0;
+  const conversionRate = metrics?.conversionRate ?? 0;
+  const avgScore = metrics?.avgScore ?? 0;
+
+  const sourceCounts = new Map<string, number>();
+  for (const lead of leads ?? []) {
+    sourceCounts.set(lead.source, (sourceCounts.get(lead.source) ?? 0) + 1);
+  }
+
+  const sourceData = Array.from(sourceCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({
+      label: name.charAt(0).toUpperCase() + name.slice(1),
+      value: count,
+      color: "rgb(99 102 241)",
+    }));
+
+  const stageColors: Record<string, string> = {
+    "New Lead": "rgb(99 102 241)",
+    Contacted: "rgb(6 182 212)",
+    Qualified: "rgb(16 185 129)",
+    "Proposal Sent": "rgb(245 158 11)",
+    Negotiation: "rgb(139 92 246)",
+    "Closed Won": "rgb(16 185 129)",
+    "Closed Lost": "rgb(239 68 68)",
+  };
+
+  const donutData = (pipeline?.stages ?? []).map((s) => ({
+    label: s.stageName,
+    value: s.count,
+    color: stageColors[s.stageName] ?? "rgb(99 102 241)",
+  }));
+
+  const hasPipeline =
+    donutData.length > 0 && donutData.some((s) => s.value > 0);
+
+  const stats = [
+    {
+      label: "Total Leads",
+      value: totalLeads.toLocaleString(),
+      change: 0,
+      icon: <Users className="size-5 text-primary" />,
+    },
+    {
+      label: "Qualified Leads",
+      value: qualified.toLocaleString(),
+      change: 0,
+      icon: <TrendingUp className="size-5 text-success" />,
+    },
+    {
+      label: "Conversion Rate",
+      value: `${conversionRate}%`,
+      change: 0,
+      icon: <BarChart3 className="size-5 text-accent" />,
+    },
+    {
+      label: "Avg AI Score",
+      value: `${avgScore}/100`,
+      change: 0,
+      icon: <BarChart3 className="size-5 text-secondary" />,
+    },
+  ];
+
   return (
     <Container className="max-w-none px-0">
       <div className="mb-8">
@@ -69,7 +106,7 @@ export default function AnalyticsPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <StatWidget key={stat.label} {...stat} />
         ))}
@@ -81,21 +118,25 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Lead Volume
+                  Lead Sources
                 </h3>
-                <p className="text-sm text-zinc-500">Monthly new leads</p>
+                <p className="text-sm text-zinc-500">By acquisition channel</p>
               </div>
-              <Badge variant="default" size="sm">
-                <ArrowUp className="size-3" /> +18.2%
-              </Badge>
+              {totalLeads > 0 && (
+                <Badge variant="default" size="sm">
+                  {totalLeads} leads
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent>
-            <LineChart
-              data={monthlyLeads}
-              height={240}
-              color="rgb(99 102 241)"
-            />
+            {sourceData.length > 0 ? (
+              <BarChart data={sourceData} height={240} />
+            ) : (
+              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+                No source data yet
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -104,14 +145,20 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  Lead Sources
+                  Pipeline Distribution
                 </h3>
-                <p className="text-sm text-zinc-500">By acquisition channel</p>
+                <p className="text-sm text-zinc-500">Leads by stage</p>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            <BarChart data={sources} height={240} />
+            {hasPipeline ? (
+              <DonutChart segments={donutData} size={180} />
+            ) : (
+              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+                No pipeline data
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -125,26 +172,32 @@ export default function AnalyticsPage() {
             <p className="text-sm text-zinc-500">Pipeline stages</p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {conversionData.map((stage, i) => (
-                <div key={stage.label}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span className="text-foreground">{stage.label}</span>
-                    <span className="text-zinc-500">{stage.value}</span>
+            {hasPipeline ? (
+              <div className="space-y-4">
+                {donutData.map((stage, i) => (
+                  <div key={stage.label}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-foreground">{stage.label}</span>
+                      <span className="text-zinc-500">{stage.value}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-surface-secondary">
+                      <div
+                        className="h-2 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.max((stage.value / Math.max(donutData[0]!.value, 1)) * 100, 2)}%`,
+                          backgroundColor: stage.color,
+                          opacity: 1 - i * 0.12,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 w-full rounded-full bg-surface-secondary">
-                    <div
-                      className="h-2 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(stage.value / conversionData[0]!.value) * 100}%`,
-                        backgroundColor: stage.color,
-                        opacity: 1 - i * 0.15,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+                No pipeline data
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -162,77 +215,47 @@ export default function AnalyticsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left">
-                    <th className="pb-3 font-medium text-zinc-500">Source</th>
-                    <th className="pb-3 font-medium text-zinc-500">Leads</th>
-                    <th className="pb-3 font-medium text-zinc-500">Conv.</th>
-                    <th className="pb-3 font-medium text-zinc-500">Revenue</th>
-                    <th className="pb-3 font-medium text-zinc-500">Trend</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    {
-                      source: "Website",
-                      leads: 520,
-                      conv: "26.4%",
-                      revenue: "$48.2k",
-                      trend: "+12%",
-                    },
-                    {
-                      source: "Referral",
-                      leads: 280,
-                      conv: "32.1%",
-                      revenue: "$32.8k",
-                      trend: "+18%",
-                    },
-                    {
-                      source: "LinkedIn",
-                      leads: 180,
-                      conv: "18.7%",
-                      revenue: "$15.4k",
-                      trend: "+5%",
-                    },
-                    {
-                      source: "Email",
-                      leads: 140,
-                      conv: "22.3%",
-                      revenue: "$11.2k",
-                      trend: "-3%",
-                    },
-                    {
-                      source: "Events",
-                      leads: 80,
-                      conv: "28.9%",
-                      revenue: "$9.6k",
-                      trend: "+8%",
-                    },
-                  ].map((row) => (
-                    <tr key={row.source} className="border-b border-border">
-                      <td className="py-3 font-medium text-foreground">
-                        {row.source}
-                      </td>
-                      <td className="py-3 text-zinc-600">{row.leads}</td>
-                      <td className="py-3 text-zinc-600">{row.conv}</td>
-                      <td className="py-3 text-zinc-600">{row.revenue}</td>
-                      <td className="py-3">
-                        <Badge
-                          variant={
-                            row.trend.startsWith("+") ? "success" : "error"
-                          }
-                          size="sm"
-                        >
-                          {row.trend}
-                        </Badge>
-                      </td>
+            {sourceData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="pb-3 font-medium text-zinc-500">Source</th>
+                      <th className="pb-3 font-medium text-zinc-500">Leads</th>
+                      <th className="pb-3 font-medium text-zinc-500">
+                        % of Total
+                      </th>
+                      <th className="pb-3 font-medium text-zinc-500">Trend</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {sourceData.map((row) => (
+                      <tr key={row.label} className="border-b border-border">
+                        <td className="py-3 font-medium text-foreground">
+                          {row.label}
+                        </td>
+                        <td className="py-3 text-zinc-600">{row.value}</td>
+                        <td className="py-3 text-zinc-600">
+                          {totalLeads > 0
+                            ? Math.round((row.value / totalLeads) * 100)
+                            : 0}
+                          %
+                        </td>
+                        <td className="py-3">
+                          <Badge variant="default" size="sm">
+                            Active
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+                No leads recorded yet
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
