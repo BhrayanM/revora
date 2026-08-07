@@ -16,7 +16,7 @@
 - [x] Loading / Empty / Error states
 - [x] Dark mode preparation
 - [x] Responsive utilities
-- [x] Animations (Framer Motion + CSS)
+- [x] Animations (CSS keyframes + animation-delay stagger)
 
 ## Phase 2 — Landing Premium ✅
 - [x] Navbar with mobile menu
@@ -49,6 +49,22 @@
 - [x] Recent activity feed
 - [x] Calendar placeholder
 - [x] AI Insights placeholder
+
+## Phase 3.5 — Premium Polish ✅
+- [x] Dashboard layout to Server Component (only Sidebar/TopNav as Client Components)
+- [x] FAQ converted to native `<details>` element (accessible, zero JS)
+- [x] Testimonials as CSS scroll-snap carousel (Server Component)
+- [x] Removed framer-motion (~34KB bundle savings); all animations pure CSS
+- [x] Created `/signup` page with registration form; all CTAs route correctly
+- [x] TrustedBy section: real statistics replacing fake company names
+- [x] Hero dashboard mockup upgraded with real-looking KPIs
+- [x] Fixed mobile sidebar toggle with overlay backdrop
+- [x] Added `loading.tsx` and `error.tsx` for dashboard routes
+- [x] Accessibility: skip-to-content, semantic icons, reduced-motion support
+- [x] Fixed SVG gradient ID collision with `useId()`
+- [x] Added `generateMetadata` to Server Component pages (Dashboard, Analytics)
+- [x] Pricing card uses `ring-2` instead of `scale-[1.02]` for visual consistency
+- [x] Low-contrast `text-zinc-400` replaced with `text-zinc-500` where needed
 
 ## Phase 4 — Backend & Database (Planned)
 - [ ] Prisma ORM setup
