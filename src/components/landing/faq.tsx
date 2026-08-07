@@ -1,12 +1,5 @@
-"use client";
-
-import { ChevronDown } from "lucide-react";
-import { useState } from "react";
-
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
-import { SlideUp } from "@/components/ui/motion";
-import { cn } from "@/lib/utils";
 
 const faqs = [
   {
@@ -42,8 +35,6 @@ const faqs = [
 ];
 
 export function FAQ() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
   return (
     <section id="faq" className="py-24 sm:py-32 bg-surface-secondary">
       <Container>
@@ -61,40 +52,29 @@ export function FAQ() {
 
         <div className="mt-16 mx-auto max-w-3xl divide-y divide-border">
           {faqs.map((faq, index) => (
-            <SlideUp key={index} delay={index * 0.05}>
-              <div className="py-4">
-                <button
-                  onClick={() =>
-                    setOpenIndex(openIndex === index ? null : index)
-                  }
-                  className="flex w-full items-center justify-between gap-4 text-left"
+            <details key={index} className="group py-4">
+              <summary className="flex w-full cursor-pointer items-center justify-between gap-4 text-left list-none">
+                <span className="text-base font-medium text-foreground">
+                  {faq.question}
+                </span>
+                <svg
+                  className="size-5 shrink-0 text-zinc-500 transition-transform duration-200 group-open:rotate-180"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
                 >
-                  <span className="text-base font-medium text-foreground">
-                    {faq.question}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "size-5 shrink-0 text-zinc-400 transition-transform duration-200",
-                      openIndex === index && "rotate-180",
-                    )}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 9l-7 7-7-7"
                   />
-                </button>
-                <div
-                  className={cn(
-                    "grid transition-all duration-200",
-                    openIndex === index
-                      ? "grid-rows-[1fr] opacity-100 mt-3"
-                      : "grid-rows-[0fr] opacity-0",
-                  )}
-                >
-                  <div className="overflow-hidden">
-                    <p className="text-sm leading-relaxed text-zinc-600">
-                      {faq.answer}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </SlideUp>
+                </svg>
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+                {faq.answer}
+              </p>
+            </details>
           ))}
         </div>
       </Container>

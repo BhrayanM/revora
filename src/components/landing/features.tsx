@@ -13,7 +13,6 @@ import { BackgroundPattern } from "@/components/shared/background-pattern";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { SlideUp, StaggerChildren } from "@/components/ui/motion";
 
 const features = [
   {
@@ -86,10 +85,16 @@ export function Features() {
             heavy lifting so your team can focus on what matters.
           </p>
         </div>
-
-        <StaggerChildren className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <SlideUp key={feature.title}>
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {features.map((feature, i) => (
+            <div
+              key={feature.title}
+              className="animate-slide-up"
+              style={{
+                animationDelay: `${i * 0.1}s`,
+                animationFillMode: "both",
+              }}
+            >
               <Card className="h-full transition-all duration-300 hover:border-primary/30 hover:shadow-lg">
                 <CardContent className="p-6">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -103,9 +108,9 @@ export function Features() {
                   </p>
                 </CardContent>
               </Card>
-            </SlideUp>
+            </div>
           ))}
-        </StaggerChildren>
+        </div>
       </Container>
     </section>
   );

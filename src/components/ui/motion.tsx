@@ -1,22 +1,6 @@
-"use client";
+import type { CSSProperties, ReactNode } from "react";
 
-import { motion, type Variants } from "framer-motion";
-import type { ReactNode } from "react";
-
-const fadeInVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-};
-
-const slideUpVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const scaleInVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { opacity: 1, scale: 1 },
-};
+import { cn } from "@/lib/utils";
 
 interface MotionWrapperProps {
   children: ReactNode;
@@ -31,19 +15,17 @@ export function FadeIn({
   className,
   delay = 0,
   duration = 0.5,
-  once = true,
 }: MotionWrapperProps) {
+  const style: CSSProperties = {
+    animationDelay: `${delay}s`,
+    animationDuration: `${duration}s`,
+    animationFillMode: "both",
+  };
+
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once }}
-      variants={fadeInVariants}
-      transition={{ duration, delay, ease: "easeOut" }}
-      className={className}
-    >
+    <div className={cn("animate-fade-in", className)} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -52,19 +34,17 @@ export function SlideUp({
   className,
   delay = 0,
   duration = 0.5,
-  once = true,
 }: MotionWrapperProps) {
+  const style: CSSProperties = {
+    animationDelay: `${delay}s`,
+    animationDuration: `${duration}s`,
+    animationFillMode: "both",
+  };
+
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once }}
-      variants={slideUpVariants}
-      transition={{ duration, delay, ease: "easeOut" }}
-      className={className}
-    >
+    <div className={cn("animate-slide-up", className)} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -73,19 +53,17 @@ export function ScaleIn({
   className,
   delay = 0,
   duration = 0.4,
-  once = true,
 }: MotionWrapperProps) {
+  const style: CSSProperties = {
+    animationDelay: `${delay}s`,
+    animationDuration: `${duration}s`,
+    animationFillMode: "both",
+  };
+
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once }}
-      variants={scaleInVariants}
-      transition={{ duration, delay, ease: "easeOut" }}
-      className={className}
-    >
+    <div className={cn("animate-scale-in", className)} style={style}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -101,21 +79,11 @@ export function StaggerChildren({
   staggerDelay = 0.1,
 }: StaggerChildrenProps) {
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true }}
-      variants={{
-        hidden: {},
-        visible: {
-          transition: {
-            staggerChildren: staggerDelay,
-          },
-        },
-      }}
-      className={className}
+    <div
+      className={cn(className)}
+      style={{ "--stagger-delay": `${staggerDelay}s` } as CSSProperties}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

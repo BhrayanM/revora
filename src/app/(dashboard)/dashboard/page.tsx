@@ -1,4 +1,5 @@
 import { BarChart3, TrendingUp, UserPlus, Users } from "lucide-react";
+import type { Metadata } from "next";
 
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { BarChart, DonutChart, LineChart } from "@/components/dashboard/charts";
@@ -7,6 +8,10 @@ import { StatWidget } from "@/components/dashboard/stat-widget";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+
+export const metadata: Metadata = {
+  title: "Dashboard — AI Growth Platform",
+};
 
 const stats = [
   {
@@ -171,7 +176,7 @@ export default function DashboardPage() {
                 automatically book meetings.
               </p>
               <p className="mt-3 text-xs font-medium text-primary">
-                Coming in Phase 5
+                Calendar integration launching soon
               </p>
             </div>
           </CardContent>

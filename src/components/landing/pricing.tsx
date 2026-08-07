@@ -92,7 +92,7 @@ export function Pricing() {
               className={cn(
                 "relative flex flex-col",
                 plan.popular &&
-                  "border-primary/50 shadow-lg shadow-primary/10 scale-[1.02]",
+                  "border-primary/50 shadow-lg shadow-primary/10 ring-2 ring-primary/20",
               )}
             >
               {plan.popular && (

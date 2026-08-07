@@ -1,4 +1,5 @@
 import { ArrowUp, BarChart3, TrendingUp, Users } from "lucide-react";
+import type { Metadata } from "next";
 
 import { BarChart, LineChart } from "@/components/dashboard/charts";
 import { StatWidget } from "@/components/dashboard/stat-widget";
@@ -53,6 +54,10 @@ const conversionData = [
   { label: "Proposal", value: 120, color: "rgb(245 158 11)" },
   { label: "Won", value: 85, color: "rgb(139 92 246)" },
 ];
+
+export const metadata: Metadata = {
+  title: "Analytics — AI Growth Platform",
+};
 
 export default function AnalyticsPage() {
   return (
