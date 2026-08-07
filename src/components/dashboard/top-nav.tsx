@@ -1,18 +1,33 @@
 "use client";
 
+import type { User } from "@supabase/supabase-js";
 import { Bell, Menu, Search } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface TopNavProps {
   onMenuClick?: () => void;
+  user: User | null;
 }
 
-export function TopNav({ onMenuClick }: TopNavProps) {
-  const [notifications] = useState(3);
+function getInitials(
+  name: string | undefined,
+  email: string | undefined,
+): string {
+  if (name) {
+    const parts = name.split(" ");
+    if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  }
+  if (email) return email.slice(0, 2).toUpperCase();
+  return "??";
+}
+
+export function TopNav({ onMenuClick, user }: TopNavProps) {
+  const userMeta = user?.user_metadata as { full_name?: string } | undefined;
+  const initials = getInitials(userMeta?.full_name, user?.email);
 
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-surface/80 px-4 backdrop-blur-xl sm:px-6">
@@ -28,7 +43,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
 
       <div className="hidden sm:flex sm:flex-1 sm:max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-400" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
           <Input
             placeholder="Search leads, contacts, deals..."
             className="pl-9"
@@ -43,17 +58,12 @@ export function TopNav({ onMenuClick }: TopNavProps) {
         <Link href="/notifications" className="relative">
           <Button variant="ghost" size="sm" className="size-9 p-0">
             <Bell className="size-4" />
-            {notifications > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[0.625rem] font-bold text-white">
-                {notifications}
-              </span>
-            )}
           </Button>
         </Link>
 
         <Link href="/profile">
           <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/20">
-            JS
+            {initials}
           </div>
         </Link>
       </div>

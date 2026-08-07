@@ -72,7 +72,7 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/signup">
+          <Link href="/login">
             <Button variant="ghost" size="sm">
               Sign In
             </Button>
@@ -109,7 +109,7 @@ export function Navbar() {
               </Link>
             ))}
             <div className="flex flex-col gap-2 pt-2 border-t border-border">
-              <Link href="/signup">
+              <Link href="/login">
                 <Button
                   variant="ghost"
                   size="sm"

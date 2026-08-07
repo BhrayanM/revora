@@ -8,6 +8,7 @@ import { StatWidget } from "@/components/dashboard/stat-widget";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Dashboard — AI Growth Platform",
@@ -67,13 +68,21 @@ const donutData = [
   { label: "Won", value: 145, color: "rgb(139 92 246)" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const userMeta = user?.user_metadata as { full_name?: string } | undefined;
+  const displayName =
+    userMeta?.full_name ?? user?.email?.split("@")[0] ?? "User";
+
   return (
     <Container className="max-w-none px-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Welcome back, John. Here&apos;s what&apos;s happening today.
+          Welcome back, {displayName}. Here&apos;s what&apos;s happening today.
         </p>
       </div>
 
