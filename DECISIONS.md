@@ -154,5 +154,16 @@
 - `onboard_user` PostgreSQL function wraps org + membership + workspace creation in a single atomic transaction, preventing orphan records
 - Organization slugs include a random 4-char suffix to prevent collisions between users sharing email domains
 - All `SECURITY DEFINER` functions set `search_path = ''` to prevent function hijacking attacks
+
+### DR-016: Organization Scope for Dashboard (Not Workspace)
+**Date:** 2026-08-07
+**Decision:** All dashboard pages operate at organization scope, not workspace scope. `getCurrentOrganization()` returns the user's first org membership. Workspace filtering is available in the query layer but not wired to any UI yet.
+**Rationale:**
+- Phase 4 MVP only supports single-organization per user; workspace-level isolation adds complexity without immediate value
+- The `workspaces` table exists and is populated on onboarding (default workspace), but no UI exists for workspace switching or filtering
+- Query layer already supports workspace-scoped queries (`getLeadsByWorkspace(orgId, wsId)`) — ready for Phase 5 when workspace switching UI is built
+- RLS policies enforce org-level isolation; workspace is an additional filter layer within an org
+- Settings page persists org-level configuration; workspace-level settings would require schema changes
+- This decision can be revisited in Phase 5 when multi-workspace dashboards become necessary
 - Redirect parameters validated against `startsWith("/")` to prevent open redirect attacks
 - Middleware migrated to `proxy.ts` (Next.js 16 convention); `getUser()` only called on protected routes, not public pages

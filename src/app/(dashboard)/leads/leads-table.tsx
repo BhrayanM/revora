@@ -1,8 +1,10 @@
 "use client";
 
-import { MoreHorizontal, Search } from "lucide-react";
+import { MoreHorizontal, Plus, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { FormEvent } from "react";
+import { useState, useTransition } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +12,8 @@ import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
 import { Table, type TableColumn } from "@/components/ui/table";
 import type { Lead } from "@/lib/queries/leads";
+
+import { addLead } from "./actions";
 
 const statusConfig: Record<
   string,
@@ -28,12 +32,87 @@ const statusConfig: Record<
   lost: { label: "Lost", variant: "error" },
 };
 
+function AddLeadForm({ onClose }: { onClose: () => void }) {
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      const result = await addLead(formData);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        form.reset();
+        onClose();
+      }
+    });
+  };
+
+  return (
+    <div className="mb-6 rounded-xl border border-border bg-surface p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-foreground">Add Lead</h2>
+        <button
+          onClick={onClose}
+          className="rounded-md p-1 text-zinc-500 hover:text-foreground"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+      {error && <p className="text-sm text-error mb-3">{error}</p>}
+      <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+        <Input
+          label="First Name"
+          name="first_name"
+          placeholder="Sarah"
+          inputSize="sm"
+          required
+        />
+        <Input
+          label="Last Name"
+          name="last_name"
+          placeholder="Johnson"
+          inputSize="sm"
+          required
+        />
+        <Input
+          label="Email"
+          name="email"
+          type="email"
+          placeholder="sarah@company.com"
+          inputSize="sm"
+        />
+        <Input
+          label="Company"
+          name="company"
+          placeholder="Company name"
+          inputSize="sm"
+        />
+        <div className="sm:col-span-2 flex justify-end gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" size="sm" loading={isPending}>
+            Save Lead
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 interface LeadsTableProps {
   leads: Lead[];
 }
 
 export function LeadsTable({ leads }: LeadsTableProps) {
   const router = useRouter();
+  const [showForm, setShowForm] = useState(false);
 
   const columns: TableColumn<Lead>[] = [
     {
@@ -126,9 +205,14 @@ export function LeadsTable({ leads }: LeadsTableProps) {
               inputSize="sm"
             />
           </div>
-          <Button size="sm">Add Lead</Button>
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <Plus className="size-3.5" /> Add Lead
+          </Button>
         </div>
       </div>
+
+      {showForm && <AddLeadForm onClose={() => setShowForm(false)} />}
+
       <Table
         columns={columns}
         data={leads}
