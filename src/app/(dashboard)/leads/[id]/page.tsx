@@ -1,14 +1,15 @@
-import { ArrowLeft, Calendar, Mail, Phone, Star } from "lucide-react";
+import { ArrowLeft, Calendar, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { BarChart } from "@/components/dashboard/charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById } from "@/lib/queries/leads";
+
+import { AIQualificationPanel } from "./ai-qualification-panel";
 
 const statusConfig: Record<string, BadgeVariant> = {
   new: "default",
@@ -21,13 +22,6 @@ const statusConfig: Record<string, BadgeVariant> = {
 };
 type BadgeVariant =
   "default" | "success" | "warning" | "error" | "secondary" | "outline";
-
-const scoreData = [
-  { label: "Engagement", value: 92, color: "rgb(99 102 241)" },
-  { label: "Fit", value: 78, color: "rgb(16 185 129)" },
-  { label: "Intent", value: 85, color: "rgb(6 182 212)" },
-  { label: "Timeline", value: 65, color: "rgb(245 158 11)" },
-];
 
 export default async function LeadDetailPage({
   params,
@@ -43,6 +37,13 @@ export default async function LeadDetailPage({
   }
 
   const { data: conversations } = await getLeadConversations(id);
+
+  const existingQualification = lead.metadata
+    ? ((lead.metadata as Record<string, unknown>)["qualification"] as Record<
+        string,
+        unknown
+      > | null)
+    : null;
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString("en-US", {
@@ -176,37 +177,11 @@ export default async function LeadDetailPage({
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <h3 className="text-base font-semibold">AI Score Breakdown</h3>
-            </CardHeader>
-            <CardContent>
-              <BarChart data={scoreData} height={140} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-base font-semibold">Notes</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-lg bg-surface-secondary p-3">
-                <div className="flex items-center gap-2">
-                  <Star className="size-3.5 text-warning fill-warning" />
-                  <span className="text-xs font-medium text-foreground">
-                    AI Summary
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-zinc-600">
-                  Lead from {lead.company ?? "unknown company"}. Current score:{" "}
-                  {lead.score}/100. Status: {lead.status}.
-                  {lead.score >= 80
-                    ? " High-priority lead — recommend contacting within 24 hours."
-                    : " Continue nurturing with automated sequences."}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <AIQualificationPanel
+            leadId={id}
+            currentScore={lead.score}
+            existingQualification={existingQualification}
+          />
         </div>
       </div>
     </Container>

@@ -15,6 +15,22 @@ import type {
   AIStructuredResponse,
 } from "@/lib/ai/types";
 
+export type {
+  AIRequest,
+  AIResponse,
+  AIStructuredResponse,
+  AIMessage,
+} from "@/lib/ai/types";
+export type {
+  QualificationResult,
+  LeadTemperature,
+} from "@/lib/ai/qualification";
+export {
+  scoreToTemperature,
+  validateQualificationResult,
+} from "@/lib/ai/qualification";
+export { qualifyLead } from "@/lib/ai/lead-qualification";
+
 function logAIError(
   operation: string,
   error: unknown,

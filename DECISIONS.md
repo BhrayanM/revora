@@ -180,5 +180,19 @@
 - Structured output uses `response_format: { type: "json_object" }` for reliable JSON parsing
 - Usage metadata (input/output/total tokens, model, duration) preserved for future cost tracking and monitoring
 - Build succeeds without OPENAI_API_KEY — the infrastructure validates the key at runtime, not compile time
+
+### DR-018: AI Lead Qualification Architecture
+**Date:** 2026-08-07
+**Decision:** Use existing `leads` schema fields (`score`, `tags`, `metadata`) for qualification storage. Score clamped 0-100. Temperature derived deterministically from score (80-100→HOT, 50-79→WARM, 0-49→COLD). LLM temperature suggestion is advisory only — the application enforces classification.
+**Rationale:**
+- Existing `score` (integer 0-100) maps directly to qualification score — no new column needed
+- `tags` (text[]) stores buying signals as searchable tags
+- `metadata` (jsonb) stores the full qualification result (temperature, intent, confidence, buyingSignals, risks, recommendedAction, summary, qualifiedAt, model, tokens)
+- Deterministic temperature derivation prevents LLM from inventing mismatched classifications (score=85, temperature="COLD" is impossible)
+- Post-processing validates and clamps all fields — malformed LLM output is rejected at the application layer
+- Re-qualification overwrites previous qualification data (latest wins model)
+- Qualification is explicitly triggered (not automatic) — prevents unnecessary API costs
+- Tenant isolation: `getLeadById()` + RLs verifies lead belongs to user's org before qualification
+- When qualification produces HOT result and lead is "new", an AI conversation summary is auto-created for the activity timeline
 - Redirect parameters validated against `startsWith("/")` to prevent open redirect attacks
 - Middleware migrated to `proxy.ts` (Next.js 16 convention); `getUser()` only called on protected routes, not public pages
