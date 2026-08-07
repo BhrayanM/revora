@@ -26,7 +26,7 @@ export interface TableProps<T> {
   showPagination?: boolean;
 }
 
-export function Table<T extends Record<string, unknown>>({
+export function Table<T>({
   columns,
   data,
   keyField,
@@ -52,8 +52,10 @@ export function Table<T extends Record<string, unknown>>({
 
   const sortedData = sortKey
     ? [...data].sort((a, b) => {
-        const aVal = a[sortKey];
-        const bVal = b[sortKey];
+        const recordA = a as Record<string, unknown>;
+        const recordB = b as Record<string, unknown>;
+        const aVal = recordA[sortKey];
+        const bVal = recordB[sortKey];
         if (aVal == null) return 1;
         if (bVal == null) return -1;
         const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
