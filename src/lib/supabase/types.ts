@@ -1,4 +1,4 @@
-export interface Database {
+﻿export interface Database {
   public: {
     Tables: {
       profiles: {
@@ -29,6 +29,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       organizations: {
         Row: {
@@ -58,6 +59,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       memberships: {
         Row: {
@@ -81,6 +83,7 @@ export interface Database {
           role?: "owner" | "admin" | "manager" | "agent";
           created_at?: string;
         };
+        Relationships: [];
       };
       workspaces: {
         Row: {
@@ -107,6 +110,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       pipelines: {
         Row: {
@@ -136,6 +140,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       pipeline_stages: {
         Row: {
@@ -165,6 +170,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       leads: {
         Row: {
@@ -269,6 +275,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       conversations: {
         Row: {
@@ -304,6 +311,7 @@ export interface Database {
           metadata?: Record<string, unknown>;
           created_at?: string;
         };
+        Relationships: [];
       };
       automations: {
         Row: {
@@ -378,6 +386,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       integrations: {
         Row: {
@@ -431,6 +440,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

@@ -138,3 +138,16 @@
 - `automations` and `integrations` use `jsonb` for flexible config — avoids schema migrations for new providers/triggers
 - `conversations` is append-only (no `updated_at`) for immutable audit trail
 - Auto-created profile on signup (`handle_new_user` trigger) eliminates race conditions between auth and app data
+
+### DR-015: Supabase Auth with SSR Middleware Protection
+**Date:** 2026-08-07
+**Decision:** Use Supabase Auth with `@supabase/ssr` for session management. Protect dashboard routes with Next.js middleware. Auto-create organization + workspace on first signup via auth callback.
+**Rationale:**
+- `@supabase/ssr` provides idiomatic cookie-based session management for Next.js App Router — no `localStorage` tokens, works in Server Components
+- Middleware checks `auth.getUser()` on every protected route and redirects unauthenticated users to `/login`
+- Auth callback route handles email confirmation, exchanges code for session, and provisions tenant resources (org, membership, workspace) on first login
+- Service role client in callback bypasses RLS for org creation during onboarding
+- `handle_new_user` database trigger auto-creates `profiles` row on `auth.users` insert — zero application code for profile creation
+- User metadata from signup (`full_name`) flows through to dashboard greeting, sidebar, and topnav via server-side session
+- Logout clears session client-side and redirects to `/login`
+- RLS policies on all 10 tables enforce tenant isolation transparently without application-level authorization checks

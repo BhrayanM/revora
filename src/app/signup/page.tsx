@@ -1,12 +1,50 @@
+"use client";
+
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import type { FormEvent } from "react";
+import { useState } from "react";
 
 import { BackgroundPattern } from "@/components/shared/background-pattern";
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setLoading(true);
+
+    const supabase = createClient();
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      setMessage("Check your email for the confirmation link.");
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="relative flex min-h-screen flex-col bg-background">
       <BackgroundPattern variant="gradient" />
@@ -54,30 +92,62 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <div className="mt-8 space-y-4">
-            <Input label="Full Name" placeholder="John Smith" inputSize="lg" />
-            <Input
-              label="Work Email"
-              placeholder="john@company.com"
-              inputSize="lg"
-              type="email"
-            />
-            <Input
-              label="Password"
-              placeholder="Create a password"
-              inputSize="lg"
-              type="password"
-            />
+          <div className="mt-8">
+            {error && (
+              <Alert variant="error" className="mb-4">
+                {error}
+              </Alert>
+            )}
+            {message && (
+              <Alert variant="success" className="mb-4">
+                {message}
+              </Alert>
+            )}
 
-            <Button size="xl" className="w-full shadow-lg shadow-primary/25">
-              Create Free Account
-              <ArrowRight className="size-5" />
-            </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="John Smith"
+                inputSize="lg"
+                required
+              />
+              <Input
+                label="Work Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="john@company.com"
+                inputSize="lg"
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Create a password (min 6 characters)"
+                inputSize="lg"
+                required
+                minLength={6}
+              />
 
-            <p className="text-center text-xs text-zinc-500">
-              By signing up, you agree to our Terms of Service and Privacy
-              Policy.
-            </p>
+              <Button
+                type="submit"
+                size="xl"
+                className="w-full shadow-lg shadow-primary/25"
+                loading={loading}
+              >
+                Create Free Account
+                <ArrowRight className="size-5" />
+              </Button>
+
+              <p className="text-center text-xs text-zinc-500">
+                By signing up, you agree to our Terms of Service and Privacy
+                Policy.
+              </p>
+            </form>
           </div>
 
           <div className="mt-8 rounded-xl border border-border bg-surface-secondary p-5">
@@ -107,7 +177,7 @@ export default function SignupPage() {
             <p className="text-sm text-zinc-500">
               Already have an account?{" "}
               <Link
-                href="/signup"
+                href="/login"
                 className="font-medium text-primary hover:underline"
               >
                 Sign in

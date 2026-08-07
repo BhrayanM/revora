@@ -1,5 +1,6 @@
 "use client";
 
+import type { User } from "@supabase/supabase-js";
 import {
   BarChart3,
   Bot,
@@ -8,16 +9,18 @@ import {
   ChevronRight,
   Layers,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   Settings,
-  User,
+  User as UserIcon,
   Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const navigation = [
@@ -57,7 +60,7 @@ const navigation = [
     section: "Settings",
     items: [
       { label: "Settings", href: "/settings", icon: Settings },
-      { label: "Profile", href: "/profile", icon: User },
+      { label: "Profile", href: "/profile", icon: UserIcon },
     ],
   },
 ];
@@ -65,11 +68,42 @@ const navigation = [
 interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  user: User | null;
 }
 
-export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
+function getInitials(
+  name: string | undefined,
+  email: string | undefined,
+): string {
+  if (name) {
+    const parts = name.split(" ");
+    if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  }
+  if (email) return email.slice(0, 2).toUpperCase();
+  return "??";
+}
+
+export function Sidebar({
+  mobileOpen = false,
+  onMobileClose,
+  user,
+}: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  const userMeta = user?.user_metadata as { full_name?: string } | undefined;
+  const displayName =
+    userMeta?.full_name ?? user?.email?.split("@")[0] ?? "User";
+  const initials = getInitials(userMeta?.full_name, user?.email);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   const sidebarContent = (
     <>
@@ -97,7 +131,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={onMobileClose}
-            className="rounded-md p-1.5 text-zinc-400 hover:bg-surface-secondary hover:text-foreground lg:hidden"
+            className="rounded-md p-1.5 text-zinc-500 hover:bg-surface-secondary hover:text-foreground lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="size-4" />
@@ -105,7 +139,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              "rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-surface-secondary hover:text-foreground",
+              "rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-surface-secondary hover:text-foreground",
               collapsed && "mx-auto",
             )}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -183,20 +217,34 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
         {!collapsed ? (
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              JS
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                John Smith
+                {displayName}
               </p>
-              <p className="text-xs text-zinc-500">Admin</p>
+              <p className="text-xs text-zinc-500">{user?.email ?? ""}</p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="rounded-md p-1 text-zinc-400 hover:bg-surface-secondary hover:text-error"
+              aria-label="Sign out"
+            >
+              <LogOut className="size-4" />
+            </button>
           </div>
         ) : (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              JS
+              {initials}
             </div>
+            <button
+              onClick={handleLogout}
+              className="rounded-md p-1 text-zinc-400 hover:bg-surface-secondary hover:text-error"
+              aria-label="Sign out"
+            >
+              <LogOut className="size-3.5" />
+            </button>
           </div>
         )}
       </div>
