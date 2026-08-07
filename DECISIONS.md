@@ -111,3 +111,16 @@
 - Consistent design language
 - MIT licensed
 - Active maintenance
+
+### DR-013: Supabase as Backend Platform (No Prisma)
+**Date:** 2026-08-07
+**Decision:** Use Supabase as the primary backend platform. No Prisma ORM.
+**Rationale:**
+- Managed PostgreSQL with built-in Auth, Realtime, and Storage — single platform instead of stitching together NextAuth + Prisma + separate DB hosting
+- Row Level Security enforces permissions at the database level, eliminating boilerplate API authorization code
+- `@supabase/ssr` provides idiomatic Next.js App Router integration with cookie-based session management
+- Realtime subscriptions enable live dashboard updates without WebSocket infrastructure
+- Service role key enables privileged server-side operations (webhooks, n8n integration) while anon key gated by RLS handles client requests
+- Avoids Prisma's migration overhead during early iterations; Supabase Dashboard provides visual schema management
+- Auto-generated TypeScript types via Supabase CLI eliminate manual type maintenance
+- Free tier sufficient for development and early production; scales to paid plans as needed

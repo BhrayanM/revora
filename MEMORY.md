@@ -72,3 +72,11 @@ src/components/
 5. Read DECISIONS.md for rationale behind choices
 6. Run `npm run dev` to see current state
 7. Run `npm run typecheck && npm run lint` to ensure cleanliness
+
+## Phase 4 — Backend Stack
+
+- **Platform:** Supabase (PostgreSQL, Auth, Realtime, Storage)
+- **ORM/Client:** `@supabase/supabase-js` + `@supabase/ssr` (no Prisma)
+- **Client pattern:** Browser client via `src/lib/supabase/client.ts`, Server client via `src/lib/supabase/server.ts`
+- **Types:** Auto-generated from Supabase schema in `src/lib/supabase/types.ts`
+- **Auth:** Supabase Auth (Phase 4.2+), not NextAuth.js

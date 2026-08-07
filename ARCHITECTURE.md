@@ -46,6 +46,11 @@ ai-growth-platform/
 │   │   └── shared/            # Cross-cutting components
 │   ├── hooks/                 # Custom React hooks
 │   ├── lib/                   # Utilities and helpers
+│   │   ├── supabase/          # Supabase clients and types
+│   │   │   ├── client.ts      # Browser client
+│   │   │   ├── server.ts      # Server + service role clients
+│   │   │   └── types.ts       # Database type definitions
+│   │   └── utils.ts           # cn() helper
 │   ├── types/                 # TypeScript definitions
 │   └── styles/                # Additional styles (if needed)
 ├── public/                    # Static assets
@@ -60,9 +65,30 @@ ai-growth-platform/
 ## Data Flow
 
 ```
-User → Browser → Next.js (SSR/RSC) → API Routes → Services → Database
-                                               → External APIs
+User → Browser → Next.js (SSR/RSC) → Supabase Client → PostgreSQL
+                                   → External APIs (OpenAI, Twilio, HubSpot, n8n)
 ```
+
+### Supabase Backend (Phase 4+)
+
+- **PostgreSQL** — Hosted database with Row Level Security policies
+- **Auth** — Email/password, OAuth social providers, magic links
+- **Realtime** — WebSocket subscriptions for live dashboard updates
+- **Storage** — File uploads for avatars and attachments
+- **Edge Functions** — Serverless compute for webhook handlers
+
+### Supabase Client Architecture
+
+```
+Browser (Client Component)
+  └── createClient()        → @supabase/ssr browser client (src/lib/supabase/client.ts)
+
+Server (Server Component / Route Handler)
+  └── createClient()        → @supabase/ssr server client  (src/lib/supabase/server.ts)
+  └── createServiceClient() → Service role bypass RLS      (src/lib/supabase/server.ts)
+```
+
+No Prisma ORM — direct Supabase JS client with generated TypeScript types.
 
 ## Component Architecture
 
