@@ -165,5 +165,20 @@
 - RLS policies enforce org-level isolation; workspace is an additional filter layer within an org
 - Settings page persists org-level configuration; workspace-level settings would require schema changes
 - This decision can be revisited in Phase 5 when multi-workspace dashboards become necessary
+
+### DR-017: OpenAI Infrastructure Design
+**Date:** 2026-08-07
+**Decision:** Build a server-only AI abstraction layer using OpenAI SDK with typed errors, retry logic, and structured output support. No client-side AI access.
+**Rationale:**
+- `import "server-only"` on all AI modules enforces compile-time protection against Client Component imports
+- Singleton client pattern (`getOpenAIClient()`) with lazy initialization — the client is never created unless `generateText()` or `generateStructuredOutput()` is actually called, avoiding errors during build when OPENAI_API_KEY is absent
+- `gpt-4o-mini` as default model balances quality, speed, and cost for MVP; configurable via OPENAI_MODEL env var
+- 3 retries with exponential backoff (1s/2s/4s) and 20% jitter — handles transient API failures without overwhelming the API
+- Retry classification: auth errors (401/403) and config/validation errors are non-retryable; rate limits (429), timeouts, and 5xx server errors are retried
+- `shouldRetry()` and `classifyAIError()` are pure functions — testable in isolation without API keys
+- Error normalization prevents raw OpenAI errors from leaking through the application boundary
+- Structured output uses `response_format: { type: "json_object" }` for reliable JSON parsing
+- Usage metadata (input/output/total tokens, model, duration) preserved for future cost tracking and monitoring
+- Build succeeds without OPENAI_API_KEY — the infrastructure validates the key at runtime, not compile time
 - Redirect parameters validated against `startsWith("/")` to prevent open redirect attacks
 - Middleware migrated to `proxy.ts` (Next.js 16 convention); `getUser()` only called on protected routes, not public pages

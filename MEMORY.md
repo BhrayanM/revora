@@ -111,3 +111,15 @@ src/components/
 - `analytics.ts` — getLeadMetrics, getPipelineMetrics, getRecentActivity
 - Returns `{ data, error }` — never throws
 - Designed for Server Components (async/await)
+
+### AI Layer (Phase 5.1+)
+
+- `src/lib/ai/` — Server-only OpenAI infrastructure
+- `client.ts` — Singleton client with lazy init; throws clean message if OPENAI_API_KEY missing
+- `config.ts` — Model: gpt-4o-mini default, timeout: 60s, retry: 3 attempts, exponential backoff (1s/2s/4s)
+- `types.ts` — AIRequest, AIResponse, AIStructuredResponse<T>, AIMessage
+- `errors.ts` — Typed errors: AIConfigurationError, AIAuthenticationError, AIRateLimitError, AITimeoutError, AIRequestError, AIResponseValidationError
+- `index.ts` — Public API: generateText(), generateStructuredOutput<T>()
+- Server-only boundary: `import "server-only"` in all modules; OPENAI_API_KEY/OPENAI_MODEL never prefixed with NEXT_PUBLIC_
+- Retries: 3 attempts, exponential backoff with 20% jitter. Non-retryable: auth errors (401/403), config errors, validation errors
+- Structured output: responseSchema prop → response_format:json_object → auto JSON.parse

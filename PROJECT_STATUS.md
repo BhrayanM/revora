@@ -21,7 +21,8 @@
 | 4.4.1 — Data Layer Hardening | ✅ Complete |
 | 4.5 — Connect UI to Data Layer | ✅ Complete |
 | 4.6 — Production Readiness | ✅ Complete |
-| 5 — API & Integrations | ⏳ Pending |
+| 5.1 — OpenAI Infrastructure | ✅ Complete |
+| 5.2 — AI Lead Scoring | ⏳ Pending |
 | 6 — AI Features | ⏳ Pending |
 | 7 — Polish & Launch | ⏳ Pending |
 
