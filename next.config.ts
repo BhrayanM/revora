@@ -2,13 +2,12 @@ import type { NextConfig } from "next";
 
 const CSP_DIRECTIVES = [
   "default-src 'self'",
-  // Next.js hydration requires inline scripts in development and for its runtime
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  "connect-src 'self' https://fnkzqrnsfnqxbodxdjgq.supabase.co https://api.openai.com",
-  "frame-src 'self'",
+  "connect-src 'self' https://fnkzqrnsfnqxbodxdjgq.supabase.co",
+  "frame-src 'self' https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

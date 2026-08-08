@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useState } from "react";
 
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +26,8 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaEnabled = isTurnstileEnabled();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -32,6 +38,7 @@ function LoginForm() {
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: captchaToken ? { captchaToken } : undefined,
     });
 
     if (authError) {
@@ -100,10 +107,22 @@ function LoginForm() {
           inputSize="lg"
           required
         />
-        <Button type="submit" size="xl" className="w-full" loading={loading}>
+        <Button
+          type="submit"
+          size="xl"
+          className="w-full"
+          loading={loading}
+          disabled={captchaEnabled && !captchaToken}
+        >
           Sign In
         </Button>
       </form>
+
+      {captchaEnabled && (
+        <div className="mt-4">
+          <TurnstileWidget onVerify={setCaptchaToken} />
+        </div>
+      )}
 
       <p className="mt-3 text-center">
         <Link
