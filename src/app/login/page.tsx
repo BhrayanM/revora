@@ -105,7 +105,16 @@ function LoginForm() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-muted-foreground">
+      <p className="mt-3 text-center">
+        <Link
+          href="/forgot-password"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Forgot password?
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
