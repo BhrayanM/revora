@@ -1,11 +1,17 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
-import Link from "next/link";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useEffect, useState } from "react";
 
+import {
+  AuthBackLink,
+  AuthCard,
+  AuthLoadingState,
+  AuthPageHeader,
+  AuthShell,
+} from "@/components/auth/auth-shell";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,37 +113,16 @@ function VerifyEmailForm() {
 
   return (
     <>
-      <div className="text-center mb-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 font-bold text-xl"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <svg
-              className="h-4 w-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-              />
-            </svg>
-          </div>
-          <span className="text-foreground">AI Growth</span>
-        </Link>
-        <h1 className="mt-6 text-2xl font-bold text-foreground">
-          Verify your email
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {email
+      <AuthPageHeader
+        visual="email"
+        title="Verify your email"
+        description={
+          email
             ? `Enter the 6-digit code sent to ${maskedEmail}`
-            : "Enter your email and the 6-digit verification code"}
-        </p>
-      </div>
+            : "Enter your email and the 6-digit verification code"
+        }
+        className="mb-8"
+      />
 
       {error && (
         <Alert variant="error" className="mb-4">
@@ -159,6 +144,7 @@ function VerifyEmailForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             inputSize="lg"
+            autoComplete="email"
             required
           />
         )}
@@ -198,7 +184,7 @@ function VerifyEmailForm() {
           type="button"
           onClick={handleResend}
           disabled={resending || cooldown > 0 || !email}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50"
         >
           <RefreshCw
             className={`size-3.5 ${resending ? "animate-spin" : ""}`}
@@ -208,13 +194,7 @@ function VerifyEmailForm() {
             : "Resend code"}
         </button>
 
-        <Link
-          href="/signup"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back to signup
-        </Link>
+        <AuthBackLink href="/signup">Back to signup</AuthBackLink>
       </div>
     </>
   );
@@ -222,20 +202,16 @@ function VerifyEmailForm() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm">
-        <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
-          <Suspense
-            fallback={
-              <div className="text-center text-muted-foreground">
-                Loading...
-              </div>
-            }
-          >
-            <VerifyEmailForm />
-          </Suspense>
-        </div>
-      </div>
-    </div>
+    <AuthShell>
+      <AuthCard>
+        <Suspense
+          fallback={
+            <AuthLoadingState>Loading email verification...</AuthLoadingState>
+          }
+        >
+          <VerifyEmailForm />
+        </Suspense>
+      </AuthCard>
+    </AuthShell>
   );
 }

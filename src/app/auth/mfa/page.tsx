@@ -1,10 +1,17 @@
 "use client";
 
-import { ArrowLeft, Shield } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useEffect, useState } from "react";
 
+import {
+  AuthCard,
+  AuthLoadingState,
+  AuthPageHeader,
+  AuthShell,
+  AuthStatusPanel,
+} from "@/components/auth/auth-shell";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,159 +92,135 @@ function MfaChallengeForm() {
   };
 
   if (hasMfa === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-        <p className="text-sm text-muted-foreground">
-          Checking authentication...
-        </p>
-      </div>
-    );
+    return <AuthLoadingState>Checking authentication...</AuthLoadingState>;
   }
 
   if (hasMfa === false) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-        <div className="w-full max-w-sm text-center rounded-2xl border border-border bg-surface p-8 shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-muted ring-1 ring-border">
-            <Shield className="size-6 text-muted-foreground" />
-          </div>
-          <h1 className="mt-4 text-xl font-bold text-foreground">
-            No MFA Configured
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Multi-factor authentication is not set up for your account.
-          </p>
-          <Button
-            className="mt-6"
-            onClick={() => {
-              router.push(redirect);
-              router.refresh();
-            }}
-          >
-            Go to Dashboard
-          </Button>
-        </div>
-      </div>
+      <AuthStatusPanel
+        tone="neutral"
+        title="No MFA configured"
+        description="Multi-factor authentication is not set up for your account."
+      >
+        <Button
+          onClick={() => {
+            router.push(redirect);
+            router.refresh();
+          }}
+        >
+          Go to Dashboard
+        </Button>
+      </AuthStatusPanel>
     );
   }
 
   if (!factorId) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-        <div className="w-full max-w-sm text-center rounded-2xl border border-border bg-surface p-8 shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-warning/10 ring-1 ring-warning/10">
-            <Shield className="size-6 text-warning" />
-          </div>
-          <h1 className="mt-4 text-xl font-bold text-foreground">
-            MFA Setup Incomplete
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Your authenticator enrollment has not been verified. Complete the
-            setup in Settings → Security.
-          </p>
-        </div>
-      </div>
+      <AuthStatusPanel
+        tone="warning"
+        title="MFA setup incomplete"
+        description="Your authenticator enrollment has not been verified. Complete setup in Settings → Security."
+      />
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm">
-        <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={handleBackToLogin}
-              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="size-3.5" />
-              Back to login
-            </button>
-          </div>
-
-          <div className="text-center mb-6">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
-              <Shield className="size-6 text-primary" />
-            </div>
-            <h1 className="mt-4 text-xl font-bold text-foreground">
-              Two-Factor Authentication
-            </h1>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Enter the 6-digit code from your authenticator app.
-            </p>
-          </div>
-
-          {error && (
-            <Alert variant="error" className="mb-4">
-              {error}
-            </Alert>
-          )}
-
-          {factors.length > 1 && (
-            <div className="mb-4">
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">
-                Authenticator
-              </label>
-              <select
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                value={factorId}
-                onChange={(e) => {
-                  setFactorId(e.target.value);
-                  setCode("");
-                  setError(null);
-                }}
-              >
-                {factors.map((f, i) => (
-                  <option key={f.id} value={f.id}>
-                    {f.friendly_name
-                      ? f.friendly_name
-                      : `Authenticator ${i + 1}`}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Verification Code"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="000000"
-              required
-              maxLength={6}
-              inputSize="lg"
-              className="text-center text-2xl tracking-[0.25em]"
-            />
-            <Button
-              type="submit"
-              size="xl"
-              className="w-full"
-              loading={loading}
-              disabled={code.length !== 6}
-            >
-              Verify
-            </Button>
-          </form>
-
-          <p className="mt-4 text-xs text-center text-muted-foreground">
-            Lost access to your authenticator? Try another enrolled
-            authenticator or contact support for account recovery.
-          </p>
-        </div>
+    <>
+      <div className="mb-6">
+        <button
+          type="button"
+          onClick={handleBackToLogin}
+          className="inline-flex items-center gap-1 rounded text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
+          Back to login
+        </button>
       </div>
-    </div>
+
+      <AuthPageHeader
+        visual="security"
+        title="Two-factor authentication"
+        description="Enter the 6-digit code from your authenticator app."
+        className="mb-6"
+      />
+
+      {error && (
+        <Alert variant="error" className="mb-4">
+          {error}
+        </Alert>
+      )}
+
+      {factors.length > 1 && (
+        <div className="mb-4">
+          <label
+            htmlFor="mfa-authenticator"
+            className="mb-1.5 block text-xs font-medium text-muted-foreground"
+          >
+            Authenticator
+          </label>
+          <select
+            id="mfa-authenticator"
+            className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+            value={factorId}
+            onChange={(e) => {
+              setFactorId(e.target.value);
+              setCode("");
+              setError(null);
+            }}
+          >
+            {factors.map((f, i) => (
+              <option key={f.id} value={f.id}>
+                {f.friendly_name ? f.friendly_name : `Authenticator ${i + 1}`}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Input
+          label="Verification Code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          placeholder="000000"
+          required
+          maxLength={6}
+          inputSize="lg"
+          className="text-center text-2xl tracking-[0.25em]"
+          autoComplete="one-time-code"
+          inputMode="numeric"
+        />
+        <Button
+          type="submit"
+          size="xl"
+          className="w-full"
+          loading={loading}
+          disabled={code.length !== 6}
+        >
+          Verify
+        </Button>
+      </form>
+
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Lost access to your authenticator? Try another enrolled authenticator or
+        contact support for account recovery.
+      </p>
+    </>
   );
 }
 
 export default function MfaChallengePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <Suspense
-        fallback={<p className="text-sm text-muted-foreground">Loading...</p>}
-      >
-        <MfaChallengeForm />
-      </Suspense>
-    </div>
+    <AuthShell>
+      <AuthCard>
+        <Suspense
+          fallback={
+            <AuthLoadingState>Loading security check...</AuthLoadingState>
+          }
+        >
+          <MfaChallengeForm />
+        </Suspense>
+      </AuthCard>
+    </AuthShell>
   );
 }
