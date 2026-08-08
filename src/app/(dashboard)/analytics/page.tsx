@@ -62,13 +62,13 @@ export default async function AnalyticsPage() {
     }));
 
   const stageColors: Record<string, string> = {
-    "New Lead": "rgb(99 102 241)",
-    Contacted: "rgb(6 182 212)",
-    Qualified: "rgb(16 185 129)",
-    "Proposal Sent": "rgb(245 158 11)",
-    Negotiation: "rgb(139 92 246)",
-    "Closed Won": "rgb(16 185 129)",
-    "Closed Lost": "rgb(239 68 68)",
+    "New Lead": "var(--color-primary)",
+    Contacted: "var(--color-secondary)",
+    Qualified: "var(--color-success)",
+    "Proposal Sent": "var(--color-warning)",
+    Negotiation: "var(--color-accent)",
+    "Closed Won": "var(--color-success)",
+    "Closed Lost": "var(--color-error)",
   };
 
   const donutData = (pipeline?.stages ?? []).map((s) => ({
@@ -176,8 +176,14 @@ export default async function AnalyticsPage() {
             {sourceData.length > 0 ? (
               <BarChart data={sourceData} height={240} />
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-                No source data yet
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <BarChart3 className="size-8 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No source data yet
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add leads to see acquisition channels
+                </p>
               </div>
             )}
           </CardContent>
@@ -198,8 +204,14 @@ export default async function AnalyticsPage() {
             {hasPipeline ? (
               <DonutChart segments={donutData} size={180} />
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-                No pipeline data
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <BarChart3 className="size-8 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No pipeline data
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leads will appear here when added
+                </p>
               </div>
             )}
           </CardContent>
@@ -239,8 +251,14 @@ export default async function AnalyticsPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-                No pipeline data
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <BarChart3 className="size-8 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No pipeline data
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add leads to populate your funnel
+                </p>
               </div>
             )}
           </CardContent>
@@ -248,16 +266,12 @@ export default async function AnalyticsPage() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Source Performance
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Detailed breakdown by channel
-                </p>
-              </div>
-            </div>
+            <h3 className="text-base font-semibold text-foreground">
+              Source Performance
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Detailed breakdown by channel
+            </p>
           </CardHeader>
           <CardContent>
             {sourceData.length > 0 ? (
@@ -294,10 +308,8 @@ export default async function AnalyticsPage() {
                             : 0}
                           %
                         </td>
-                        <td className="py-3">
-                          <Badge variant="default" size="sm">
-                            Active
-                          </Badge>
+                        <td className="py-3 text-xs text-muted-foreground">
+                          —
                         </td>
                       </tr>
                     ))}
@@ -305,8 +317,14 @@ export default async function AnalyticsPage() {
                 </table>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-                No leads recorded yet
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <BarChart3 className="size-8 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No leads recorded yet
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leads will appear here when added
+                </p>
               </div>
             )}
           </CardContent>

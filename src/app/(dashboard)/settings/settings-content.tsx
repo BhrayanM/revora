@@ -54,20 +54,20 @@ export function SettingsContent({ org }: { org: Organization | null }) {
 
       <div className="grid gap-6 lg:grid-cols-4">
         <Card className="lg:col-span-1 h-fit">
-          <CardContent className="p-3">
+          <CardContent className="p-2">
             <nav className="space-y-0.5">
               {sections.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                     activeSection === section.id
-                      ? "bg-primary/10 text-primary"
+                      ? "bg-primary/10 text-primary shadow-sm"
                       : "text-muted-foreground hover:bg-surface-secondary hover:text-foreground",
                   )}
                 >
-                  <section.icon className="size-4" />
+                  <section.icon className="size-4 shrink-0" />
                   {section.label}
                 </button>
               ))}
@@ -177,19 +177,25 @@ export function SettingsContent({ org }: { org: Organization | null }) {
 
           {activeSection === "notifications" && (
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Bell className="size-8 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Notification preferences coming soon
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-secondary ring-1 ring-border mb-4">
+                <Bell className="size-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Notification preferences
               </p>
+              <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
             </CardContent>
           )}
 
           {activeSection === "security" && (
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Shield className="size-8 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Security settings coming soon
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-secondary ring-1 ring-border mb-4">
+                <Shield className="size-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                Security settings
               </p>
+              <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
             </CardContent>
           )}
         </Card>

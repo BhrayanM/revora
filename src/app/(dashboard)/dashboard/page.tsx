@@ -203,8 +203,13 @@ export default async function DashboardPage() {
               ))}
             </div>
           ) : (
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-              No recent activity
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <BarChart3 className="size-8 text-muted-foreground/40 mb-3" />
+              <p className="text-sm text-muted-foreground">No activity yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Automation events will appear here after your first lead is
+                processed
+              </p>
             </div>
           )}
         </div>
