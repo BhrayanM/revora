@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useRef, useState } from "react";
 
+import { SocialAuth } from "@/components/auth/social-auth";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,19 @@ function LoginForm() {
           {error}
         </Alert>
       )}
+
+      <SocialAuth returnTo={redirect} />
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-surface px-2 text-muted-foreground">
+            or continue with email
+          </span>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
