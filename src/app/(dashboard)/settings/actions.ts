@@ -60,14 +60,15 @@ export async function changePassword(formData: FormData) {
     return { error: "New password must be different from current password" };
   }
 
+  // Send current_password for validation. Supabase validates it when
+  // "Require current password when changing password" is enabled in the
+  // Supabase Dashboard. If that setting is OFF, current_password is ignored.
   const { error: updateError } = await supabase.auth.updateUser({
     password: newPassword,
+    current_password: currentPassword,
   });
 
-  if (updateError) {
-    return { error: updateError.message };
-  }
-
+  if (updateError) return { error: updateError.message };
   return { error: null };
 }
 
@@ -82,7 +83,6 @@ export async function signOutSessions(scope: "others" | "global") {
   if (error) return { error: error.message };
 
   if (scope === "global") {
-    // Server redirect handled client-side after action
     return { error: null, redirect: "/login" };
   }
 

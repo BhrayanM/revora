@@ -48,8 +48,19 @@ function LoginForm() {
       setLoading(false);
       resetCaptcha();
     } else {
-      router.push(redirect);
-      router.refresh();
+      // Check if MFA is required
+      const supabase = createClient();
+      const { data: aal } =
+        await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+      if (aal?.nextLevel === "aal2") {
+        const mfaUrl = new URL("/auth/mfa", window.location.origin);
+        mfaUrl.searchParams.set("redirect", redirect);
+        router.push(mfaUrl.toString());
+      } else {
+        router.push(redirect);
+        router.refresh();
+      }
     }
   };
 

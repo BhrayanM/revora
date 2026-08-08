@@ -1,17 +1,23 @@
 "use client";
 
 import { Shield } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
-export default function MfaChallengePage() {
+function MfaChallengeForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect");
+  const redirect =
+    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/dashboard";
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,7 +32,10 @@ export default function MfaChallengePage() {
         return;
       }
       setHasMfa(true);
-      setFactorId(data.all[0]!.id);
+      const verifiedFactors = data.all.filter((f) => f.status === "verified");
+      if (verifiedFactors.length > 0) {
+        setFactorId(verifiedFactors[0]!.id);
+      }
     });
   }, []);
 
@@ -46,7 +55,7 @@ export default function MfaChallengePage() {
     if (verifyError) {
       setError(verifyError.message);
     } else {
-      router.push("/dashboard");
+      router.push(redirect);
       router.refresh();
     }
   };
@@ -74,9 +83,34 @@ export default function MfaChallengePage() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             Multi-factor authentication is not set up for your account.
           </p>
-          <Button className="mt-6" onClick={() => router.push("/dashboard")}>
+          <Button
+            className="mt-6"
+            onClick={() => {
+              router.push(redirect);
+              router.refresh();
+            }}
+          >
             Go to Dashboard
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!factorId) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
+        <div className="w-full max-w-sm text-center rounded-2xl border border-border bg-surface p-8 shadow-sm">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-warning/10 ring-1 ring-warning/10">
+            <Shield className="size-6 text-warning" />
+          </div>
+          <h1 className="mt-4 text-xl font-bold text-foreground">
+            MFA Setup Incomplete
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Your authenticator enrollment has not been verified. Complete the
+            setup in Settings → Security.
+          </p>
         </div>
       </div>
     );
@@ -132,6 +166,18 @@ export default function MfaChallengePage() {
           </p>
         </div>
       </div>
+    </div>
+  );
+}
+
+export default function MfaChallengePage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
+      <Suspense
+        fallback={<p className="text-sm text-muted-foreground">Loading...</p>}
+      >
+        <MfaChallengeForm />
+      </Suspense>
     </div>
   );
 }
