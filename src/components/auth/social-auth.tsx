@@ -11,10 +11,13 @@ import { createClient } from "@/lib/supabase/client";
 
 type OAuthProvider = "google" | "apple" | "azure";
 
+type ProviderStatus = "active" | "coming_soon";
+
 type ProviderConfig = {
   provider: OAuthProvider;
   label: string;
   icon: typeof GoogleIcon;
+  scopes?: string;
 };
 
 const allProviders: ProviderConfig[] = [
@@ -24,35 +27,29 @@ const allProviders: ProviderConfig[] = [
     provider: "azure",
     label: "Continue with Microsoft",
     icon: MicrosoftIcon,
+    scopes: "email",
   },
 ];
 
-function getEnabledProviders(): {
-  enabled: ProviderConfig[];
-  hasSocialAuth: boolean;
-} {
+function getActiveProviders(): OAuthProvider[] {
   const raw = process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "google";
-  const enabled = raw
+  return raw
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter((s): s is OAuthProvider =>
       ["google", "apple", "azure"].includes(s),
     );
+}
 
-  return {
-    enabled: allProviders.filter((p) => enabled.includes(p.provider)),
-    hasSocialAuth: enabled.length > 0,
-  };
+function getProviderStatus(provider: OAuthProvider): ProviderStatus {
+  return getActiveProviders().includes(provider) ? "active" : "coming_soon";
 }
 
 export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
   const [loading, setLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { enabled, hasSocialAuth } = getEnabledProviders();
 
-  if (!hasSocialAuth) return null;
-
-  const handleSignIn = async (provider: OAuthProvider) => {
+  const handleSignIn = async (provider: OAuthProvider, scopes?: string) => {
     setLoading(provider);
     setError(null);
 
@@ -61,6 +58,7 @@ export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(returnTo)}`,
+        ...(scopes ? { scopes } : {}),
       },
     });
 
@@ -79,21 +77,32 @@ export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
         </Alert>
       )}
 
-      {enabled.map(({ provider, label, icon: Icon }) => (
-        <Button
-          key={provider}
-          type="button"
-          variant="outline"
-          size="xl"
-          className="w-full"
-          leftIcon={<Icon className="size-5" />}
-          loading={loading === provider}
-          disabled={loading !== null && loading !== provider}
-          onClick={() => handleSignIn(provider)}
-        >
-          {label}
-        </Button>
-      ))}
+      {allProviders.map(({ provider, label, icon: Icon, scopes }) => {
+        const status = getProviderStatus(provider);
+        const isActive = status === "active";
+
+        return (
+          <div key={provider} className="relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="xl"
+              className="w-full"
+              leftIcon={<Icon className="size-5" />}
+              loading={loading === provider}
+              disabled={!isActive || loading !== null}
+              onClick={() => isActive && handleSignIn(provider, scopes)}
+            >
+              {label}
+            </Button>
+            {!isActive && (
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                Soon
+              </span>
+            )}
+          </div>
+        );
+      })}
 
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
