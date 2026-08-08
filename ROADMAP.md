@@ -1,103 +1,98 @@
-# ROADMAP
+# AI Growth Roadmap
 
-## Phase 0 — Foundation ✅
-- [x] Next.js 16 + TypeScript (Strict)
-- [x] Tailwind CSS v4 + Design Tokens
-- [x] ESLint + Prettier
-- [x] Husky + lint-staged
-- [x] Docker + docker-compose
-- [x] Environment variables
-- [x] Initial architecture
-- [x] Documentation
+**Current checkpoint:** Pre-Phase 14.4D documentation sync (2026-08-08)
 
-## Phase 1 — Design System ✅
-- [x] Design Tokens (colors, typography, spacing, shadows, animations)
-- [x] Component primitives (Button, Input, Card, Badge, Alert, Toast, Modal, Table)
-- [x] Loading / Empty / Error states
-- [x] Dark mode preparation
-- [x] Responsive utilities
-- [x] Animations (CSS keyframes + animation-delay stagger)
+This roadmap reflects the repository's Supabase-based implementation. Earlier
+Prisma and NextAuth planning is historical only and is not the current
+architecture.
 
-## Phase 2 — Landing Premium ✅
-- [x] Navbar with mobile menu
-- [x] Hero section
-- [x] Trusted By / Social Proof
-- [x] Features grid
-- [x] Benefits section
-- [x] AI Workflow visualization
-- [x] Integrations showcase
-- [x] Demo / Interactive section
-- [x] Testimonials
-- [x] Pricing table
-- [x] FAQ accordion
-- [x] CTA section
-- [x] Footer
-- [x] Fully responsive
+## Completed Foundation and Product Delivery
 
-## Phase 3 — Dashboard UI ✅
-- [x] Sidebar navigation
-- [x] Top navigation bar
-- [x] Dashboard overview
-- [x] Analytics page
-- [x] Lead table with actions
-- [x] Lead detail view
-- [x] Pipeline kanban view
-- [x] Settings page
-- [x] Profile page
-- [x] Notifications panel
-- [x] Charts and widgets
-- [x] Recent activity feed
-- [x] Calendar placeholder
-- [x] AI Insights placeholder
+- **Phases 0-3.5 - Foundation, design system, landing, and dashboard UI**
+  - Next.js App Router, TypeScript, Tailwind CSS, reusable UI primitives,
+    responsive public landing, and dashboard shell.
+- **Phases 4.1-4.6 - Supabase foundation and CRM data layer**
+  - Supabase Auth/SSR, PostgreSQL schema, organizations, memberships,
+    workspaces, pipelines, leads, server data access, and RLS tenant isolation.
+- **Phases 5-6.1 - AI, ingestion, CRM, automation, and hardening**
+  - OpenAI qualification architecture, authenticated lead intake, n8n event
+    emission, HubSpot/GoHighLevel provider adapters, Slack notifications,
+    automation execution/retry support, and security hardening.
+- **Phases 7-13 - SaaS UI, validation, deployment preparation, and runbooks**
+  - Production UI, validation artifacts, provisioning guidance, and deployment
+    documentation. External-service configuration remains a separate follow-up.
 
-## Phase 3.5 — Premium Polish ✅
-- [x] Dashboard layout to Server Component (only Sidebar/TopNav as Client Components)
-- [x] FAQ converted to native `<details>` element (accessible, zero JS)
-- [x] Testimonials as CSS scroll-snap carousel (Server Component)
-- [x] Removed framer-motion (~34KB bundle savings); all animations pure CSS
-- [x] Created `/signup` page with registration form; all CTAs route correctly
-- [x] TrustedBy section: real statistics replacing fake company names
-- [x] Hero dashboard mockup upgraded with real-looking KPIs
-- [x] Fixed mobile sidebar toggle with overlay backdrop
-- [x] Added `loading.tsx` and `error.tsx` for dashboard routes
-- [x] Accessibility: skip-to-content, semantic icons, reduced-motion support
-- [x] Fixed SVG gradient ID collision with `useId()`
-- [x] Added `generateMetadata` to Server Component pages (Dashboard, Analytics)
-- [x] Pricing card uses `ring-2` instead of `scale-[1.02]` for visual consistency
-- [x] Low-contrast `text-zinc-400` replaced with `text-zinc-500` where needed
+## Completed Phase 14.4 Work
 
-## Phase 4 — Backend & Database (Planned)
-- [ ] Prisma ORM setup
-- [ ] PostgreSQL schema + migrations
-- [ ] Authentication (NextAuth.js)
-- [ ] User management
-- [ ] Role-based access control
+### Phase 14.4B - Security, Authentication, and Legal Consent - Complete
 
-## Phase 5 — API & Integrations (Planned)
-- [ ] REST API routes
-- [ ] OpenAI integration
-- [ ] GoHighLevel integration
-- [ ] HubSpot integration
-- [ ] Twilio (SMS) integration
-- [ ] Slack integration
-- [ ] n8n webhook integration
-- [ ] Email automation (Resend/SendGrid)
+- Email/password authentication, email OTP verification UI, secure password
+  recovery, secure email change, session management, and Account Security
+  Center.
+- Google and Microsoft OAuth with PKCE; Apple is intentionally visible as a
+  deferred provider.
+- Cloudflare Turnstile on login, signup, and password recovery with
+  production fail-closed behavior.
+- Native Supabase TOTP MFA with AAL2 enforcement for protected dashboard
+  access and sensitive MFA unenrollment.
+- Service-role-only onboarding RPC, safe redirects, Supabase SSR cookies, and
+  organization-scoped RLS hardening.
+- Versioned Terms, Privacy, and optional marketing consent. Migration 00017
+  is deployed; the current legal renderer reads the authoritative effective
+  date from the versioned legal-document record.
 
-## Phase 6 — AI Features (Planned)
-- [ ] AI Lead Qualification engine
-- [ ] AI-powered lead scoring
-- [ ] Automated appointment booking
-- [ ] Email generation (OpenAI)
-- [ ] SMS automation flows
-- [ ] AI insights dashboard
-- [ ] Chatbot / conversational AI
+### Phase 14.4C - Auth Visual Polish - Complete
 
-## Phase 7 — Polish & Launch (Planned)
-- [ ] End-to-end tests
-- [ ] Performance optimization
-- [ ] SEO optimization
-- [ ] Accessibility audit (WCAG 2.1 AA)
-- [ ] Monitoring (Sentry)
-- [ ] Analytics (PostHog/Plausible)
-- [ ] Documentation site
-- [ ] Deployment pipeline
+- Shared responsive auth shell, form/status patterns, OAuth presentation, and
+  accessible focus, loading, and validation states.
+
+### Phase 14.4C.1 - Global Theme System - Complete
+
+- System-default Light/Dark preference with local persistence, OS preference
+  tracking, semantic theme tokens, Settings appearance controls, and TopNav
+  quick control.
+
+### Phase 14.4C.1A - Final Visual and UX Corrective Pass - Complete
+
+- Corrected theme-init placement, legal-consent disabled state, landing
+  timeline layering, CTA/branding consistency, responsive auth presentation,
+  Turnstile presentation, and dark-mode secondary-text contrast.
+
+## Next - Phase 14.4D: Team Management + Invitations + RBAC
+
+Implement organization members, invitations, roles, permissions, membership
+lifecycle controls, seat-limit-ready structure, and a basic audit trail. This
+phase requires a new forward migration and explicit product/security decisions
+before implementation. It must preserve current signup, onboarding, consent,
+MFA, RLS, and tenant-isolation behavior.
+
+## After 14.4D - Phase 14.5: Core CRM Live Test
+
+Run the planned live CRM validation after Team Management is complete and its
+authorization model is verified. Do not start Phase 14.5 before Phase 14.4D.
+
+## Later Planned Phases
+
+- **Phase 14.6 - OpenAI Live Qualification**
+- **Phase 14.7 - Production Infrastructure** (Vercel, SMTP, Redis)
+- **Phase 14.8 - n8n + Webhook Security Hardening**
+- **Phase 14.9 - HubSpot Live**
+- **Phase 14.10 - Slack Live**
+
+## Deferred / Enterprise
+
+- SAML SSO, SCIM, IP allowlists, enterprise compliance, and dedicated
+  environments.
+- Customer portal work remains a separate future application concern.
+- Do not reintroduce custom MFA recovery codes without a valid Supabase AAL2
+  recovery design.
+
+## Roadmap Guardrails
+
+- Migrations 00001 through 00017 are immutable. New database work must use a
+  new migration number.
+- Keep Supabase RLS and organization isolation authoritative; UI state is not
+  authorization.
+- Do not expose service-role credentials or weaken PKCE, MFA/AAL2, Turnstile,
+  legal-consent, or onboarding safeguards.
+- Do not push local checkpoints without explicit authorization.
