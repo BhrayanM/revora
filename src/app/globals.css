@@ -174,12 +174,12 @@
   --input-border: #2b313c;
   --accent-surface: #29284e;
   --muted: #1b1f27;
-  --muted-foreground: #a7afbd;
-  --subtle: #747d8c;
+  --muted-foreground: #b2bac7;
+  --subtle: #8c96a5;
 
   --sidebar: #0b0d11;
   --sidebar-foreground: #e8ebf0;
-  --sidebar-muted: #98a1af;
+  --sidebar-muted: #a9b1bf;
   --sidebar-border: rgb(245 247 250 / 0.08);
   --sidebar-hover: #171b22;
   --sidebar-active: #9b9cff;

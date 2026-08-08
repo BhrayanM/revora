@@ -7,7 +7,7 @@ import { Container } from "@/components/ui/container";
 
 export function CTA() {
   return (
-    <section className="relative overflow-hidden py-24 sm:py-32">
+    <section className="relative overflow-hidden border-y border-border/70 bg-gradient-to-b from-surface-secondary via-surface to-surface py-24 sm:py-32">
       <BackgroundPattern variant="gradient" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
       <Container className="relative">
@@ -23,18 +23,18 @@ export function CTA() {
             Your Growth?
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Join thousands of businesses using AI Growth Platform to qualify
-            more leads, book more meetings, and close more deals.
+            Join thousands of businesses using AI Growth to qualify more leads,
+            book more meetings, and close more deals.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/signup">
               <Button size="xl" className="shadow-lg shadow-primary/25">
-                Start Free 14-Day Trial
+                Start Free Trial
                 <ArrowRight className="size-5" />
               </Button>
             </Link>
             <Button variant="outline" size="xl">
-              Schedule a Demo
+              Book a Demo
             </Button>
           </div>
           <p className="mt-6 text-sm text-muted-foreground">

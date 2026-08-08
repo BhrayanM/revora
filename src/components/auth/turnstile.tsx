@@ -78,26 +78,28 @@ export function TurnstileWidget({
   }
 
   return (
-    <div className="flex justify-center">
-      <Turnstile
-        ref={ref}
-        siteKey={siteKey}
-        onSuccess={handleSuccess}
-        onExpire={handleExpire}
-        onError={handleError}
-        options={{
-          theme: "auto",
-          size: "normal",
-        }}
-        className="mx-auto"
-      />
+    <div className="w-full rounded-xl border border-border bg-surface-secondary/70 p-3 sm:p-4">
+      <div className="flex min-h-[65px] w-full justify-center overflow-visible">
+        <Turnstile
+          ref={ref}
+          siteKey={siteKey}
+          onSuccess={handleSuccess}
+          onExpire={handleExpire}
+          onError={handleError}
+          options={{
+            theme: "auto",
+            size: "flexible",
+          }}
+          className="w-full"
+        />
+      </div>
       {state === "expired" && (
-        <p className="mt-1 text-xs text-warning">
+        <p className="mt-2 text-center text-xs text-warning">
           Security check expired. The widget will refresh.
         </p>
       )}
       {state === "error" && (
-        <p className="mt-1 text-xs text-error">
+        <p className="mt-2 text-center text-xs text-error">
           Security check failed. Please try again.
         </p>
       )}

@@ -81,7 +81,7 @@ export function AuthShell({
   return (
     <main
       id="main-content"
-      className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-8 sm:px-6 sm:py-12"
+      className="relative isolate flex min-h-[100dvh] items-start justify-center overflow-hidden bg-canvas px-4 py-6 sm:min-h-screen sm:items-center sm:px-6 sm:py-12"
     >
       <BackgroundPattern variant="gradient" />
       <div
@@ -105,7 +105,7 @@ export function AuthCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border/90 bg-surface/95 p-6 shadow-xl backdrop-blur-sm sm:p-8",
+        "rounded-2xl border border-border/90 bg-surface/95 p-5 shadow-xl backdrop-blur-sm sm:p-8",
         className,
       )}
     >

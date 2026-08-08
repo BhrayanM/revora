@@ -36,7 +36,7 @@ const benefits = [
     stat: "10k+",
     label: "Active Users",
     description:
-      "Join over 10,000 businesses already using AI Growth Platform to automate their sales and marketing.",
+      "Join over 10,000 businesses already using AI Growth to automate their sales and marketing.",
   },
 ];
 

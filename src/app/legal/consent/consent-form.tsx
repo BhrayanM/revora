@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import {
   acceptCurrentLegalDocuments,
@@ -17,6 +17,7 @@ export function ConsentForm({ nextPath }: { nextPath: string }) {
     acceptCurrentLegalDocuments,
     initialState,
   );
+  const [requiredConsentAccepted, setRequiredConsentAccepted] = useState(false);
 
   return (
     <form action={formAction} className="space-y-5">
@@ -29,6 +30,8 @@ export function ConsentForm({ nextPath }: { nextPath: string }) {
           type="checkbox"
           name="acceptRequiredLegalDocuments"
           required
+          checked={requiredConsentAccepted}
+          onChange={(event) => setRequiredConsentAccepted(event.target.checked)}
           className="mt-0.5 size-4 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         />
         <span>
@@ -55,7 +58,7 @@ export function ConsentForm({ nextPath }: { nextPath: string }) {
         size="xl"
         className="w-full"
         loading={pending}
-        disabled={pending}
+        disabled={pending || !requiredConsentAccepted}
       >
         Accept and continue
       </Button>

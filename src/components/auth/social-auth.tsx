@@ -96,10 +96,11 @@ export function SocialAuth({
               type="button"
               variant="outline"
               size="xl"
-              className="w-full justify-start border-border bg-surface/70 px-5 shadow-sm hover:border-primary/30 hover:bg-surface-secondary"
+              className="w-full justify-start border-border bg-surface/70 px-5 shadow-sm hover:border-primary/30 hover:bg-surface-secondary disabled:opacity-70"
               leftIcon={<Icon className="size-5" />}
               loading={loading === provider}
               disabled={!isActive || loading !== null || consentRequired}
+              aria-label={!isActive ? `${label} (coming soon)` : undefined}
               onClick={() =>
                 isActive && !consentRequired && handleSignIn(provider, scopes)
               }
@@ -107,8 +108,8 @@ export function SocialAuth({
               {label}
             </Button>
             {!isActive && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                Soon
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                Coming soon
               </span>
             )}
           </div>

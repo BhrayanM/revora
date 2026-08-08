@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
@@ -54,9 +55,6 @@ export function Navbar() {
             </svg>
           </div>
           <span className="text-foreground">AI Growth</span>
-          <span className="hidden font-normal text-subtle sm:inline">
-            Platform
-          </span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
@@ -71,28 +69,31 @@ export function Navbar() {
           ))}
         </div>
 
-        <div className="hidden items-center gap-3 md:flex">
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-          </Link>
-          <Link href="/signup">
-            <Button size="sm">Get Started Free</Button>
-          </Link>
-        </div>
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <div className="hidden items-center gap-3 md:flex">
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Sign In
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button size="sm">Start Free Trial</Button>
+            </Link>
+          </div>
 
-        <button
-          className="rounded-lg p-2 text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas md:hidden"
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          aria-label="Toggle menu"
-        >
-          {isMobileOpen ? (
-            <X className="size-5" />
-          ) : (
-            <Menu className="size-5" />
-          )}
-        </button>
+          <button
+            className="rounded-lg p-2 text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas md:hidden"
+            onClick={() => setIsMobileOpen(!isMobileOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMobileOpen ? (
+              <X className="size-5" />
+            ) : (
+              <Menu className="size-5" />
+            )}
+          </button>
+        </div>
       </Container>
 
       {isMobileOpen && (
@@ -120,7 +121,7 @@ export function Navbar() {
               </Link>
               <Link href="/signup">
                 <Button size="sm" className="justify-start w-full">
-                  Get Started Free
+                  Start Free Trial
                 </Button>
               </Link>
             </div>

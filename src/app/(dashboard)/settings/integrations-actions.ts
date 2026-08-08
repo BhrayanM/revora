@@ -59,17 +59,15 @@ export async function saveIntegration(
   }
 
   const supabase = await createServiceClient();
-  const { error } = await supabase
-    .from("integrations")
-    .upsert(
-      {
-        organization_id: org.id,
-        provider,
-        credentials: credentials as Record<string, unknown>,
-        is_active: true,
-      },
-      { onConflict: "organization_id, provider" },
-    );
+  const { error } = await supabase.from("integrations").upsert(
+    {
+      organization_id: org.id,
+      provider,
+      credentials: credentials as Record<string, unknown>,
+      is_active: true,
+    },
+    { onConflict: "organization_id, provider" },
+  );
 
   if (error) return { error: error.message };
   return { error: null };
@@ -134,7 +132,7 @@ export async function testIntegration(provider: Provider) {
       const res = await fetch(creds["webhook_url"] as string, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: "AI Growth Platform — Integration test" }),
+        body: JSON.stringify({ text: "AI Growth — Integration test" }),
       });
       return { success: res.ok, provider };
     }
