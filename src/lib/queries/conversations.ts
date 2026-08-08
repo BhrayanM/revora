@@ -8,6 +8,16 @@ type ConversationInsert =
 
 export type Conversation = ConversationRow;
 
+function sanitizeError(operation: string, error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    console.error(
+      `[Queries:Conversations] ${operation}:`,
+      (error as { message: string }).message,
+    );
+  }
+  return `Failed to ${operation}`;
+}
+
 export async function getLeadConversations(
   leadId: string,
 ): Promise<QueryResult<Conversation[]>> {
@@ -20,7 +30,7 @@ export async function getLeadConversations(
     .order("created_at", { ascending: false });
 
   if (error) {
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("fetch conversations", error) };
   }
 
   return { data, error: null };
@@ -40,7 +50,7 @@ export async function createConversation(
     .single();
 
   if (error) {
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("create conversation", error) };
   }
 
   return { data, error: null };

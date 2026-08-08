@@ -8,6 +8,16 @@ type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 
 export type Lead = LeadRow;
 
+function sanitizeError(operation: string, error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    console.error(
+      `[Queries:Leads] ${operation}:`,
+      (error as { message: string }).message,
+    );
+  }
+  return `Failed to ${operation}`;
+}
+
 export async function getLeads(
   organizationId: string,
 ): Promise<QueryResult<Lead[]>> {
@@ -20,7 +30,7 @@ export async function getLeads(
     .order("created_at", { ascending: false });
 
   if (error) {
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("fetch leads", error) };
   }
 
   return { data, error: null };
@@ -40,7 +50,10 @@ export async function getLeadsByWorkspace(
     .order("created_at", { ascending: false });
 
   if (error) {
-    return { data: null, error: error.message };
+    return {
+      data: null,
+      error: sanitizeError("fetch leads by workspace", error),
+    };
   }
 
   return { data, error: null };
@@ -59,7 +72,7 @@ export async function getLeadById(id: string): Promise<QueryResult<Lead>> {
     if (error.code === "PGRST116") {
       return { data: null, error: null };
     }
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("fetch lead", error) };
   }
 
   return { data, error: null };
@@ -77,7 +90,7 @@ export async function createLead(
     .single();
 
   if (error) {
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("create lead", error) };
   }
 
   return { data, error: null };
@@ -97,7 +110,7 @@ export async function updateLead(
     .single();
 
   if (error) {
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("update lead", error) };
   }
 
   return { data, error: null };
@@ -109,7 +122,7 @@ export async function deleteLead(id: string): Promise<MutationResult> {
   const { error } = await supabase.from("leads").delete().eq("id", id);
 
   if (error) {
-    return { error: error.message };
+    return { error: sanitizeError("delete lead", error) };
   }
 
   return { error: null };

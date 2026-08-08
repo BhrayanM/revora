@@ -23,6 +23,16 @@ export interface RecentActivity {
   timestamp: string;
 }
 
+function sanitizeError(operation: string, error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    console.error(
+      `[Queries:Analytics] ${operation}:`,
+      (error as { message: string }).message,
+    );
+  }
+  return `Failed to ${operation}`;
+}
+
 export async function getLeadMetrics(
   organizationId: string,
 ): Promise<QueryResult<LeadMetrics>> {
@@ -34,7 +44,7 @@ export async function getLeadMetrics(
     .eq("organization_id", organizationId);
 
   if (error) {
-    return { data: null, error: error.message };
+    return { data: null, error: sanitizeError("fetch lead metrics", error) };
   }
 
   if (!data || data.length === 0) {
@@ -76,7 +86,10 @@ export async function getPipelineMetrics(
     .limit(1);
 
   if (pipelineError) {
-    return { data: null, error: pipelineError.message };
+    return {
+      data: null,
+      error: sanitizeError("fetch pipeline metrics", pipelineError),
+    };
   }
 
   if (!pipelines || pipelines.length === 0) {
@@ -98,11 +111,17 @@ export async function getPipelineMetrics(
   ]);
 
   if (stagesResult.error) {
-    return { data: null, error: stagesResult.error.message };
+    return {
+      data: null,
+      error: sanitizeError("fetch stages", stagesResult.error),
+    };
   }
 
   if (leadCountsResult.error) {
-    return { data: null, error: leadCountsResult.error.message };
+    return {
+      data: null,
+      error: sanitizeError("fetch lead counts", leadCountsResult.error),
+    };
   }
 
   const stages = stagesResult.data ?? [];
@@ -158,7 +177,10 @@ export async function getRecentActivity(
     .limit(limit);
 
   if (leadsError) {
-    return { data: null, error: leadsError.message };
+    return {
+      data: null,
+      error: sanitizeError("fetch recent activity", leadsError),
+    };
   }
 
   if (!leads || leads.length === 0) {

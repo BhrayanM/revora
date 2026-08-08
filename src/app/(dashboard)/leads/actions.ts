@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { getCurrentOrganization } from "@/lib/auth";
-import { createLead, deleteLead } from "@/lib/queries/leads";
+import { createLead, deleteLead, getLeadById } from "@/lib/queries/leads";
 
 export async function addLead(formData: FormData) {
   const org = await getCurrentOrganization();
@@ -37,6 +37,13 @@ export async function addLead(formData: FormData) {
 }
 
 export async function removeLead(id: string) {
+  const org = await getCurrentOrganization();
+  if (!org) return { error: "Unauthorized" };
+
+  const { data: lead, error: lookupError } = await getLeadById(id);
+  if (lookupError || !lead) return { error: "Lead not found" };
+  if (lead.organization_id !== org.id) return { error: "Forbidden" };
+
   const { error } = await deleteLead(id);
   if (error) return { error };
   revalidatePath("/leads");
