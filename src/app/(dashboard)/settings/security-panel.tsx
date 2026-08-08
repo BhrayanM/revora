@@ -4,6 +4,8 @@ import {
   CheckCircle2,
   Key,
   LogOut,
+  Mail,
+  Phone,
   QrCode,
   Shield,
   XCircle,
@@ -11,6 +13,7 @@ import {
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 
+import { Accordion } from "@/components/ui/accordion";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,22 +31,7 @@ import {
   verifyTotpEnrollment,
 } from "./mfa-actions";
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h4 className="text-sm font-semibold text-foreground mb-1">{children}</h4>
-  );
-}
-
-function SectionDesc({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs text-muted-foreground mb-4">{children}</p>;
-}
-
-interface StatusBadgeProps {
-  active: boolean;
-  label?: string;
-}
-
-function StatusBadge({ active, label }: StatusBadgeProps) {
+function StatusBadge({ active, label }: { active: boolean; label?: string }) {
   return (
     <Badge
       variant={active ? "success" : "secondary"}
@@ -75,15 +63,9 @@ export function SecurityPanel() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-10">
+      <CardContent className="space-y-8">
         <AccountProtection />
-        <ChangePasswordSection />
-        <ChangeEmailSection />
-        <MfaSection />
-        <RecoverySection />
-        <PhoneSection />
-        <RecoveryEmailSection />
-        <SessionSection />
+        <SecurityAccordion />
       </CardContent>
     </>
   );
@@ -106,10 +88,7 @@ function AccountProtection() {
   const checks = [
     { label: "Email verified", ok: true },
     { label: "Password configured", ok: true },
-    {
-      label: "Authenticator MFA",
-      ok: mfaActive === true,
-    },
+    { label: "Authenticator MFA", ok: mfaActive === true },
     { label: "Phone verification", ok: false },
     { label: "Recovery email", ok: false },
   ];
@@ -119,8 +98,12 @@ function AccountProtection() {
 
   return (
     <div>
-      <SectionTitle>Account Protection</SectionTitle>
-      <SectionDesc>Your overall account security status.</SectionDesc>
+      <h4 className="text-sm font-semibold text-foreground mb-1">
+        Account Protection
+      </h4>
+      <p className="text-xs text-muted-foreground mb-4">
+        Your overall account security status.
+      </p>
       <div className="rounded-xl border border-border bg-surface-secondary p-4">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-foreground">
@@ -163,7 +146,81 @@ function AccountProtection() {
   );
 }
 
-function ChangePasswordSection() {
+function SecurityAccordion() {
+  const accordionItems = [
+    {
+      value: "password",
+      icon: <Key className="size-4" />,
+      title: "Password",
+      description:
+        "Use at least 10 characters with a mix of letters, numbers, and symbols.",
+      children: <PasswordForm />,
+    },
+    {
+      value: "email",
+      icon: <Mail className="size-4" />,
+      title: "Email Address",
+      description: "Change the email address associated with your account.",
+      children: <EmailForm />,
+    },
+    {
+      value: "mfa",
+      icon: <QrCode className="size-4" />,
+      title: "Multi-Factor Authentication",
+      description: "Add an extra layer of security with an authenticator app.",
+      children: <MfaContent />,
+      badge: <MfaBadge />,
+    },
+    {
+      value: "recovery",
+      icon: <Key className="size-4" />,
+      title: "Recovery Methods",
+      description:
+        "One-time recovery codes and secondary email for account recovery.",
+      children: <RecoveryContent />,
+    },
+    {
+      value: "phone",
+      icon: <Phone className="size-4" />,
+      title: "Phone Verification",
+      description: "Add a verified phone number for account recovery.",
+      children: <PhoneContent />,
+    },
+    {
+      value: "sessions",
+      icon: <LogOut className="size-4" />,
+      title: "Sessions",
+      description: "Manage your active sessions.",
+      children: <SessionsContent />,
+    },
+  ];
+
+  return <Accordion items={accordionItems} />;
+}
+
+function MfaBadge() {
+  const [enrolled, setEnrolled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const result = await listFactors();
+      if (!cancelled && result.data) setEnrolled(result.data.enrolled);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <StatusBadge
+      active={enrolled === true}
+      label={enrolled ? "Enabled" : "Not enabled"}
+    />
+  );
+}
+
+function PasswordForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -180,10 +237,6 @@ function ChangePasswordSection() {
 
   return (
     <div>
-      <SectionTitle>Change Password</SectionTitle>
-      <SectionDesc>
-        Use at least 10 characters with a mix of letters, numbers, and symbols.
-      </SectionDesc>
       {message && (
         <Alert
           variant={message.startsWith("Password changed") ? "success" : "error"}
@@ -224,7 +277,7 @@ function ChangePasswordSection() {
   );
 }
 
-function ChangeEmailSection() {
+function EmailForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -243,10 +296,6 @@ function ChangeEmailSection() {
 
   return (
     <div>
-      <SectionTitle>Email Address</SectionTitle>
-      <SectionDesc>
-        Change the email address associated with your account.
-      </SectionDesc>
       {message && (
         <Alert
           variant={message.startsWith("A confirmation") ? "success" : "error"}
@@ -271,7 +320,7 @@ function ChangeEmailSection() {
   );
 }
 
-function MfaSection() {
+function MfaContent() {
   const [enrolled, setEnrolled] = useState<boolean | null>(null);
   const [enrolling, setEnrolling] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
@@ -358,12 +407,6 @@ function MfaSection() {
 
   return (
     <div>
-      <SectionTitle>Multi-Factor Authentication</SectionTitle>
-      <SectionDesc>
-        Add an extra layer of security with an authenticator app (Google
-        Authenticator, 1Password, etc.).
-      </SectionDesc>
-
       {mfaMessage && (
         <Alert
           variant={
@@ -377,13 +420,6 @@ function MfaSection() {
           {mfaMessage}
         </Alert>
       )}
-
-      <div className="flex items-center gap-3 mb-4">
-        <StatusBadge
-          active={enrolled === true}
-          label={enrolled ? "Enabled" : "Not enabled"}
-        />
-      </div>
 
       {enrolling && qrCode && (
         <div className="rounded-xl border border-border bg-surface-secondary p-4 mb-4 max-w-sm">
@@ -465,30 +501,39 @@ function MfaSection() {
   );
 }
 
-function RecoverySection() {
+function RecoveryContent() {
   return (
-    <div>
-      <SectionTitle>Recovery Codes</SectionTitle>
-      <SectionDesc>
-        One-time recovery codes are not yet available through the current
-        authentication provider. We recommend enrolling a second authenticator
-        app as a backup instead.
-      </SectionDesc>
-      <Button variant="outline" disabled className="opacity-50">
-        <Key className="size-4 mr-2" />
-        Not Yet Available
-      </Button>
+    <div className="space-y-6">
+      <div>
+        <h4 className="text-sm font-medium text-foreground">
+          One-Time Recovery Codes
+        </h4>
+        <p className="text-xs text-muted-foreground mt-1">
+          Recovery codes are not yet available. We recommend enrolling a second
+          authenticator app as a backup.
+        </p>
+        <Button variant="outline" disabled className="opacity-50 mt-3">
+          <Key className="size-4 mr-2" />
+          Not Yet Available
+        </Button>
+      </div>
+      <div>
+        <h4 className="text-sm font-medium text-foreground">Recovery Email</h4>
+        <p className="text-xs text-muted-foreground mt-1">
+          Add a secondary email for account recovery if you lose access.
+        </p>
+        <StatusBadge active={false} label="Not configured" />
+        <p className="text-xs text-muted-foreground mt-2">
+          Recovery email configuration is planned for a future update.
+        </p>
+      </div>
     </div>
   );
 }
 
-function PhoneSection() {
+function PhoneContent() {
   return (
     <div>
-      <SectionTitle>Phone Verification</SectionTitle>
-      <SectionDesc>
-        Add a verified phone number for account recovery.
-      </SectionDesc>
       <StatusBadge active={false} label="Not configured" />
       <p className="text-xs text-muted-foreground mt-3">
         SMS provider configuration required. This feature will be available
@@ -498,22 +543,7 @@ function PhoneSection() {
   );
 }
 
-function RecoveryEmailSection() {
-  return (
-    <div>
-      <SectionTitle>Recovery Email</SectionTitle>
-      <SectionDesc>
-        Add a secondary email for account recovery if you lose access.
-      </SectionDesc>
-      <StatusBadge active={false} label="Not configured" />
-      <p className="text-xs text-muted-foreground mt-3">
-        Recovery email configuration is planned for a future update.
-      </p>
-    </div>
-  );
-}
-
-function SessionSection() {
+function SessionsContent() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -538,39 +568,39 @@ function SessionSection() {
 
   return (
     <div>
-      <SectionTitle>Sessions</SectionTitle>
-      <SectionDesc>Manage your active sessions.</SectionDesc>
       {message && (
         <Alert variant="success" className="mb-4">
           {message}
         </Alert>
       )}
-      <div className="space-y-2">
-        <Button
-          variant="outline"
-          onClick={() => handleSignOut("others")}
-          loading={loading}
-        >
-          <LogOut className="size-4 mr-2" />
-          Sign Out Other Sessions
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          This will end all sessions on other devices. Already-issued access
-          tokens remain valid until they expire.
-        </p>
-      </div>
-      <div className="mt-4 space-y-2">
-        <Button
-          variant="outline"
-          onClick={() => handleSignOut("global")}
-          loading={loading}
-        >
-          <LogOut className="size-4 mr-2" />
-          Sign Out Everywhere
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          This will sign you out of all devices including this one.
-        </p>
+      <div className="space-y-4">
+        <div>
+          <Button
+            variant="outline"
+            onClick={() => handleSignOut("others")}
+            loading={loading}
+          >
+            <LogOut className="size-4 mr-2" />
+            Sign Out Other Sessions
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            End all sessions on other devices. Already-issued access tokens
+            remain valid until they expire.
+          </p>
+        </div>
+        <div>
+          <Button
+            variant="outline"
+            onClick={() => handleSignOut("global")}
+            loading={loading}
+          >
+            <LogOut className="size-4 mr-2" />
+            Sign Out Everywhere
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Sign out of all devices including this one.
+          </p>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground mt-4">
         Session details (device, location, last active) are not available from
