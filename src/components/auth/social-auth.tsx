@@ -45,7 +45,15 @@ function getProviderStatus(provider: OAuthProvider): ProviderStatus {
   return getActiveProviders().includes(provider) ? "active" : "coming_soon";
 }
 
-export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
+export function SocialAuth({
+  returnTo = "/dashboard",
+  requireLegalConsent = false,
+  legalConsentAccepted = false,
+}: {
+  returnTo?: string;
+  requireLegalConsent?: boolean;
+  legalConsentAccepted?: boolean;
+}) {
   const [loading, setLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +88,7 @@ export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
       {allProviders.map(({ provider, label, icon: Icon, scopes }) => {
         const status = getProviderStatus(provider);
         const isActive = status === "active";
+        const consentRequired = requireLegalConsent && !legalConsentAccepted;
 
         return (
           <div key={provider} className="relative">
@@ -90,8 +99,10 @@ export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
               className="w-full"
               leftIcon={<Icon className="size-5" />}
               loading={loading === provider}
-              disabled={!isActive || loading !== null}
-              onClick={() => isActive && handleSignIn(provider, scopes)}
+              disabled={!isActive || loading !== null || consentRequired}
+              onClick={() =>
+                isActive && !consentRequired && handleSignIn(provider, scopes)
+              }
             >
               {label}
             </Button>

@@ -1,3 +1,4 @@
+import { hasCurrentLegalConsent } from "@/lib/legal/consent";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getCurrentUser() {
@@ -15,6 +16,8 @@ export async function getCurrentOrganization() {
   } = await supabase.auth.getUser();
 
   if (!user) return null;
+
+  if (!(await hasCurrentLegalConsent(supabase, user.id))) return null;
 
   const { data: membership } = await supabase
     .from("memberships")
@@ -57,6 +60,8 @@ export async function getCurrentProfile() {
   } = await supabase.auth.getUser();
 
   if (!user) return null;
+
+  if (!(await hasCurrentLegalConsent(supabase, user.id))) return null;
 
   const { data: profile } = await supabase
     .from("profiles")

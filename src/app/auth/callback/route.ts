@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import {
+  getSafeInternalPath,
+  hasCurrentLegalConsent,
+} from "@/lib/legal/consent";
+import {
   createServiceAdminClient,
   createServiceClient,
 } from "@/lib/supabase/server";
@@ -17,10 +21,7 @@ function generateSlug(email: string): string {
 
 function safeRedirect(request: NextRequest, path: string | null): string {
   const { origin } = new URL(request.url);
-  const safePath =
-    path && path.startsWith("/") && !path.startsWith("//")
-      ? path
-      : "/dashboard";
+  const safePath = getSafeInternalPath(path);
   const forwardedHost = request.headers.get("x-forwarded-host");
   const isLocalEnv = process.env.NEXT_PUBLIC_APP_ENV === "development";
 
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next");
+  const nextPath = getSafeInternalPath(next);
 
   const supabase = await createServiceClient();
 
@@ -88,6 +90,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=no_session`);
   }
 
+  if (!(await hasCurrentLegalConsent(supabase, user.id))) {
+    const consentPath = `/legal/consent?next=${encodeURIComponent(nextPath)}`;
+    return NextResponse.redirect(safeRedirect(request, consentPath));
+  }
+
   const { data: memberships } = await supabase
     .from("memberships")
     .select("id")
@@ -102,6 +109,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const redirectTo = safeRedirect(request, next);
+  const redirectTo = safeRedirect(request, nextPath);
   return NextResponse.redirect(redirectTo);
 }
