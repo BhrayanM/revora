@@ -17,7 +17,7 @@ export function BarChart({ data, height = 200, className }: BarChartProps) {
     <div className={cn("flex items-end gap-3", className)} style={{ height }}>
       {maxValue === 0 && (
         <div className="flex w-full items-center justify-center h-full">
-          <p className="text-sm text-muted">No data yet</p>
+          <p className="text-sm text-muted-foreground">No data yet</p>
         </div>
       )}
       {maxValue > 0 &&
@@ -37,7 +37,7 @@ export function BarChart({ data, height = 200, className }: BarChartProps) {
                 opacity: 0.85,
               }}
             />
-            <span className="text-xs text-muted">{item.label}</span>
+            <span className="text-xs text-muted-foreground">{item.label}</span>
           </div>
         ))}
     </div>
@@ -97,7 +97,7 @@ export function LineChart({
       </svg>
       <div className="mt-2 flex justify-between">
         {data.map((item) => (
-          <span key={item.label} className="text-xs text-muted">
+          <span key={item.label} className="text-xs text-muted-foreground">
             {item.label}
           </span>
         ))}

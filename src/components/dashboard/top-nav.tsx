@@ -42,10 +42,10 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
 
       <div className="hidden sm:flex sm:flex-1 sm:max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
           <Input
             placeholder="Search leads, contacts..."
-            className="pl-9 bg-surface-secondary border-transparent focus:bg-surface focus:border-border"
+            className="pl-9 bg-surface-secondary border-border text-muted-foreground"
             inputSize="sm"
             disabled
           />

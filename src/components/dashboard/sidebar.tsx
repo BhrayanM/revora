@@ -151,7 +151,7 @@ export function Sidebar({
           </button>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden rounded-md p-1.5 text-muted hover:bg-surface-secondary hover:text-foreground transition-colors lg:block"
+            className="hidden rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-foreground transition-colors lg:block"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
@@ -167,7 +167,7 @@ export function Sidebar({
         {navigation.map((group) => (
           <div key={group.section} className="mb-5">
             {!collapsed && (
-              <h3 className="mb-1.5 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-muted">
+              <h3 className="mb-1.5 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.section}
               </h3>
             )}
@@ -181,7 +181,7 @@ export function Sidebar({
                     <span
                       key={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted/60 cursor-not-allowed select-none",
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50 cursor-not-allowed select-none",
                         collapsed && "justify-center px-2",
                       )}
                       aria-disabled="true"
@@ -210,7 +210,7 @@ export function Sidebar({
                         "size-4 shrink-0 transition-colors duration-150",
                         isActive
                           ? "text-primary"
-                          : "text-muted group-hover:text-foreground",
+                          : "text-muted-foreground group-hover:text-foreground",
                       )}
                     />
                     {!collapsed && (
@@ -241,11 +241,13 @@ export function Sidebar({
               <p className="text-sm font-medium text-foreground truncate">
                 {displayName}
               </p>
-              <p className="text-xs text-muted truncate">{user?.email ?? ""}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user?.email ?? ""}
+              </p>
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-muted hover:bg-surface-secondary hover:text-error transition-colors"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-error transition-colors"
               aria-label="Sign out"
             >
               <LogOut className="size-3.5" />
@@ -258,7 +260,7 @@ export function Sidebar({
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-muted hover:bg-surface-secondary hover:text-error transition-colors"
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-error transition-colors"
               aria-label="Sign out"
             >
               <LogOut className="size-3.5" />

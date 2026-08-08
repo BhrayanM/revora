@@ -94,7 +94,7 @@ export function Table<T>({
                   <div className="flex items-center gap-1">
                     {col.header}
                     {col.sortable && (
-                      <span className="text-muted">
+                      <span className="text-subtle">
                         {sortKey === col.key ? (
                           sortDir === "asc" ? (
                             <ChevronUp className="size-3.5" />

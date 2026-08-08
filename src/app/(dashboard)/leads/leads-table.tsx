@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Plus, Search, X } from "lucide-react";
+import { MoreHorizontal, Plus, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
@@ -278,19 +278,37 @@ export function LeadsTable({ leads }: LeadsTableProps) {
 
       {showForm && <AddLeadForm onClose={() => setShowForm(false)} />}
 
-      <Table
-        columns={columns}
-        data={filtered}
-        keyField="id"
-        onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
-        showPagination
-        pageSize={8}
-        emptyMessage={
-          search || statusFilter !== "all"
-            ? "No leads match your filters"
-            : "No leads yet"
-        }
-      />
+      {leads.length === 0 && !search && statusFilter === "all" ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/10">
+            <UserPlus className="size-7 text-primary" />
+          </div>
+          <h3 className="mt-5 text-sm font-semibold text-foreground">
+            No leads yet
+          </h3>
+          <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+            Add your first lead manually or connect a lead source to start
+            building your pipeline.
+          </p>
+          <Button size="sm" className="mt-5" onClick={() => setShowForm(true)}>
+            <Plus className="size-3.5" /> Add Lead
+          </Button>
+        </div>
+      ) : (
+        <Table
+          columns={columns}
+          data={filtered}
+          keyField="id"
+          onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
+          showPagination
+          pageSize={8}
+          emptyMessage={
+            search || statusFilter !== "all"
+              ? "No leads match your filters"
+              : "No leads yet"
+          }
+        />
+      )}
     </Container>
   );
 }

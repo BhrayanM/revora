@@ -53,7 +53,7 @@ export function Input({
         {leftIcon && (
           <div
             className={cn(
-              "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted",
+              "pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle",
               iconSizeClasses[inputSize],
             )}
           >
@@ -63,7 +63,7 @@ export function Input({
         <input
           id={inputId}
           className={cn(
-            "flex w-full rounded-lg border border-border bg-surface text-foreground placeholder:text-muted transition-colors duration-200",
+            "flex w-full rounded-lg border border-border bg-surface text-foreground placeholder:text-subtle transition-colors duration-200",
             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
             "focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
             "disabled:cursor-not-allowed disabled:opacity-50",
@@ -78,7 +78,7 @@ export function Input({
         {rightIcon && (
           <div
             className={cn(
-              "absolute right-3 top-1/2 -translate-y-1/2 text-muted",
+              "absolute right-3 top-1/2 -translate-y-1/2 text-subtle",
               iconSizeClasses[inputSize],
             )}
           >

@@ -103,7 +103,7 @@ export function Toast({
       </div>
       <button
         onClick={() => setIsVisible(false)}
-        className="ml-auto shrink-0 rounded-md p-0.5 text-muted opacity-70 transition-opacity hover:opacity-100"
+        className="ml-auto shrink-0 rounded-md p-0.5 text-subtle opacity-70 transition-opacity hover:opacity-100"
         aria-label="Dismiss"
       >
         <X className="size-4" />

@@ -8,7 +8,6 @@ import { useState } from "react";
 import { BackgroundPattern } from "@/components/shared/background-pattern";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
@@ -53,13 +52,13 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-background">
+    <div className="relative flex min-h-screen flex-col bg-canvas">
       <BackgroundPattern variant="gradient" />
 
       <div className="flex items-center p-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="size-3.5" />
           Back to Home
@@ -67,7 +66,7 @@ export default function SignupPage() {
       </div>
 
       <main className="flex flex-1 items-center justify-center px-4 pb-16">
-        <Container className="w-full max-w-md">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-surface p-8 shadow-sm">
           <div className="text-center">
             <Link
               href="/"
@@ -202,7 +201,7 @@ export default function SignupPage() {
               </Link>
             </p>
           </div>
-        </Container>
+        </div>
       </main>
     </div>
   );
