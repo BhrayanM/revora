@@ -140,6 +140,15 @@ function LoginForm() {
         </Link>
       </p>
 
+      <p className="mt-1 text-center">
+        <Link
+          href="/forgot-email"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Forgot which email you used?
+        </Link>
+      </p>
+
       <p className="mt-4 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link

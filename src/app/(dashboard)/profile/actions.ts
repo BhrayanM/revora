@@ -26,3 +26,33 @@ export async function updateProfile(formData: FormData) {
   revalidatePath("/dashboard");
   return { error: null };
 }
+
+export async function changeEmail(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const newEmail = (formData.get("new_email") as string)?.trim().toLowerCase();
+  if (!newEmail) return { error: "Email is required" };
+
+  if (!newEmail.includes("@") || newEmail.length > 254) {
+    return { error: "Invalid email format" };
+  }
+
+  if (user.email === newEmail) {
+    return { error: "New email is the same as your current email" };
+  }
+
+  const { error } = await supabase.auth.updateUser(
+    { email: newEmail },
+    {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/auth/email-change`,
+    },
+  );
+
+  if (error) return { error: error.message };
+
+  return { error: null };
+}
