@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { updateOrgSettings } from "./actions";
 import { APIKeysPanel } from "./api-keys-panel";
 import { IntegrationsPanel } from "./integrations-panel";
+import { SecurityPanel } from "./security-panel";
 
 type Organization = Database["public"]["Tables"]["organizations"]["Row"];
 
@@ -187,17 +188,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
             </CardContent>
           )}
 
-          {activeSection === "security" && (
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-secondary ring-1 ring-border mb-4">
-                <Shield className="size-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Security settings
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
-            </CardContent>
-          )}
+          {activeSection === "security" && <SecurityPanel />}
         </Card>
       </div>
     </Container>
