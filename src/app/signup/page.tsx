@@ -2,6 +2,7 @@
 
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 
 export default function SignupPage() {
+  const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,8 +59,10 @@ export default function SignupPage() {
       setLoading(false);
       resetCaptcha();
     } else {
-      setMessage("Check your email for the confirmation link.");
-      setLoading(false);
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem("pendingSignupEmail", email);
+      }
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     }
   };
 

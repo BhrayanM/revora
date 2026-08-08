@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Camera, Mail, User } from "lucide-react";
+import { Bell, Camera, User } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
@@ -11,7 +11,7 @@ import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
 import type { Database } from "@/lib/supabase/types";
 
-import { changeEmail, updateProfile } from "./actions";
+import { updateProfile } from "./actions";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -24,8 +24,6 @@ function getInitials(name: string): string {
 export function ProfileContent({ profile }: { profile: Profile }) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
-  const [emailMessage, setEmailMessage] = useState<string | null>(null);
-  const [emailLoading, setEmailLoading] = useState(false);
   const initials = getInitials(profile.full_name);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -37,25 +35,6 @@ export function ProfileContent({ profile }: { profile: Profile }) {
       const result = await updateProfile(formData);
       setMessage(result.error ? result.error : "Profile updated.");
     });
-  };
-
-  const handleEmailChange = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setEmailMessage(null);
-    setEmailLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    const result = await changeEmail(formData);
-
-    setEmailLoading(false);
-    if (result.error) {
-      setEmailMessage(result.error);
-    } else {
-      setEmailMessage(
-        "A confirmation email has been sent to your new address. Click the link to complete the change.",
-      );
-      (e.target as HTMLFormElement).reset();
-    }
   };
 
   return (
@@ -94,12 +73,6 @@ export function ProfileContent({ profile }: { profile: Profile }) {
               })}
             </p>
             <div className="mt-6 w-full space-y-2">
-              <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
-                <Mail className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground truncate">
-                  {profile.email}
-                </span>
-              </div>
               <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
                 <User className="size-4 text-muted-foreground shrink-0" />
                 <span className="text-muted-foreground">
@@ -142,51 +115,6 @@ export function ProfileContent({ profile }: { profile: Profile }) {
                 <div className="flex justify-end">
                   <Button type="submit" loading={isPending}>
                     Update Profile
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-base font-semibold">Account Security</h3>
-              <p className="text-sm text-muted-foreground">
-                Change the email address associated with your account.
-              </p>
-            </CardHeader>
-            <CardContent>
-              {emailMessage && (
-                <Alert
-                  variant={
-                    emailMessage.startsWith("A confirmation")
-                      ? "success"
-                      : "error"
-                  }
-                  className="mb-4"
-                >
-                  {emailMessage}
-                </Alert>
-              )}
-              <form onSubmit={handleEmailChange} className="space-y-4">
-                <div className="max-w-sm">
-                  <Input
-                    label="Current Email"
-                    defaultValue={profile.email}
-                    disabled
-                    className="mb-3"
-                  />
-                  <Input
-                    label="New Email"
-                    name="new_email"
-                    type="email"
-                    placeholder="you@newemail.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <Button type="submit" loading={emailLoading}>
-                    Change Email
                   </Button>
                 </div>
               </form>
