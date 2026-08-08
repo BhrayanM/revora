@@ -86,24 +86,28 @@ export default async function AnalyticsPage() {
       value: totalLeads.toLocaleString(),
       change: 0,
       icon: <Users className="size-5 text-primary" />,
+      accentColor: "primary",
     },
     {
       label: "Qualified Leads",
       value: qualified.toLocaleString(),
       change: 0,
       icon: <TrendingUp className="size-5 text-success" />,
+      accentColor: "success",
     },
     {
       label: "Conversion Rate",
       value: `${conversionRate}%`,
       change: 0,
       icon: <BarChart3 className="size-5 text-accent" />,
+      accentColor: "accent",
     },
     {
       label: "Avg AI Score",
       value: `${avgScore}/100`,
       change: 0,
       icon: <BarChart3 className="size-5 text-secondary" />,
+      accentColor: "secondary",
     },
   ];
 

@@ -117,14 +117,14 @@
 }
 
 :root {
-  --canvas: #f2f4f7;
+  --canvas: #f0f2f5;
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
-  --surface-secondary: #f8fafc;
-  --surface-tertiary: #f1f5f9;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
+  --surface-secondary: #f8f9fb;
+  --surface-tertiary: #f1f3f6;
+  --border: #e4e7eb;
+  --border-strong: #cdd1d7;
   --muted: #f1f5f9;
   --muted-foreground: #475569;
   --subtle: #94a3b8;

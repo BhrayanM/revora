@@ -42,6 +42,7 @@ const navigation = [
         href: "/dashboard#calendar",
         icon: Calendar,
         disabled: true,
+        badge: "Soon",
       },
     ],
   },
@@ -54,6 +55,7 @@ const navigation = [
         href: "/dashboard#chat",
         icon: MessageSquare,
         disabled: true,
+        badge: "Soon",
       },
     ],
   },
@@ -187,7 +189,16 @@ export function Sidebar({
                       aria-disabled="true"
                     >
                       <item.icon className="size-4 shrink-0" />
-                      {!collapsed && <span>{item.label}</span>}
+                      {!collapsed && (
+                        <>
+                          <span>{item.label}</span>
+                          {"badge" in item && item.badge && (
+                            <span className="ml-auto rounded-full bg-surface-secondary px-1.5 py-0.5 text-[0.625rem] font-medium text-muted-foreground">
+                              {item.badge}
+                            </span>
+                          )}
+                        </>
+                      )}
                     </span>
                   );
                 }

@@ -43,24 +43,28 @@ export default async function DashboardPage() {
       value: totalLeads.toLocaleString(),
       change: 0,
       icon: <Users className="size-5 text-primary" />,
+      accentColor: "primary",
     },
     {
       label: "Qualified Leads",
       value: qualified.toLocaleString(),
       change: 0,
       icon: <TrendingUp className="size-5 text-success" />,
+      accentColor: "success",
     },
     {
       label: "Conversion Rate",
       value: `${conversionRate}%`,
       change: 0,
       icon: <UserPlus className="size-5 text-accent" />,
+      accentColor: "accent",
     },
     {
       label: "Avg AI Score",
       value: `${avgScore}/100`,
       change: 0,
       icon: <BarChart3 className="size-5 text-secondary" />,
+      accentColor: "secondary",
     },
   ];
 
@@ -195,19 +199,17 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <div>
+          <div className="mb-4">
             <h3 className="text-base font-semibold text-foreground">
               AI Insights
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-0.5">
               Actionable intelligence
             </p>
-          </CardHeader>
-          <CardContent>
-            <AIInsights />
-          </CardContent>
-        </Card>
+          </div>
+          <AIInsights />
+        </div>
       </div>
     </Container>
   );

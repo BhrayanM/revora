@@ -1,5 +1,3 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface StatWidgetProps {
@@ -9,7 +7,15 @@ interface StatWidgetProps {
   changeLabel?: string;
   icon: React.ReactNode;
   className?: string;
+  accentColor?: string;
 }
+
+const accentBorders: Record<string, string> = {
+  primary: "border-t-primary/40",
+  success: "border-t-success/40",
+  accent: "border-t-accent/40",
+  secondary: "border-t-secondary/40",
+};
 
 export function StatWidget({
   label,
@@ -18,34 +24,45 @@ export function StatWidget({
   changeLabel = "vs last month",
   icon,
   className,
+  accentColor = "primary",
 }: StatWidgetProps) {
+  const borderClass = accentBorders[accentColor] ?? accentBorders.primary;
   const isPositive = change >= 0;
 
   return (
-    <Card
+    <div
       className={cn(
-        "transition-shadow duration-200 hover:shadow-md",
+        "rounded-xl border border-border bg-surface shadow-sm transition-shadow duration-200 hover:shadow-md",
+        "border-t-2",
+        borderClass,
         className,
       )}
     >
-      <CardContent className="p-5">
+      <div className="p-5">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-secondary ring-1 ring-border">
             {icon}
           </div>
         </div>
-        <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+        <p className="mt-3 text-[1.75rem] font-bold leading-none tracking-tight text-foreground">
           {value}
         </p>
-        <div className="mt-2 flex items-center gap-1.5">
-          <Badge variant={isPositive ? "success" : "error"} size="sm">
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <span
+            className={cn(
+              "inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.625rem] font-semibold",
+              isPositive
+                ? "bg-success/10 text-success"
+                : "bg-error/10 text-error",
+            )}
+          >
             {isPositive ? "+" : ""}
             {change}%
-          </Badge>
+          </span>
           <span className="text-xs text-muted-foreground">{changeLabel}</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
