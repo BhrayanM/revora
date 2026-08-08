@@ -1,4 +1,4 @@
-import { Activity } from "lucide-react";
+import { ArrowRight, Brain, MessageSquare, UserPlus } from "lucide-react";
 import type { Metadata } from "next";
 
 import { Badge } from "@/components/ui/badge";
@@ -56,12 +56,28 @@ export default async function AutomationPage() {
         <CardContent className="p-0">
           {!executions || executions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Activity className="size-8 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground">
-                No automation activity yet
+              <div className="flex items-center gap-2 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
+                  <UserPlus className="size-5 text-primary" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground/40" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 ring-1 ring-secondary/10">
+                  <Brain className="size-5 text-secondary" />
+                </div>
+                <ArrowRight className="size-4 text-muted-foreground/40" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 ring-1 ring-success/10">
+                  <MessageSquare className="size-5 text-success" />
+                </div>
+              </div>
+              <h3 className="text-sm font-semibold text-foreground">
+                Automation Flow
+              </h3>
+              <p className="mt-1.5 max-w-md text-sm text-muted-foreground">
+                When a lead is created, the automation engine processes
+                qualification, syncs to your CRM, and sends notifications.
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Activity will appear here when automations run
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add your first lead to see the automation pipeline in action.
               </p>
             </div>
           ) : (
