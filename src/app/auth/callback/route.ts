@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import {
+  createServiceAdminClient,
+  createServiceClient,
+} from "@/lib/supabase/server";
 
 function generateSlug(email: string): string {
   const base =
@@ -27,11 +30,11 @@ function safeRedirect(request: NextRequest, path: string | null): string {
 }
 
 async function onboardNewUser(
-  supabase: Awaited<ReturnType<typeof createServiceClient>>,
   userId: string,
   email: string | undefined,
   fullName: string | undefined,
 ) {
+  const supabase = await createServiceAdminClient();
   const orgName = fullName ?? email?.split("@")[0] ?? "My Organization";
   const slug = generateSlug(email ?? "user@default.com");
 
@@ -93,7 +96,6 @@ export async function GET(request: NextRequest) {
 
   if (!memberships || memberships.length === 0) {
     await onboardNewUser(
-      supabase,
       user.id,
       user.email,
       user.user_metadata["full_name"] as string | undefined,
