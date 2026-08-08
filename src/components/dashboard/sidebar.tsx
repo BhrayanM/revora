@@ -114,13 +114,10 @@ export function Sidebar({
 
   const sidebarContent = (
     <>
-      <div className="flex h-14 items-center justify-between border-b border-border px-4">
+      <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
         {!collapsed && (
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-2.5 font-bold"
-          >
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary shadow-sm shadow-primary/25">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sidebar-active shadow-sm shadow-sidebar-active/25">
               <svg
                 className="h-3.5 w-3.5 text-white"
                 fill="none"
@@ -135,7 +132,9 @@ export function Sidebar({
                 />
               </svg>
             </div>
-            <span className="text-sm tracking-tight">AI Growth</span>
+            <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
+              AI Growth
+            </span>
           </Link>
         )}
         <div
@@ -146,15 +145,16 @@ export function Sidebar({
         >
           <button
             onClick={onMobileClose}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-foreground lg:hidden"
+            className="rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="size-4" />
           </button>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-foreground transition-colors lg:block"
+            className="hidden rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground transition-colors lg:block"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {collapsed ? (
               <ChevronRight className="size-3.5" />
@@ -169,7 +169,7 @@ export function Sidebar({
         {navigation.map((group) => (
           <div key={group.section} className="mb-5">
             {!collapsed && (
-              <h3 className="mb-1.5 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
+              <h3 className="mb-1.5 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-sidebar-muted">
                 {group.section}
               </h3>
             )}
@@ -183,7 +183,8 @@ export function Sidebar({
                     <span
                       key={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50 cursor-not-allowed select-none",
+                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm cursor-not-allowed select-none",
+                        "text-sidebar-muted/50",
                         collapsed && "justify-center px-2",
                       )}
                       aria-disabled="true"
@@ -191,9 +192,9 @@ export function Sidebar({
                       <item.icon className="size-4 shrink-0" />
                       {!collapsed && (
                         <>
-                          <span>{item.label}</span>
+                          <span className="flex-1">{item.label}</span>
                           {"badge" in item && item.badge && (
-                            <span className="ml-auto rounded-full bg-surface-secondary px-1.5 py-0.5 text-[0.625rem] font-medium text-muted-foreground">
+                            <span className="rounded-full bg-sidebar-border px-1.5 py-0.5 text-[0.625rem] font-medium text-sidebar-muted">
                               {item.badge}
                             </span>
                           )}
@@ -211,8 +212,8 @@ export function Sidebar({
                     className={cn(
                       "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
                       isActive
-                        ? "bg-primary/10 text-primary shadow-sm"
-                        : "text-muted-foreground hover:bg-surface-secondary hover:text-foreground",
+                        ? "bg-sidebar-active/15 text-sidebar-active"
+                        : "text-sidebar-muted hover:bg-white/4 hover:text-sidebar-foreground",
                       collapsed && "justify-center px-2",
                     )}
                   >
@@ -220,15 +221,15 @@ export function Sidebar({
                       className={cn(
                         "size-4 shrink-0 transition-colors duration-150",
                         isActive
-                          ? "text-primary"
-                          : "text-muted-foreground group-hover:text-foreground",
+                          ? "text-sidebar-active"
+                          : "text-sidebar-muted group-hover:text-sidebar-foreground",
                       )}
                     />
                     {!collapsed && (
                       <>
                         <span className="flex-1">{item.label}</span>
-                        {"badge" in item && item.badge && (
-                          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-primary">
+                        {"badge" in item && item.badge && !isDisabled && (
+                          <span className="rounded-full bg-sidebar-active/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-sidebar-active">
                             {item.badge}
                           </span>
                         )}
@@ -242,36 +243,37 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="border-t border-border p-3">
+      <div className="border-t border-sidebar-border p-3">
         {!collapsed ? (
           <div className="flex items-center gap-3 rounded-lg p-1.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-active/15 text-xs font-semibold text-sidebar-active ring-1 ring-sidebar-active/20">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
                 {displayName}
               </p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-sidebar-muted truncate">
                 {user?.email ?? ""}
               </p>
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-error transition-colors"
+              className="rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-error transition-colors"
               aria-label="Sign out"
+              title="Sign out"
             >
               <LogOut className="size-3.5" />
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-active/15 text-xs font-semibold text-sidebar-active ring-1 ring-sidebar-active/20">
               {initials}
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-error transition-colors"
+              className="rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-error transition-colors"
               aria-label="Sign out"
             >
               <LogOut className="size-3.5" />
@@ -293,7 +295,7 @@ export function Sidebar({
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border bg-surface transition-transform duration-300 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 lg:translate-x-0",
           collapsed ? "w-[68px]" : "w-60",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}

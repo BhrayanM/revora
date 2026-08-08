@@ -92,6 +92,12 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-subtle: var(--subtle);
 
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted: var(--sidebar-muted);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-active: var(--sidebar-active);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
@@ -117,17 +123,23 @@
 }
 
 :root {
-  --canvas: #f0f2f5;
+  --canvas: #eef0f3;
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
-  --surface-secondary: #f8f9fb;
-  --surface-tertiary: #f1f3f6;
-  --border: #e4e7eb;
-  --border-strong: #cdd1d7;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
-  --subtle: #94a3b8;
+  --surface-secondary: #f7f8fa;
+  --surface-tertiary: #f0f2f5;
+  --border: #e2e5ea;
+  --border-strong: #cdd1d8;
+  --muted: #f1f3f6;
+  --muted-foreground: #5a6270;
+  --subtle: #99a1af;
+
+  --sidebar: #151820;
+  --sidebar-foreground: #e4e7ee;
+  --sidebar-muted: #7c8396;
+  --sidebar-border: #232734;
+  --sidebar-active: #6366f1;
 }
 
 .dark {
@@ -142,6 +154,12 @@
   --muted: #334155;
   --muted-foreground: #94a3b8;
   --subtle: #64748b;
+
+  --sidebar: #0d1117;
+  --sidebar-foreground: #c9d1d9;
+  --sidebar-muted: #6e7681;
+  --sidebar-border: #21262d;
+  --sidebar-active: #818cf8;
 }
 
 @keyframes fade-in {
