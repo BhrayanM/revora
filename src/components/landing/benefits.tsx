@@ -77,7 +77,7 @@ export function Benefits() {
                 <p className="mt-1 text-sm font-semibold text-foreground">
                   {benefit.label}
                 </p>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   {benefit.description}
                 </p>
               </div>

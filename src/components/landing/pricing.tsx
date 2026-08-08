@@ -79,7 +79,7 @@ export function Pricing() {
             </span>{" "}
             Pricing
           </h2>
-          <p className="mt-4 text-lg text-zinc-600">
+          <p className="mt-4 text-lg text-muted-foreground">
             Start free for 14 days. No credit card required. Upgrade, downgrade,
             or cancel anytime.
           </p>
@@ -111,17 +111,21 @@ export function Pricing() {
                     {plan.price === "Custom" ? plan.price : <>${plan.price}</>}
                   </span>
                   {plan.price !== "Custom" && (
-                    <span className="text-sm text-zinc-500">/month</span>
+                    <span className="text-sm text-muted-foreground">
+                      /month
+                    </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-zinc-500">{plan.description}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {plan.description}
+                </p>
               </CardHeader>
               <CardContent className="flex-1">
                 <ul className="space-y-3">
                   {plan.features.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-start gap-2 text-sm text-zinc-700"
+                      className="flex items-start gap-2 text-sm text-foreground"
                     >
                       <Check className="mt-0.5 size-4 shrink-0 text-success" />
                       {feature}

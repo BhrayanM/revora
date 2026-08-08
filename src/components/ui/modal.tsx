@@ -22,7 +22,7 @@ const overlayVariants = cva(
 );
 
 const panelVariants = cva(
-  "relative w-full bg-surface shadow-xl animate-scale-in",
+  "relative w-full bg-surface-elevated shadow-xl animate-scale-in",
   {
     variants: {
       size: {
@@ -97,7 +97,7 @@ export function Modal({
         {showCloseButton && (
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-md p-1 text-subtle transition-colors hover:bg-surface-secondary hover:text-foreground"
+            className="absolute right-4 top-4 rounded-md p-1 text-subtle outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated"
             aria-label="Close"
           >
             <X className="size-5" />

@@ -63,7 +63,7 @@ export function Input({
         <input
           id={inputId}
           className={cn(
-            "flex w-full rounded-lg border border-border bg-surface text-foreground placeholder:text-subtle transition-colors duration-200",
+            "flex w-full rounded-lg border border-input-border bg-input text-foreground placeholder:text-subtle transition-colors duration-200",
             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
             "focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20",
             "disabled:cursor-not-allowed disabled:opacity-50",

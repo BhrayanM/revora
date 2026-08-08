@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
+
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import { THEME_INIT_SCRIPT } from "@/components/theme/theme-script";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -43,6 +48,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
     >
+      <Script id="theme-init" strategy="beforeInteractive">
+        {THEME_INIT_SCRIPT}
+      </Script>
       <body className="flex min-h-full flex-col">
         <a
           href="#main-content"
@@ -50,7 +58,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

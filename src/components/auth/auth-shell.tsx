@@ -105,7 +105,7 @@ export function AuthCard({
   return (
     <section
       className={cn(
-        "rounded-2xl border border-border/90 bg-surface/95 p-6 shadow-[0_20px_60px_-28px_rgb(15_23_42_/_0.32)] backdrop-blur-sm sm:p-8",
+        "rounded-2xl border border-border/90 bg-surface/95 p-6 shadow-xl backdrop-blur-sm sm:p-8",
         className,
       )}
     >

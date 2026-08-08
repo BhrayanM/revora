@@ -19,7 +19,7 @@ export function BackgroundPattern({
           className="absolute inset-0"
           style={{
             backgroundImage:
-              "radial-gradient(circle, rgb(99 102 241 / 0.08) 1px, transparent 1px)",
+              "radial-gradient(circle, color-mix(in srgb, var(--color-primary) 8%, transparent) 1px, transparent 1px)",
             backgroundSize: "24px 24px",
           }}
         />
@@ -29,7 +29,7 @@ export function BackgroundPattern({
           className="absolute inset-0"
           style={{
             backgroundImage:
-              "linear-gradient(rgb(99 102 241 / 0.05) 1px, transparent 1px), linear-gradient(90deg, rgb(99 102 241 / 0.05) 1px, transparent 1px)",
+              "linear-gradient(color-mix(in srgb, var(--color-primary) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 5%, transparent) 1px, transparent 1px)",
             backgroundSize: "64px 64px",
           }}
         />

@@ -4,6 +4,7 @@ import { Bell, Key, Plug, Shield, User } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
+import { ThemeAppearance } from "@/components/theme/theme-appearance";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -63,8 +64,9 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                    "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                     activeSection === section.id
-                      ? "bg-primary/10 text-primary shadow-sm"
+                      ? "bg-accent-surface text-primary shadow-sm"
                       : "text-muted-foreground hover:bg-surface-secondary hover:text-foreground",
                   )}
                 >
@@ -140,6 +142,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                     </Button>
                   </div>
                 </form>
+                <ThemeAppearance />
               </CardContent>
             </>
           )}

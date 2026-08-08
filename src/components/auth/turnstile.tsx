@@ -97,7 +97,7 @@ export function TurnstileWidget({
         </p>
       )}
       {state === "error" && (
-        <p className="mt-1 text-xs text-destructive">
+        <p className="mt-1 text-xs text-error">
           Security check failed. Please try again.
         </p>
       )}

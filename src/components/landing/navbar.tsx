@@ -32,7 +32,7 @@ export function Navbar() {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-300",
         isScrolled
-          ? "border-b border-border bg-white/80 backdrop-blur-xl"
+          ? "border-b border-border bg-surface/85 backdrop-blur-xl"
           : "bg-transparent",
       )}
     >
@@ -54,7 +54,7 @@ export function Navbar() {
             </svg>
           </div>
           <span className="text-foreground">AI Growth</span>
-          <span className="hidden sm:inline text-zinc-400 font-normal">
+          <span className="hidden font-normal text-subtle sm:inline">
             Platform
           </span>
         </Link>
@@ -64,7 +64,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-zinc-600 transition-colors hover:text-foreground"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               {link.label}
             </Link>
@@ -83,7 +83,7 @@ export function Navbar() {
         </div>
 
         <button
-          className="md:hidden rounded-lg p-2 text-zinc-600 hover:bg-surface-secondary"
+          className="rounded-lg p-2 text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas md:hidden"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
           aria-label="Toggle menu"
         >
@@ -96,13 +96,13 @@ export function Navbar() {
       </Container>
 
       {isMobileOpen && (
-        <div className="animate-slide-down border-b border-border bg-white md:hidden">
+        <div className="animate-slide-down border-b border-border bg-surface md:hidden">
           <Container className="flex flex-col gap-3 py-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-surface-secondary hover:text-foreground"
+                className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 onClick={() => setIsMobileOpen(false)}
               >
                 {link.label}

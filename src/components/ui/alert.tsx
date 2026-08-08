@@ -15,10 +15,10 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        info: "border-primary/30 bg-primary/5 text-primary-800",
-        success: "border-success/30 bg-success/5 text-success-800",
-        warning: "border-warning/30 bg-warning/5 text-warning-800",
-        error: "border-error/30 bg-error/5 text-error-800",
+        info: "border-primary/30 bg-primary/5 text-primary",
+        success: "border-success/30 bg-success/5 text-success",
+        warning: "border-warning/30 bg-warning/5 text-warning",
+        error: "border-error/30 bg-error/5 text-error",
       },
     },
     defaultVariants: {

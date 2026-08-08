@@ -247,7 +247,7 @@ export function LeadsTable({ leads }: LeadsTableProps) {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground"
+            className="rounded-lg border border-input-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           >
             <option value="all">All Status</option>
             <option value="new">New</option>

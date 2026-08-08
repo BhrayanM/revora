@@ -12,14 +12,14 @@ export function TrustedBy() {
   return (
     <section className="border-y border-border bg-surface-secondary py-12">
       <Container>
-        <p className="text-center text-sm font-medium text-zinc-500">
+        <p className="text-center text-sm font-medium text-muted-foreground">
           Trusted by innovative companies worldwide
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-x-16 gap-y-6">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
               <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="mt-1 text-xs text-zinc-500">{stat.label}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
             </div>
           ))}
         </div>
