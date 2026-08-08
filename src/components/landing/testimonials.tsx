@@ -10,7 +10,7 @@ const testimonials = [
     role: "VP of Sales",
     company: "CloudScale",
     content:
-      "AI Growth Platform transformed our lead qualification process. We went from 15% to 43% conversion rate in just two months. The AI scoring is incredibly accurate.",
+      "AI Growth transformed our lead qualification process. We went from 15% to 43% conversion rate in just two months. The AI scoring is incredibly accurate.",
     rating: 5,
     avatar: "SC",
   },
@@ -19,7 +19,7 @@ const testimonials = [
     role: "CEO",
     company: "GrowthLabs",
     content:
-      "We replaced 4 different tools with AI Growth Platform. The n8n integration lets us build custom workflows that connect our entire tech stack seamlessly.",
+      "We replaced 4 different tools with AI Growth. The n8n integration lets us build custom workflows that connect our entire tech stack seamlessly.",
     rating: 5,
     avatar: "MJ",
   },

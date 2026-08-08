@@ -8,7 +8,7 @@ import { getLeads } from "@/lib/queries/leads";
 import { LeadsTable } from "./leads-table";
 
 export const metadata: Metadata = {
-  title: "Leads — AI Growth Platform",
+  title: "Leads — AI Growth",
 };
 
 export default async function LeadsPage() {

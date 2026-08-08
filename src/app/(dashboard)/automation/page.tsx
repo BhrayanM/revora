@@ -8,7 +8,7 @@ import { getCurrentOrganization } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Automation — AI Growth Platform",
+  title: "Automation — AI Growth",
 };
 
 const statusBadge: Record<string, "success" | "error" | "warning" | "default"> =

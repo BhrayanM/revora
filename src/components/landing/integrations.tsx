@@ -42,8 +42,8 @@ export function Integrations() {
             </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            AI Growth Platform integrates with the tools you already use. One
-            click setup, zero maintenance.
+            AI Growth integrates with the tools you already use. One click
+            setup, zero maintenance.
           </p>
         </div>
         <div className="mt-16 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">

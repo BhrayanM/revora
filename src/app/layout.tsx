@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Growth Platform | End-to-End AI Business Automation",
+  title: "AI Growth | End-to-End AI Business Automation",
   description:
     "Automate your business with AI-powered lead qualification, appointment booking, and multi-channel outreach. Integrates with GoHighLevel, HubSpot, Slack, Twilio, and n8n.",
   keywords: [
@@ -32,9 +32,9 @@ export const metadata: Metadata = {
     "AI platform",
     "SaaS",
   ],
-  authors: [{ name: "AI Growth Platform" }],
+  authors: [{ name: "AI Growth" }],
   openGraph: {
-    title: "AI Growth Platform",
+    title: "AI Growth",
     description:
       "End-to-End AI Business Automation Platform. Qualify leads, book appointments, and automate outreach.",
     type: "website",
@@ -48,10 +48,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full scroll-smooth antialiased`}
     >
-      <Script id="theme-init" strategy="beforeInteractive">
-        {THEME_INIT_SCRIPT}
-      </Script>
       <body className="flex min-h-full flex-col">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {THEME_INIT_SCRIPT}
+        </Script>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"

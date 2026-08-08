@@ -10,7 +10,7 @@ import { getSafeInternalPath } from "@/lib/legal/consent";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Review legal terms — AI Growth Platform",
+  title: "Review legal terms — AI Growth",
 };
 
 export default async function LegalConsentPage({
@@ -37,7 +37,7 @@ export default async function LegalConsentPage({
           visual="legal"
           eyebrow="One more step"
           title="Review our legal terms"
-          description="We have updated the terms that govern access to AI Growth Platform. Please review and accept them to continue."
+          description="We have updated the terms that govern access to AI Growth. Please review and accept them to continue."
         />
 
         <div className="mt-6">

@@ -38,7 +38,7 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-surface-secondary">
+    <footer className="bg-surface-secondary">
       <Container className="py-16">
         <div className="grid gap-8 lg:grid-cols-6">
           <div className="lg:col-span-2">
@@ -124,8 +124,7 @@ export function Footer() {
 
         <div className="mt-12 border-t border-border pt-8">
           <p className="text-center text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} AI Growth Platform. All rights
-            reserved.
+            &copy; {new Date().getFullYear()} AI Growth. All rights reserved.
           </p>
         </div>
       </Container>

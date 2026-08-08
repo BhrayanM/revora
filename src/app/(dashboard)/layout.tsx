@@ -11,7 +11,7 @@ import {
 import { createClient, createServiceAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Dashboard — AI Growth Platform",
+  title: "Dashboard — AI Growth",
 };
 
 function generateSlug(email: string): string {

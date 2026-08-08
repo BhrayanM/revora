@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Dashboard — AI Growth Platform",
+  title: "Dashboard — AI Growth",
 };
 
 export default async function DashboardPage() {

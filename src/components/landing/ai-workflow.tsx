@@ -69,9 +69,12 @@ export function AIWorkflow() {
             every step of your sales process.
           </p>
         </div>
-        <div className="mt-16 relative">
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-primary via-accent to-secondary/50 hidden lg:block" />
-          <div className="space-y-12">
+        <div className="relative mt-16">
+          <div
+            className="pointer-events-none absolute top-0 bottom-0 left-8 z-0 hidden w-px bg-gradient-to-b from-primary via-accent to-secondary/50 lg:block"
+            aria-hidden="true"
+          />
+          <div className="relative z-10 space-y-12">
             {steps.map((step, index) => (
               <div
                 key={step.title}
@@ -84,10 +87,12 @@ export function AIWorkflow() {
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-12">
                   <div className="flex lg:w-1/2 lg:justify-end">
                     <div className="flex items-start gap-4 lg:gap-6">
-                      <div
-                        className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${step.color}`}
-                      >
-                        <step.icon className="size-6" />
+                      <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface p-1 shadow-sm ring-4 ring-canvas">
+                        <div
+                          className={`flex size-full items-center justify-center rounded-lg ${step.color}`}
+                        >
+                          <step.icon className="size-6" />
+                        </div>
                         {index < steps.length - 1 && (
                           <ArrowRight className="absolute -bottom-8 size-5 rotate-90 text-subtle lg:hidden" />
                         )}

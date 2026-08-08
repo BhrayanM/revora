@@ -11,7 +11,7 @@ import { getLeadMetrics, getPipelineMetrics } from "@/lib/queries/analytics";
 import { getLeads } from "@/lib/queries/leads";
 
 export const metadata: Metadata = {
-  title: "Analytics — AI Growth Platform",
+  title: "Analytics — AI Growth",
 };
 
 export default async function AnalyticsPage() {

@@ -33,7 +33,7 @@ export function Demo() {
               See It In Action
             </Badge>
             <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Watch AI Growth Platform{" "}
+              Watch AI Growth{" "}
               <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Transform
               </span>{" "}
@@ -62,12 +62,12 @@ export function Demo() {
             </ul>
             <div className="mt-8 flex gap-3">
               <Button>
-                Try Live Demo
+                Start Free Trial
                 <ArrowRight className="size-4" />
               </Button>
               <Button variant="outline">
                 <Play className="size-4" />
-                Watch Overview
+                Watch Demo
               </Button>
             </div>
           </div>

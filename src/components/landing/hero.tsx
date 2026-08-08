@@ -42,7 +42,7 @@ export function Hero() {
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link href="/signup">
               <Button size="xl" className="shadow-lg shadow-primary/25">
-                Start Automating Free
+                Start Free Trial
                 <ArrowRight className="size-5" />
               </Button>
             </Link>
@@ -77,7 +77,7 @@ export function Hero() {
                 <div className="size-2.5 rounded-full bg-warning/60" />
                 <div className="size-2.5 rounded-full bg-success/60" />
                 <span className="ml-2 text-xs text-muted-foreground">
-                  AI Growth Platform — Dashboard
+                  AI Growth — Dashboard
                 </span>
               </div>
               <div className="p-6">
