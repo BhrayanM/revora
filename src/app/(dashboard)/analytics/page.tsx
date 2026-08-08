@@ -23,7 +23,7 @@ export default async function AnalyticsPage() {
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
         </div>
-        <p className="text-sm text-zinc-500">No organization found.</p>
+        <p className="text-sm text-muted-foreground">No organization found.</p>
       </Container>
     );
   }
@@ -58,7 +58,7 @@ export default async function AnalyticsPage() {
     .map(([name, count]) => ({
       label: name.charAt(0).toUpperCase() + name.slice(1),
       value: count,
-      color: "rgb(99 102 241)",
+      color: "var(--color-primary)",
     }));
 
   const stageColors: Record<string, string> = {
@@ -111,7 +111,7 @@ export default async function AnalyticsPage() {
     <Container className="max-w-none px-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Track performance, conversions, and lead sources.
         </p>
       </div>
@@ -125,19 +125,25 @@ export default async function AnalyticsPage() {
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs font-medium text-zinc-500">HOT Leads</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              HOT Leads
+            </p>
             <p className="mt-1 text-2xl font-bold text-error">{hotCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs font-medium text-zinc-500">WARM Leads</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              WARM Leads
+            </p>
             <p className="mt-1 text-2xl font-bold text-warning">{warmCount}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <p className="text-xs font-medium text-zinc-500">COLD Leads</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              COLD Leads
+            </p>
             <p className="mt-1 text-2xl font-bold text-primary">{coldCount}</p>
           </CardContent>
         </Card>
@@ -151,7 +157,9 @@ export default async function AnalyticsPage() {
                 <h3 className="text-base font-semibold text-foreground">
                   Lead Sources
                 </h3>
-                <p className="text-sm text-zinc-500">By acquisition channel</p>
+                <p className="text-sm text-muted-foreground">
+                  By acquisition channel
+                </p>
               </div>
               {totalLeads > 0 && (
                 <Badge variant="default" size="sm">
@@ -164,7 +172,7 @@ export default async function AnalyticsPage() {
             {sourceData.length > 0 ? (
               <BarChart data={sourceData} height={240} />
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                 No source data yet
               </div>
             )}
@@ -178,7 +186,7 @@ export default async function AnalyticsPage() {
                 <h3 className="text-base font-semibold text-foreground">
                   Pipeline Distribution
                 </h3>
-                <p className="text-sm text-zinc-500">Leads by stage</p>
+                <p className="text-sm text-muted-foreground">Leads by stage</p>
               </div>
             </div>
           </CardHeader>
@@ -186,7 +194,7 @@ export default async function AnalyticsPage() {
             {hasPipeline ? (
               <DonutChart segments={donutData} size={180} />
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                 No pipeline data
               </div>
             )}
@@ -200,7 +208,7 @@ export default async function AnalyticsPage() {
             <h3 className="text-base font-semibold text-foreground">
               Conversion Funnel
             </h3>
-            <p className="text-sm text-zinc-500">Pipeline stages</p>
+            <p className="text-sm text-muted-foreground">Pipeline stages</p>
           </CardHeader>
           <CardContent>
             {hasPipeline ? (
@@ -209,7 +217,9 @@ export default async function AnalyticsPage() {
                   <div key={stage.label}>
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span className="text-foreground">{stage.label}</span>
-                      <span className="text-zinc-500">{stage.value}</span>
+                      <span className="text-muted-foreground">
+                        {stage.value}
+                      </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-surface-secondary">
                       <div
@@ -225,7 +235,7 @@ export default async function AnalyticsPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                 No pipeline data
               </div>
             )}
@@ -239,7 +249,7 @@ export default async function AnalyticsPage() {
                 <h3 className="text-base font-semibold text-foreground">
                   Source Performance
                 </h3>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-muted-foreground">
                   Detailed breakdown by channel
                 </p>
               </div>
@@ -251,12 +261,18 @@ export default async function AnalyticsPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border text-left">
-                      <th className="pb-3 font-medium text-zinc-500">Source</th>
-                      <th className="pb-3 font-medium text-zinc-500">Leads</th>
-                      <th className="pb-3 font-medium text-zinc-500">
+                      <th className="pb-3 font-medium text-muted-foreground">
+                        Source
+                      </th>
+                      <th className="pb-3 font-medium text-muted-foreground">
+                        Leads
+                      </th>
+                      <th className="pb-3 font-medium text-muted-foreground">
                         % of Total
                       </th>
-                      <th className="pb-3 font-medium text-zinc-500">Trend</th>
+                      <th className="pb-3 font-medium text-muted-foreground">
+                        Trend
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -265,8 +281,10 @@ export default async function AnalyticsPage() {
                         <td className="py-3 font-medium text-foreground">
                           {row.label}
                         </td>
-                        <td className="py-3 text-zinc-600">{row.value}</td>
-                        <td className="py-3 text-zinc-600">
+                        <td className="py-3 text-muted-foreground">
+                          {row.value}
+                        </td>
+                        <td className="py-3 text-muted-foreground">
                           {totalLeads > 0
                             ? Math.round((row.value / totalLeads) * 100)
                             : 0}
@@ -283,7 +301,7 @@ export default async function AnalyticsPage() {
                 </table>
               </div>
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                 No leads recorded yet
               </div>
             )}

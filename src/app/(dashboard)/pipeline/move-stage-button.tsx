@@ -34,7 +34,7 @@ export function MoveStageButton({
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="text-zinc-500 hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground"
       >
         <MoreHorizontal className="size-4" />
       </button>
@@ -42,7 +42,7 @@ export function MoveStageButton({
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-6 z-20 w-44 rounded-lg border border-border bg-surface py-1 shadow-lg">
-            <p className="px-3 py-1.5 text-xs font-medium text-zinc-500">
+            <p className="px-3 py-1.5 text-xs font-medium text-muted-foreground">
               Move to stage
             </p>
             {availableStages.map((stage) => (
@@ -56,7 +56,7 @@ export function MoveStageButton({
               </button>
             ))}
             {availableStages.length === 0 && (
-              <p className="px-3 py-1.5 text-xs text-zinc-500">
+              <p className="px-3 py-1.5 text-xs text-muted-foreground">
                 No other stages available
               </p>
             )}

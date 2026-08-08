@@ -65,13 +65,13 @@ export default async function DashboardPage() {
   ];
 
   const stageColors: Record<string, string> = {
-    "New Lead": "rgb(99 102 241)",
-    Contacted: "rgb(6 182 212)",
-    Qualified: "rgb(16 185 129)",
-    "Proposal Sent": "rgb(245 158 11)",
-    Negotiation: "rgb(139 92 246)",
-    "Closed Won": "rgb(16 185 129)",
-    "Closed Lost": "rgb(239 68 68)",
+    "New Lead": "var(--color-primary)",
+    Contacted: "var(--color-secondary)",
+    Qualified: "var(--color-success)",
+    "Proposal Sent": "var(--color-warning)",
+    Negotiation: "var(--color-accent)",
+    "Closed Won": "var(--color-success)",
+    "Closed Lost": "var(--color-error)",
   };
 
   const donutData = (pipeline?.stages ?? []).map((s) => ({
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
     <Container className="max-w-none px-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Overview of your pipeline and leads.
         </p>
       </div>
@@ -106,7 +106,9 @@ export default async function DashboardPage() {
                 <h3 className="text-base font-semibold text-foreground">
                   Lead Volume
                 </h3>
-                <p className="text-sm text-zinc-500">Pipeline distribution</p>
+                <p className="text-sm text-muted-foreground">
+                  Pipeline distribution
+                </p>
               </div>
               {totalLeads > 0 && (
                 <Badge variant="default" size="sm">
@@ -117,16 +119,24 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             {!orgId ? (
-              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
-                Loading organization data...
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Users className="size-10 text-muted mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No organization found
+                </p>
+                <p className="text-xs text-muted mt-1">
+                  Please contact support
+                </p>
               </div>
             ) : hasPipeline ? (
               <BarChart data={donutData} height={240} />
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <BarChart3 className="size-10 text-zinc-300 mb-3" />
-                <p className="text-sm text-zinc-500">No pipeline data yet</p>
-                <p className="text-xs text-zinc-400 mt-1">
+                <BarChart3 className="size-10 text-muted mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  No pipeline data yet
+                </p>
+                <p className="text-xs text-muted mt-1">
                   Add leads to see your pipeline stats
                 </p>
               </div>
@@ -139,13 +149,13 @@ export default async function DashboardPage() {
             <h3 className="text-base font-semibold text-foreground">
               Lead Distribution
             </h3>
-            <p className="text-sm text-zinc-500">By stage</p>
+            <p className="text-sm text-muted-foreground">By stage</p>
           </CardHeader>
           <CardContent>
             {hasPipeline ? (
               <DonutChart segments={donutData} size={180} />
             ) : (
-              <div className="flex items-center justify-center py-12 text-sm text-zinc-500">
+              <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                 No data
               </div>
             )}
@@ -170,7 +180,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm text-foreground">{a.description}</p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(a.timestamp).toLocaleDateString()}
                       </p>
                     </div>
@@ -178,7 +188,7 @@ export default async function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center py-8 text-sm text-zinc-500">
+              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
                 No recent activity
               </div>
             )}
@@ -190,7 +200,9 @@ export default async function DashboardPage() {
             <h3 className="text-base font-semibold text-foreground">
               AI Insights
             </h3>
-            <p className="text-sm text-zinc-500">Actionable intelligence</p>
+            <p className="text-sm text-muted-foreground">
+              Actionable intelligence
+            </p>
           </CardHeader>
           <CardContent>
             <AIInsights />

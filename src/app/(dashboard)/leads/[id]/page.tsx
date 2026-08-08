@@ -57,7 +57,7 @@ export default async function LeadDetailPage({
       <div className="mb-6">
         <Link
           href="/leads"
-          className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-foreground mb-4"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="size-3.5" />
           Back to Leads
@@ -67,7 +67,7 @@ export default async function LeadDetailPage({
             <h1 className="text-2xl font-bold text-foreground">
               {lead.first_name} {lead.last_name}
             </h1>
-            <p className="text-sm text-zinc-500">Lead ID: {lead.id}</p>
+            <p className="text-sm text-muted-foreground">Lead ID: {lead.id}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
@@ -131,7 +131,9 @@ export default async function LeadDetailPage({
                   },
                 ].map((field) => (
                   <div key={field.label}>
-                    <p className="text-xs text-zinc-500">{field.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {field.label}
+                    </p>
                     <div className="mt-0.5 text-sm text-foreground">
                       {field.value}
                     </div>
@@ -157,10 +159,10 @@ export default async function LeadDetailPage({
                         )}
                       </div>
                       <div>
-                        <p className="text-xs text-zinc-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatDate(c.created_at)} — {c.type} ({c.direction})
                         </p>
-                        <p className="mt-0.5 text-sm text-zinc-700 line-clamp-2">
+                        <p className="mt-0.5 text-sm text-foreground line-clamp-2">
                           {c.content}
                         </p>
                       </div>
@@ -168,7 +170,7 @@ export default async function LeadDetailPage({
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center py-8 text-sm text-zinc-500">
+                <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
                   No activity recorded yet
                 </div>
               )}

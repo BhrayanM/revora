@@ -15,25 +15,31 @@ export function BarChart({ data, height = 200, className }: BarChartProps) {
 
   return (
     <div className={cn("flex items-end gap-3", className)} style={{ height }}>
-      {data.map((item) => (
-        <div
-          key={item.label}
-          className="flex flex-1 flex-col items-center gap-1.5 justify-end h-full"
-        >
-          <span className="text-xs font-medium text-zinc-600">
-            {item.value}
-          </span>
-          <div
-            className="w-full rounded-t-md transition-all duration-500"
-            style={{
-              height: `${(item.value / maxValue) * 80}%`,
-              backgroundColor: item.color || "rgb(99 102 241)",
-              opacity: 0.85,
-            }}
-          />
-          <span className="text-xs text-zinc-400">{item.label}</span>
+      {maxValue === 0 && (
+        <div className="flex w-full items-center justify-center h-full">
+          <p className="text-sm text-muted">No data yet</p>
         </div>
-      ))}
+      )}
+      {maxValue > 0 &&
+        data.map((item) => (
+          <div
+            key={item.label}
+            className="flex flex-1 flex-col items-center gap-1.5 justify-end h-full"
+          >
+            <span className="text-xs font-medium text-muted-foreground">
+              {item.value}
+            </span>
+            <div
+              className="w-full rounded-t-md transition-all duration-500"
+              style={{
+                height: `${(item.value / maxValue) * 80}%`,
+                backgroundColor: item.color || "var(--color-primary)",
+                opacity: 0.85,
+              }}
+            />
+            <span className="text-xs text-muted">{item.label}</span>
+          </div>
+        ))}
     </div>
   );
 }
@@ -48,7 +54,7 @@ interface LineChartProps {
 export function LineChart({
   data,
   height = 200,
-  color = "rgb(99 102 241)",
+  color = "var(--color-primary)",
   className,
 }: LineChartProps) {
   const gradientId = useId();
@@ -91,7 +97,7 @@ export function LineChart({
       </svg>
       <div className="mt-2 flex justify-between">
         {data.map((item) => (
-          <span key={item.label} className="text-xs text-zinc-400">
+          <span key={item.label} className="text-xs text-muted">
             {item.label}
           </span>
         ))}
@@ -169,7 +175,7 @@ export function DonutChart({
             className="transition-all duration-300 hover:opacity-80"
           />
         ))}
-        <circle cx="50" cy="50" r="25" fill="white" />
+        <circle cx="50" cy="50" r="25" fill="var(--surface)" />
         <text
           x="50"
           y="48"
@@ -183,7 +189,7 @@ export function DonutChart({
           x="50"
           y="56"
           textAnchor="middle"
-          className="fill-zinc-400"
+          className="fill-muted-foreground"
           fontSize="5"
         >
           Leads
@@ -196,7 +202,7 @@ export function DonutChart({
               className="size-2.5 rounded-full"
               style={{ backgroundColor: s.color }}
             />
-            <span className="text-xs text-zinc-600">
+            <span className="text-xs text-muted-foreground">
               {s.label} ({s.value})
             </span>
           </div>

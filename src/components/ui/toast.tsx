@@ -98,12 +98,12 @@ export function Toast({
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{title}</p>
         {description && (
-          <p className="mt-0.5 text-sm text-zinc-500">{description}</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
         )}
       </div>
       <button
         onClick={() => setIsVisible(false)}
-        className="ml-auto shrink-0 rounded-md p-0.5 text-zinc-400 opacity-70 transition-opacity hover:opacity-100"
+        className="ml-auto shrink-0 rounded-md p-0.5 text-muted opacity-70 transition-opacity hover:opacity-100"
         aria-label="Dismiss"
       >
         <X className="size-4" />

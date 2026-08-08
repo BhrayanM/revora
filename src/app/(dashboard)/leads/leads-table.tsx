@@ -59,7 +59,7 @@ function AddLeadForm({ onClose }: { onClose: () => void }) {
         <h2 className="text-base font-semibold text-foreground">Add Lead</h2>
         <button
           onClick={onClose}
-          className="rounded-md p-1 text-zinc-500 hover:text-foreground"
+          className="rounded-md p-1 text-muted-foreground hover:text-foreground"
         >
           <X className="size-4" />
         </button>
@@ -146,7 +146,7 @@ export function LeadsTable({ leads }: LeadsTableProps) {
       header: "Company",
       sortable: true,
       accessor: (lead) => (
-        <span className="text-zinc-600">{lead.company || "—"}</span>
+        <span className="text-muted-foreground">{lead.company || "—"}</span>
       ),
     },
     {
@@ -178,7 +178,9 @@ export function LeadsTable({ leads }: LeadsTableProps) {
           <div className="flex items-center gap-1.5">
             <span
               className={
-                lead.score >= 80 ? "text-success font-medium" : "text-zinc-600"
+                lead.score >= 80
+                  ? "text-success font-medium"
+                  : "text-muted-foreground"
               }
             >
               {lead.score}/100
@@ -206,7 +208,7 @@ export function LeadsTable({ leads }: LeadsTableProps) {
       header: "Created",
       sortable: true,
       accessor: (lead) => (
-        <span className="text-zinc-500 text-xs">
+        <span className="text-muted-foreground text-xs">
           {new Date(lead.created_at).toLocaleDateString()}
         </span>
       ),
@@ -227,13 +229,13 @@ export function LeadsTable({ leads }: LeadsTableProps) {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage and track all your leads.
           </p>
         </div>
         <div className="flex gap-2">
           <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search leads..."
               className="pl-9"

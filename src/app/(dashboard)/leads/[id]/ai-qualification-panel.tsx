@@ -51,7 +51,7 @@ export function AIQualificationPanel({
         <CardContent>
           {!result ? (
             <div className="space-y-3">
-              <p className="text-sm text-zinc-600">
+              <p className="text-sm text-muted-foreground">
                 Use AI to analyze this lead and generate a qualification score,
                 buying signals, risks, and recommended next actions.
               </p>
@@ -69,7 +69,7 @@ export function AIQualificationPanel({
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 rounded-full bg-surface-secondary px-3 py-1.5">
-                  <span className="text-xs font-medium text-zinc-600">
+                  <span className="text-xs font-medium text-muted-foreground">
                     Score
                   </span>
                   <span className="text-lg font-bold text-foreground">
@@ -89,14 +89,14 @@ export function AIQualificationPanel({
                   {result.temperature}
                 </Badge>
                 {result.confidence > 0 && (
-                  <span className="text-xs text-zinc-500">
+                  <span className="text-xs text-muted-foreground">
                     {Math.round(result.confidence * 100)}% confidence
                   </span>
                 )}
               </div>
 
               <div>
-                <p className="text-xs font-medium text-zinc-500 mb-1">
+                <p className="text-xs font-medium text-muted-foreground mb-1">
                   Summary
                 </p>
                 <p className="text-sm text-foreground">{result.summary}</p>
@@ -104,7 +104,7 @@ export function AIQualificationPanel({
 
               {result.buyingSignals.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 mb-1.5">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
                     Buying Signals
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -119,7 +119,7 @@ export function AIQualificationPanel({
 
               {result.risks.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 mb-1.5">
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
                     Risks
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -134,7 +134,7 @@ export function AIQualificationPanel({
 
               {result.recommendedAction && (
                 <div>
-                  <p className="text-xs font-medium text-zinc-500 mb-1">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
                     Recommended Action
                   </p>
                   <p className="text-sm text-foreground bg-surface-secondary rounded-lg p-3">
@@ -169,29 +169,36 @@ export function AIQualificationPanel({
               {
                 label: "Purchase Intent",
                 pct: currentScore > 60 ? 75 : Math.min(currentScore * 1.2, 70),
-                color: "rgb(99 102 241)",
+                color: "var(--color-primary)",
               },
               {
                 label: "Contact Data",
-                pct:
-                  ["phone", "email", "company"].filter(() => true).length * 25,
-                color: "rgb(16 185 129)",
+                pct: Math.min(currentScore * 0.9, 85),
+                color: "var(--color-success)",
               },
               {
                 label: "Engagement",
-                pct: currentScore > 50 ? 60 : 30,
-                color: "rgb(6 182 212)",
+                pct:
+                  currentScore > 50
+                    ? Math.min(currentScore * 1.1, 80)
+                    : currentScore * 0.6,
+                color: "var(--color-secondary)",
               },
               {
                 label: "Timeline Fit",
-                pct: currentScore > 70 ? 80 : currentScore * 0.8,
-                color: "rgb(245 158 11)",
+                pct:
+                  currentScore > 70
+                    ? Math.min(currentScore * 1.1, 85)
+                    : currentScore * 0.8,
+                color: "var(--color-warning)",
               },
             ].map((item) => (
               <div key={item.label}>
                 <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-zinc-600">{item.label}</span>
-                  <span className="text-zinc-500">{Math.round(item.pct)}%</span>
+                  <span className="text-muted-foreground">{item.label}</span>
+                  <span className="text-muted-foreground">
+                    {Math.round(item.pct)}%
+                  </span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-surface-secondary">
                   <div

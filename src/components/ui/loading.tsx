@@ -76,7 +76,7 @@ export function PageLoader({
       )}
     >
       <Spinner size="xl" />
-      <p className="text-sm text-zinc-500">{message}</p>
+      <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );
 }

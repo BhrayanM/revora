@@ -4,7 +4,6 @@ import type { User } from "@supabase/supabase-js";
 import { Bell, Menu, Search } from "lucide-react";
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface TopNavProps {
@@ -30,10 +29,10 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
   const initials = getInitials(userMeta?.full_name, user?.email);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-surface/80 px-4 backdrop-blur-xl sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-surface/90 px-4 backdrop-blur-xl sm:px-6">
       <button
         onClick={onMenuClick}
-        className="rounded-md p-1.5 text-zinc-500 hover:bg-surface-secondary hover:text-foreground lg:hidden"
+        className="rounded-md p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-foreground lg:hidden"
         aria-label="Open menu"
       >
         <Menu className="size-5" />
@@ -43,26 +42,27 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
 
       <div className="hidden sm:flex sm:flex-1 sm:max-w-md">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
           <Input
-            placeholder="Search leads, contacts, deals..."
-            className="pl-9"
+            placeholder="Search leads, contacts..."
+            className="pl-9 bg-surface-secondary border-transparent focus:bg-surface focus:border-border"
             inputSize="sm"
+            disabled
           />
         </div>
       </div>
 
       <div className="flex-1 sm:hidden" />
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5">
         <Link href="/notifications" className="relative">
-          <Button variant="ghost" size="sm" className="size-9 p-0">
+          <button className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-secondary hover:text-foreground transition-colors">
             <Bell className="size-4" />
-          </Button>
+          </button>
         </Link>
 
         <Link href="/profile">
-          <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary transition-colors hover:bg-primary/20">
+          <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20 transition-all hover:ring-primary/30 hover:shadow-sm">
             {initials}
           </div>
         </Link>

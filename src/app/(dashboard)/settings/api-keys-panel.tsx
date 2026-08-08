@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Key, Plus, Trash2 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -46,11 +46,13 @@ export function APIKeysPanel() {
     });
   };
 
-  if (keys.length === 0 && !loading) loadKeys();
+  useEffect(() => {
+    loadKeys();
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8 text-sm text-zinc-500">
+      <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
         Loading...
       </div>
     );
@@ -61,7 +63,7 @@ export function APIKeysPanel() {
       {error && <Alert variant="error">{error}</Alert>}
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-muted-foreground">
           API keys authenticate external services (Tally, n8n, website forms).
         </p>
         <Button
@@ -92,11 +94,11 @@ export function APIKeysPanel() {
               Key created successfully
             </p>
             <div className="flex items-center gap-2 rounded-md bg-surface-secondary p-2 font-mono text-sm">
-              <Key className="size-4 text-zinc-500 shrink-0" />
+              <Key className="size-4 text-muted-foreground shrink-0" />
               <span className="text-foreground break-all">{newKey}</span>
               <button
                 onClick={() => navigator.clipboard.writeText(newKey)}
-                className="ml-auto rounded p-1 text-zinc-500 hover:text-foreground shrink-0"
+                className="ml-auto rounded p-1 text-muted-foreground hover:text-foreground shrink-0"
               >
                 <Copy className="size-3.5" />
               </button>
@@ -110,9 +112,9 @@ export function APIKeysPanel() {
 
       {keys.length === 0 && !showCreate ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Key className="size-8 text-zinc-300 mb-3" />
-          <p className="text-sm text-zinc-500">No API keys yet</p>
-          <p className="text-xs text-zinc-400 mt-1">
+          <Key className="size-8 text-muted mb-3" />
+          <p className="text-sm text-muted-foreground">No API keys yet</p>
+          <p className="text-xs text-muted mt-1">
             Create your first key to start ingesting leads
           </p>
         </div>
@@ -136,7 +138,7 @@ export function APIKeysPanel() {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Created {new Date(key.created_at).toLocaleDateString()}
                 {key.last_used_at &&
                   ` · Last used ${new Date(key.last_used_at).toLocaleDateString()}`}
