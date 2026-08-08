@@ -78,7 +78,7 @@ export function SocialAuth({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" aria-label="Social sign-in options" role="group">
       {error && (
         <Alert variant="error" className="text-sm">
           {error}
@@ -96,7 +96,7 @@ export function SocialAuth({
               type="button"
               variant="outline"
               size="xl"
-              className="w-full"
+              className="w-full justify-start border-border bg-surface/70 px-5 shadow-sm hover:border-primary/30 hover:bg-surface-secondary"
               leftIcon={<Icon className="size-5" />}
               loading={loading === provider}
               disabled={!isActive || loading !== null || consentRequired}
@@ -115,12 +115,16 @@ export function SocialAuth({
         );
       })}
 
-      <div className="relative my-6">
+      <div
+        className="relative my-7"
+        role="separator"
+        aria-label="or continue with email"
+      >
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-surface px-2 text-muted-foreground">
+          <span className="bg-surface px-3 text-[11px] font-medium tracking-[0.14em] text-muted-foreground">
             or continue with email
           </span>
         </div>

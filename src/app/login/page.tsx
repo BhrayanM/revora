@@ -1,10 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useRef, useState } from "react";
 
+import {
+  AuthCard,
+  AuthLoadingState,
+  AuthPageHeader,
+  AuthShell,
+  AuthTextLink,
+} from "@/components/auth/auth-shell";
 import { SocialAuth } from "@/components/auth/social-auth";
 import { TurnstileWidget } from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
@@ -67,35 +73,11 @@ function LoginForm() {
 
   return (
     <>
-      <div className="text-center mb-8">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 font-bold text-xl"
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <svg
-              className="h-4 w-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-              />
-            </svg>
-          </div>
-          <span className="text-foreground">AI Growth</span>
-        </Link>
-        <h1 className="mt-6 text-2xl font-bold text-foreground">
-          Welcome back
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Sign in to your account
-        </p>
-      </div>
+      <AuthPageHeader
+        title="Welcome back"
+        description="Sign in to your account"
+        className="mb-8"
+      />
 
       {error && (
         <Alert variant="error" className="mb-4">
@@ -113,6 +95,7 @@ function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@company.com"
           inputSize="lg"
+          autoComplete="email"
           required
         />
         <Input
@@ -122,6 +105,7 @@ function LoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter your password"
           inputSize="lg"
+          autoComplete="current-password"
           required
         />
         <Button
@@ -146,31 +130,26 @@ function LoginForm() {
       </div>
 
       <p className="mt-3 text-center">
-        <Link
+        <AuthTextLink
           href="/forgot-password"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-xs font-normal text-muted-foreground hover:text-foreground"
         >
           Forgot password?
-        </Link>
+        </AuthTextLink>
       </p>
 
       <p className="mt-1 text-center">
-        <Link
+        <AuthTextLink
           href="/forgot-email"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-xs font-normal text-muted-foreground hover:text-foreground"
         >
           Forgot which email you used?
-        </Link>
+        </AuthTextLink>
       </p>
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          className="font-medium text-primary hover:underline"
-        >
-          Sign up free
-        </Link>
+        <AuthTextLink href="/signup">Sign up free</AuthTextLink>
       </p>
     </>
   );
@@ -178,20 +157,14 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4">
-      <div className="w-full max-w-sm">
-        <div className="rounded-2xl border border-border bg-surface p-8 shadow-sm">
-          <Suspense
-            fallback={
-              <div className="text-center text-muted-foreground">
-                Loading...
-              </div>
-            }
-          >
-            <LoginForm />
-          </Suspense>
-        </div>
-      </div>
-    </div>
+    <AuthShell>
+      <AuthCard>
+        <Suspense
+          fallback={<AuthLoadingState>Loading sign in...</AuthLoadingState>}
+        >
+          <LoginForm />
+        </Suspense>
+      </AuthCard>
+    </AuthShell>
   );
 }
