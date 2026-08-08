@@ -22,7 +22,7 @@ create table if not exists public.profiles (
 );
 
 create table if not exists public.organizations (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   name        text not null,
   slug        text not null unique,
   logo_url    text,
@@ -32,7 +32,7 @@ create table if not exists public.organizations (
 );
 
 create table if not exists public.memberships (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   profile_id        uuid not null references public.profiles(id) on delete cascade,
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   role              text not null default 'agent'
@@ -45,7 +45,7 @@ create index idx_memberships_profile on public.memberships(profile_id);
 create index idx_memberships_org on public.memberships(organization_id);
 
 create table if not exists public.workspaces (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   name              text not null,
   description       text,
@@ -60,7 +60,7 @@ create index idx_workspaces_org on public.workspaces(organization_id);
 -- ============================================================================
 
 create table if not exists public.pipelines (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   name              text not null,
   description       text,
@@ -72,7 +72,7 @@ create table if not exists public.pipelines (
 create index idx_pipelines_org on public.pipelines(organization_id);
 
 create table if not exists public.pipeline_stages (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   pipeline_id       uuid not null references public.pipelines(id) on delete cascade,
   name              text not null,
   order_index       integer not null default 0,
@@ -85,7 +85,7 @@ create table if not exists public.pipeline_stages (
 create index idx_pipeline_stages_pipeline on public.pipeline_stages(pipeline_id);
 
 create table if not exists public.leads (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   workspace_id      uuid references public.workspaces(id) on delete set null,
   pipeline_id       uuid references public.pipelines(id) on delete set null,
@@ -119,7 +119,7 @@ create index idx_leads_created on public.leads(organization_id, created_at desc)
 -- ============================================================================
 
 create table if not exists public.conversations (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   lead_id           uuid not null references public.leads(id) on delete cascade,
   type              text not null
@@ -141,7 +141,7 @@ create index idx_conversations_created on public.conversations(lead_id, created_
 -- ============================================================================
 
 create table if not exists public.automations (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   workspace_id      uuid references public.workspaces(id) on delete set null,
   name              text not null,
@@ -164,7 +164,7 @@ create index idx_automations_org on public.automations(organization_id);
 -- ============================================================================
 
 create table if not exists public.integrations (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   provider          text not null
                     check (provider in ('openai','twilio','hubspot','gohighlevel','slack','n8n','sendgrid')),

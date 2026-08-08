@@ -7,7 +7,7 @@
 -- ============================================================================
 
 create table if not exists public.source_api_keys (
-  id                uuid primary key default uuid_generate_v4(),
+  id                uuid primary key default gen_random_uuid(),
   organization_id   uuid not null references public.organizations(id) on delete cascade,
   source            text not null
                     check (source in ('website','tally','n8n','api')),
