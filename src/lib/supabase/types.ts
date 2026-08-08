@@ -31,6 +31,60 @@
         };
         Relationships: [];
       };
+      legal_document_versions: {
+        Row: {
+          id: string;
+          document_type: "terms" | "privacy" | "marketing";
+          version: string;
+          title: string;
+          content: string;
+          effective_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          document_type: "terms" | "privacy" | "marketing";
+          version: string;
+          title: string;
+          content: string;
+          effective_at: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          document_type?: "terms" | "privacy" | "marketing";
+          version?: string;
+          title?: string;
+          content?: string;
+          effective_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      user_legal_consents: {
+        Row: {
+          id: string;
+          user_id: string;
+          document_id: string;
+          accepted_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          document_id: string;
+          accepted_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          document_id?: string;
+          accepted_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       organizations: {
         Row: {
           id: string;

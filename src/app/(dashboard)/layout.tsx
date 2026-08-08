@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import {
+  getSafeInternalPath,
+  hasCurrentLegalConsent,
+} from "@/lib/legal/consent";
 import { createClient, createServiceAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -31,6 +35,16 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser();
 
   if (user) {
+    const pathname = (await headers()).get("x-current-path") ?? "/dashboard";
+    if (!(await hasCurrentLegalConsent(supabase, user.id))) {
+      const consentPath = new URL(
+        "/legal/consent",
+        process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+      );
+      consentPath.searchParams.set("next", getSafeInternalPath(pathname));
+      redirect(consentPath.toString().replace(consentPath.origin, ""));
+    }
+
     const { data: memberships } = await supabase
       .from("memberships")
       .select("id")
@@ -67,8 +81,6 @@ export default async function DashboardLayout({
           await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
         if (aalData?.currentLevel !== "aal2") {
-          const pathname =
-            (await headers()).get("x-current-path") ?? "/dashboard";
           const mfaUrl = new URL(
             "/auth/mfa",
             process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",

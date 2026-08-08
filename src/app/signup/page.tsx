@@ -24,6 +24,7 @@ export default function SignupPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [legalConsentAccepted, setLegalConsentAccepted] = useState(false);
   const turnstileResetRef = useRef<(() => void) | null>(null);
 
   const resetCaptcha = () => {
@@ -38,6 +39,11 @@ export default function SignupPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
+      return;
+    }
+
+    if (!legalConsentAccepted) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
       return;
     }
 
@@ -125,7 +131,38 @@ export default function SignupPage() {
               </Alert>
             )}
 
-            <SocialAuth />
+            <label className="mb-6 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-secondary p-4 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={legalConsentAccepted}
+                onChange={(event) =>
+                  setLegalConsentAccepted(event.target.checked)
+                }
+                className="mt-0.5 size-4 rounded border-border accent-primary"
+              />
+              <span>
+                I agree to the{" "}
+                <Link
+                  href="/terms"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  className="font-medium text-primary hover:underline"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+
+            <SocialAuth
+              requireLegalConsent
+              legalConsentAccepted={legalConsentAccepted}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
@@ -172,7 +209,7 @@ export default function SignupPage() {
                 size="xl"
                 className="w-full shadow-lg shadow-primary/25"
                 loading={loading}
-                disabled={!captchaToken}
+                disabled={!captchaToken || !legalConsentAccepted}
               >
                 Create Free Account
                 <ArrowRight className="size-5" />
@@ -187,11 +224,6 @@ export default function SignupPage() {
                   }}
                 />
               </div>
-
-              <p className="text-center text-xs text-muted-foreground">
-                By signing up, you agree to our Terms of Service and Privacy
-                Policy.
-              </p>
             </form>
           </div>
 

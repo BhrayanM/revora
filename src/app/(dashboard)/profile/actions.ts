@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { hasCurrentLegalConsent } from "@/lib/legal/consent";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateProfile(formData: FormData) {
@@ -10,6 +11,9 @@ export async function updateProfile(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+  if (!(await hasCurrentLegalConsent(supabase, user.id))) {
+    return { error: "Current legal consent is required" };
+  }
 
   const full_name = formData.get("full_name") as string;
 
@@ -33,6 +37,9 @@ export async function changeEmail(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+  if (!(await hasCurrentLegalConsent(supabase, user.id))) {
+    return { error: "Current legal consent is required" };
+  }
 
   const newEmail = (formData.get("new_email") as string)?.trim().toLowerCase();
   if (!newEmail) return { error: "Email is required" };
