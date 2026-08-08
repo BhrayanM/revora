@@ -3,12 +3,9 @@
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import {
-  TurnstileWidget,
-  isTurnstileEnabled,
-} from "@/components/auth/turnstile";
+import { TurnstileWidget } from "@/components/auth/turnstile";
 import { BackgroundPattern } from "@/components/shared/background-pattern";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -24,7 +21,12 @@ export default function SignupPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaEnabled = isTurnstileEnabled();
+  const turnstileResetRef = useRef<(() => void) | null>(null);
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileResetRef.current?.();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -52,6 +54,7 @@ export default function SignupPage() {
     if (authError) {
       setError(authError.message);
       setLoading(false);
+      resetCaptcha();
     } else {
       setMessage("Check your email for the confirmation link.");
       setLoading(false);
@@ -162,17 +165,21 @@ export default function SignupPage() {
                 size="xl"
                 className="w-full shadow-lg shadow-primary/25"
                 loading={loading}
-                disabled={captchaEnabled && !captchaToken}
+                disabled={!captchaToken}
               >
                 Create Free Account
                 <ArrowRight className="size-5" />
               </Button>
 
-              {captchaEnabled && (
-                <div className="flex justify-center">
-                  <TurnstileWidget onVerify={setCaptchaToken} />
-                </div>
-              )}
+              <div className="flex justify-center">
+                <TurnstileWidget
+                  onVerify={setCaptchaToken}
+                  onExpire={resetCaptcha}
+                  onResetReady={(reset) => {
+                    turnstileResetRef.current = reset;
+                  }}
+                />
+              </div>
 
               <p className="text-center text-xs text-muted-foreground">
                 By signing up, you agree to our Terms of Service and Privacy

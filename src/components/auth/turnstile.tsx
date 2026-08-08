@@ -17,19 +17,19 @@ interface TurnstileWidgetProps {
   onVerify: (token: string) => void;
   onExpire?: () => void;
   onError?: (error: string) => void;
-  onReset?: (resetFn: () => void) => void;
+  onResetReady?: (resetFn: () => void) => void;
 }
 
 export function TurnstileWidget({
   onVerify,
   onExpire,
   onError,
-  onReset,
+  onResetReady,
 }: TurnstileWidgetProps) {
   const siteKey = getSiteKey();
   const ref = useRef<TurnstileInstance>(null);
   const [state, setState] = useState<
-    "loading" | "verified" | "expired" | "error"
+    "loading" | "verified" | "expired" | "error" | "unavailable"
   >("loading");
 
   const handleSuccess = useCallback(
@@ -59,10 +59,23 @@ export function TurnstileWidget({
   }, []);
 
   useEffect(() => {
-    if (onReset) onReset(reset);
-  }, [onReset, reset]);
+    if (onResetReady) onResetReady(reset);
+  }, [onResetReady, reset]);
 
-  if (!siteKey) return null;
+  if (!siteKey) {
+    return (
+      <div className="flex justify-center">
+        <div className="rounded-lg border border-border bg-surface-secondary px-4 py-3 text-center">
+          <p className="text-sm text-muted-foreground">
+            Security verification is temporarily unavailable.
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground/60">
+            Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex justify-center">
@@ -92,6 +105,7 @@ export function TurnstileWidget({
   );
 }
 
-export function isTurnstileEnabled(): boolean {
-  return getSiteKey() !== null;
+export function isTurnstileRequired(): boolean {
+  if (process.env.NODE_ENV === "development") return true;
+  return true;
 }

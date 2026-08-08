@@ -3,12 +3,9 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 
-import {
-  TurnstileWidget,
-  isTurnstileEnabled,
-} from "@/components/auth/turnstile";
+import { TurnstileWidget } from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +24,12 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaEnabled = isTurnstileEnabled();
+  const turnstileResetRef = useRef<(() => void) | null>(null);
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileResetRef.current?.();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,6 +46,7 @@ function LoginForm() {
     if (authError) {
       setError(authError.message);
       setLoading(false);
+      resetCaptcha();
     } else {
       router.push(redirect);
       router.refresh();
@@ -112,17 +115,21 @@ function LoginForm() {
           size="xl"
           className="w-full"
           loading={loading}
-          disabled={captchaEnabled && !captchaToken}
+          disabled={!captchaToken}
         >
           Sign In
         </Button>
       </form>
 
-      {captchaEnabled && (
-        <div className="mt-4">
-          <TurnstileWidget onVerify={setCaptchaToken} />
-        </div>
-      )}
+      <div className="mt-4">
+        <TurnstileWidget
+          onVerify={setCaptchaToken}
+          onExpire={resetCaptcha}
+          onResetReady={(reset) => {
+            turnstileResetRef.current = reset;
+          }}
+        />
+      </div>
 
       <p className="mt-3 text-center">
         <Link
