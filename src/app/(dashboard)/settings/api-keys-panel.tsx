@@ -112,9 +112,9 @@ export function APIKeysPanel() {
 
       {keys.length === 0 && !showCreate ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Key className="size-8 text-muted mb-3" />
+          <Key className="size-8 text-muted-foreground mb-3" />
           <p className="text-sm text-muted-foreground">No API keys yet</p>
-          <p className="text-xs text-muted mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Create your first key to start ingesting leads
           </p>
         </div>

@@ -16,7 +16,7 @@ export default function NotificationsPage() {
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-16 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-secondary">
-            <BellOff className="size-6 text-muted" />
+            <BellOff className="size-6 text-muted-foreground" />
           </div>
           <h3 className="mt-4 text-sm font-semibold text-foreground">
             No notifications yet

@@ -90,6 +90,7 @@
 
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -116,7 +117,7 @@
 }
 
 :root {
-  --canvas: #f8f9fb;
+  --canvas: #f2f4f7;
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
@@ -125,7 +126,8 @@
   --border: #e2e8f0;
   --border-strong: #cbd5e1;
   --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  --muted-foreground: #475569;
+  --subtle: #94a3b8;
 }
 
 .dark {
@@ -139,6 +141,7 @@
   --border-strong: #475569;
   --muted: #334155;
   --muted-foreground: #94a3b8;
+  --subtle: #64748b;
 }
 
 @keyframes fade-in {

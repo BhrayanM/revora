@@ -59,7 +59,7 @@ export default async function PipelinePage() {
           </div>
         </div>
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <Layers className="size-12 text-muted mb-4" />
+          <Layers className="size-12 text-muted-foreground mb-4" />
           <p className="text-sm font-medium text-foreground">
             No pipeline configured
           </p>

@@ -56,11 +56,11 @@ export default async function AutomationPage() {
         <CardContent className="p-0">
           {!executions || executions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Activity className="size-8 text-muted mb-3" />
+              <Activity className="size-8 text-muted-foreground mb-3" />
               <p className="text-sm text-muted-foreground">
                 No automation activity yet
               </p>
-              <p className="text-xs text-muted mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Activity will appear here when automations run
               </p>
             </div>

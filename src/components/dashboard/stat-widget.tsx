@@ -43,7 +43,7 @@ export function StatWidget({
             {isPositive ? "+" : ""}
             {change}%
           </Badge>
-          <span className="text-xs text-muted">{changeLabel}</span>
+          <span className="text-xs text-muted-foreground">{changeLabel}</span>
         </div>
       </CardContent>
     </Card>

@@ -133,11 +133,11 @@ export function ProfileContent({ profile }: { profile: Profile }) {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Bell className="size-8 text-muted mb-3" />
+                <Bell className="size-8 text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
                   Notification preferences coming soon
                 </p>
-                <p className="text-xs text-muted mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Email and AI digest settings will be available in a future
                   update.
                 </p>

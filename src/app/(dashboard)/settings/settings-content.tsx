@@ -177,7 +177,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
 
           {activeSection === "notifications" && (
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Bell className="size-8 text-muted mb-3" />
+              <Bell className="size-8 text-muted-foreground mb-3" />
               <p className="text-sm text-muted-foreground">
                 Notification preferences coming soon
               </p>
@@ -186,7 +186,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
 
           {activeSection === "security" && (
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Shield className="size-8 text-muted mb-3" />
+              <Shield className="size-8 text-muted-foreground mb-3" />
               <p className="text-sm text-muted-foreground">
                 Security settings coming soon
               </p>

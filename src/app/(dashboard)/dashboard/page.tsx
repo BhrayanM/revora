@@ -120,11 +120,11 @@ export default async function DashboardPage() {
           <CardContent>
             {!orgId ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Users className="size-10 text-muted mb-3" />
+                <Users className="size-10 text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
                   No organization found
                 </p>
-                <p className="text-xs text-muted mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Please contact support
                 </p>
               </div>
@@ -132,11 +132,11 @@ export default async function DashboardPage() {
               <BarChart data={donutData} height={240} />
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
-                <BarChart3 className="size-10 text-muted mb-3" />
+                <BarChart3 className="size-10 text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
                   No pipeline data yet
                 </p>
-                <p className="text-xs text-muted mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   Add leads to see your pipeline stats
                 </p>
               </div>
