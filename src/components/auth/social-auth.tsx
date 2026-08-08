@@ -17,7 +17,7 @@ type ProviderConfig = {
   icon: typeof GoogleIcon;
 };
 
-const providers: ProviderConfig[] = [
+const allProviders: ProviderConfig[] = [
   { provider: "google", label: "Continue with Google", icon: GoogleIcon },
   { provider: "apple", label: "Continue with Apple", icon: AppleIcon },
   {
@@ -27,9 +27,30 @@ const providers: ProviderConfig[] = [
   },
 ];
 
+function getEnabledProviders(): {
+  enabled: ProviderConfig[];
+  hasSocialAuth: boolean;
+} {
+  const raw = process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "google";
+  const enabled = raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter((s): s is OAuthProvider =>
+      ["google", "apple", "azure"].includes(s),
+    );
+
+  return {
+    enabled: allProviders.filter((p) => enabled.includes(p.provider)),
+    hasSocialAuth: enabled.length > 0,
+  };
+}
+
 export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
   const [loading, setLoading] = useState<OAuthProvider | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { enabled, hasSocialAuth } = getEnabledProviders();
+
+  if (!hasSocialAuth) return null;
 
   const handleSignIn = async (provider: OAuthProvider) => {
     setLoading(provider);
@@ -58,7 +79,7 @@ export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
         </Alert>
       )}
 
-      {providers.map(({ provider, label, icon: Icon }) => (
+      {enabled.map(({ provider, label, icon: Icon }) => (
         <Button
           key={provider}
           type="button"
@@ -73,6 +94,17 @@ export function SocialAuth({ returnTo = "/dashboard" }: { returnTo?: string }) {
           {label}
         </Button>
       ))}
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-surface px-2 text-muted-foreground">
+            or continue with email
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
