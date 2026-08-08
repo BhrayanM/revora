@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient, createServiceAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Dashboard — AI Growth Platform",
@@ -38,7 +38,7 @@ export default async function DashboardLayout({
       .limit(1);
 
     if (!memberships || memberships.length === 0) {
-      const svc = await createServiceClient();
+      const svc = await createServiceAdminClient();
       const orgName =
         (user.user_metadata["full_name"] as string) ??
         user.email?.split("@")[0] ??
