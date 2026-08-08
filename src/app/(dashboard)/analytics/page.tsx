@@ -74,7 +74,7 @@ export default async function AnalyticsPage() {
   const donutData = (pipeline?.stages ?? []).map((s) => ({
     label: s.stageName,
     value: s.count,
-    color: stageColors[s.stageName] ?? "rgb(99 102 241)",
+    color: stageColors[s.stageName] ?? "var(--color-primary)",
   }));
 
   const hasPipeline =

@@ -83,20 +83,28 @@
   --color-error-900: #7f1d1d;
 
   --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
   --color-surface-secondary: var(--surface-secondary);
   --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-hover: var(--surface-hover);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-input-border: var(--input-border);
+  --color-accent-surface: var(--accent-surface);
 
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-subtle: var(--subtle);
+  --color-subtle-foreground: var(--subtle);
 
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-muted: var(--sidebar-muted);
   --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-hover: var(--sidebar-hover);
   --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-surface: var(--sidebar-active-surface);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -123,43 +131,59 @@
 }
 
 :root {
-  --canvas: #eef0f3;
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --surface: #ffffff;
-  --surface-secondary: #f7f8fa;
-  --surface-tertiary: #f0f2f5;
-  --border: #e2e5ea;
-  --border-strong: #cdd1d8;
-  --muted: #f1f3f6;
-  --muted-foreground: #5a6270;
-  --subtle: #99a1af;
+  color-scheme: light;
+  --canvas: #f3f4f7;
+  --background: #f8f9fb;
+  --foreground: #182132;
+  --surface: #fcfcfd;
+  --surface-elevated: #ffffff;
+  --surface-secondary: #f5f6f8;
+  --surface-tertiary: #eceef2;
+  --surface-hover: #f0f2f6;
+  --border: rgb(24 33 50 / 0.11);
+  --border-strong: #cfd4dc;
+  --input: #ffffff;
+  --input-border: #d9dde4;
+  --accent-surface: #eeefff;
+  --muted: #f0f2f5;
+  --muted-foreground: #5c6676;
+  --subtle: #8b94a3;
 
-  --sidebar: #151820;
-  --sidebar-foreground: #e4e7ee;
-  --sidebar-muted: #7c8396;
-  --sidebar-border: #232734;
-  --sidebar-active: #6366f1;
+  --sidebar: #fbfcfe;
+  --sidebar-foreground: #1f2937;
+  --sidebar-muted: #657184;
+  --sidebar-border: #e1e5ec;
+  --sidebar-hover: #f0f2f6;
+  --sidebar-active: #5d5ee8;
+  --sidebar-active-surface: #eeefff;
 }
 
 .dark {
-  --canvas: #0a0f1a;
-  --background: #0f172a;
-  --foreground: #f1f5f9;
-  --surface: #1e293b;
-  --surface-secondary: #334155;
-  --surface-tertiary: #475569;
-  --border: #334155;
-  --border-strong: #475569;
-  --muted: #334155;
-  --muted-foreground: #94a3b8;
-  --subtle: #64748b;
+  color-scheme: dark;
+  --canvas: #0f1115;
+  --background: #111318;
+  --foreground: #f5f7fa;
+  --surface: #15181e;
+  --surface-elevated: #191d24;
+  --surface-secondary: #1b1f27;
+  --surface-tertiary: #242934;
+  --surface-hover: #20252e;
+  --border: rgb(245 247 250 / 0.1);
+  --border-strong: rgb(245 247 250 / 0.18);
+  --input: #191d24;
+  --input-border: #2b313c;
+  --accent-surface: #29284e;
+  --muted: #1b1f27;
+  --muted-foreground: #a7afbd;
+  --subtle: #747d8c;
 
-  --sidebar: #0d1117;
-  --sidebar-foreground: #c9d1d9;
-  --sidebar-muted: #6e7681;
-  --sidebar-border: #21262d;
-  --sidebar-active: #818cf8;
+  --sidebar: #0b0d11;
+  --sidebar-foreground: #e8ebf0;
+  --sidebar-muted: #98a1af;
+  --sidebar-border: rgb(245 247 250 / 0.08);
+  --sidebar-hover: #171b22;
+  --sidebar-active: #9b9cff;
+  --sidebar-active-surface: #28274f;
 }
 
 @keyframes fade-in {
@@ -207,10 +231,12 @@
 @keyframes pulse-glow {
   0%,
   100% {
-    box-shadow: 0 0 20px rgb(99 102 241 / 0.3);
+    box-shadow: 0 0 20px
+      color-mix(in srgb, var(--color-primary) 30%, transparent);
   }
   50% {
-    box-shadow: 0 0 40px rgb(99 102 241 / 0.5);
+    box-shadow: 0 0 40px
+      color-mix(in srgb, var(--color-primary) 50%, transparent);
   }
 }
 
@@ -229,6 +255,11 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 24%, transparent);
+  color: var(--foreground);
 }
 
 * {

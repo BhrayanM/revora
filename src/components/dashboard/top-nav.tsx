@@ -4,6 +4,8 @@ import type { User } from "@supabase/supabase-js";
 import { Bell, Menu, Search } from "lucide-react";
 import Link from "next/link";
 
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+
 interface TopNavProps {
   onMenuClick?: () => void;
   user: User | null;
@@ -30,7 +32,7 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-canvas/95 backdrop-blur-md px-4 sm:px-6">
       <button
         onClick={onMenuClick}
-        className="rounded-lg p-1.5 text-muted-foreground hover:bg-surface-secondary hover:text-foreground lg:hidden transition-colors"
+        className="rounded-lg p-1.5 text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:hidden"
         aria-label="Open menu"
       >
         <Menu className="size-5" />
@@ -55,8 +57,13 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
       <div className="flex-1 sm:hidden" />
 
       <div className="flex items-center gap-1.5">
+        <ThemeToggle />
+
         <Link href="/notifications" className="relative">
-          <button className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-secondary hover:text-foreground transition-colors">
+          <button
+            type="button"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          >
             <Bell className="size-4" />
           </button>
         </Link>

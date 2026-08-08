@@ -33,7 +33,7 @@ export function Hero() {
             With AI
           </h1>
 
-          <p className="mt-6 text-lg leading-8 text-zinc-600 sm:text-xl">
+          <p className="mt-6 text-lg leading-8 text-muted-foreground sm:text-xl">
             Qualify leads, book appointments, and automate multi-channel
             outreach — all powered by AI. The only platform that connects your
             CRM, marketing, and sales in one intelligent workflow.
@@ -52,7 +52,7 @@ export function Hero() {
             </Button>
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-zinc-500">
+          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <CreditCard className="size-4 text-success" />
               No credit card required
@@ -76,7 +76,7 @@ export function Hero() {
                 <div className="size-2.5 rounded-full bg-error/60" />
                 <div className="size-2.5 rounded-full bg-warning/60" />
                 <div className="size-2.5 rounded-full bg-success/60" />
-                <span className="ml-2 text-xs text-zinc-500">
+                <span className="ml-2 text-xs text-muted-foreground">
                   AI Growth Platform — Dashboard
                 </span>
               </div>
@@ -87,26 +87,28 @@ export function Hero() {
                       label: "Total Leads",
                       value: "2,847",
                       trend: "+12.5%",
-                      color: "#6366f1",
+                      color: "var(--color-primary)",
                     },
                     {
                       label: "Qualified",
                       value: "1,423",
                       trend: "+23.1%",
-                      color: "#10b981",
+                      color: "var(--color-success)",
                     },
                     {
                       label: "Conv. Rate",
                       value: "24.8%",
                       trend: "+8.7%",
-                      color: "#8b5cf6",
+                      color: "var(--color-accent)",
                     },
                   ].map((stat) => (
                     <div
                       key={stat.label}
                       className="rounded-lg border border-border bg-surface-secondary p-4"
                     >
-                      <p className="text-xs text-zinc-500">{stat.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {stat.label}
+                      </p>
                       <p className="mt-1 text-xl font-bold text-foreground">
                         {stat.value}
                       </p>
@@ -138,23 +140,25 @@ export function Hero() {
                   ))}
                 </div>
                 <div className="mt-4 rounded-lg border border-border bg-surface-secondary p-3">
-                  <p className="text-xs text-zinc-500">Recent Activity</p>
+                  <p className="text-xs text-muted-foreground">
+                    Recent Activity
+                  </p>
                   <div className="mt-2 space-y-1.5">
                     {[
                       {
                         text: "Sarah Johnson qualified as lead",
                         time: "2m ago",
-                        dot: "#10b981",
+                        dot: "var(--color-success)",
                       },
                       {
                         text: "Email sequence sent to Marcus Lee",
                         time: "15m ago",
-                        dot: "#6366f1",
+                        dot: "var(--color-primary)",
                       },
                       {
                         text: "Meeting booked with David Park",
                         time: "1h ago",
-                        dot: "#f59e0b",
+                        dot: "var(--color-warning)",
                       },
                     ].map((item) => (
                       <div
@@ -165,10 +169,10 @@ export function Hero() {
                           className="size-1.5 rounded-full shrink-0"
                           style={{ backgroundColor: item.dot }}
                         />
-                        <span className="text-zinc-600 truncate">
+                        <span className="truncate text-muted-foreground">
                           {item.text}
                         </span>
-                        <span className="text-zinc-400 shrink-0 ml-auto">
+                        <span className="ml-auto shrink-0 text-subtle">
                           {item.time}
                         </span>
                       </div>

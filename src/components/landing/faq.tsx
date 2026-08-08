@@ -58,7 +58,7 @@ export function FAQ() {
                   {faq.question}
                 </span>
                 <svg
-                  className="size-5 shrink-0 text-zinc-500 transition-transform duration-200 group-open:rotate-180"
+                  className="size-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -71,7 +71,7 @@ export function FAQ() {
                   />
                 </svg>
               </summary>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
                 {faq.answer}
               </p>
             </details>

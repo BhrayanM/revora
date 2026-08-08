@@ -39,7 +39,7 @@ export function Demo() {
               </span>{" "}
               Your Sales
             </h2>
-            <p className="mt-4 text-lg text-zinc-600">
+            <p className="mt-4 text-lg text-muted-foreground">
               See how our AI automatically qualifies leads, sends personalized
               outreach, and books meetings — all without human intervention.
             </p>
@@ -53,7 +53,7 @@ export function Demo() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-center gap-2 text-sm text-zinc-700"
+                  className="flex items-center gap-2 text-sm text-foreground"
                 >
                   <CheckCircle2 className="size-4 text-success shrink-0" />
                   {item}
@@ -103,7 +103,7 @@ export function Demo() {
                     </div>
                   ))}
                   <div className="flex items-center justify-between rounded-lg bg-success/5 border border-success/20 p-4">
-                    <span className="text-sm font-medium text-success-700">
+                    <span className="text-sm font-medium text-success">
                       AI Active — Processing Leads
                     </span>
                     <div className="flex gap-1">

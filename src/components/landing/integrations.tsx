@@ -41,7 +41,7 @@ export function Integrations() {
               Entire Stack
             </span>
           </h2>
-          <p className="mt-4 text-lg text-zinc-600">
+          <p className="mt-4 text-lg text-muted-foreground">
             AI Growth Platform integrates with the tools you already use. One
             click setup, zero maintenance.
           </p>
@@ -68,7 +68,7 @@ export function Integrations() {
                     <p className="text-sm font-medium text-foreground">
                       {integration.name}
                     </p>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-muted-foreground">
                       {integration.category}
                     </p>
                   </div>
@@ -78,7 +78,7 @@ export function Integrations() {
           ))}
         </div>
         <div className="mt-12 text-center">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             100+ integrations available.{" "}
             <span className="text-primary font-medium">
               See all integrations →

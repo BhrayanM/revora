@@ -63,7 +63,7 @@ export function Footer() {
               </div>
               <span className="text-foreground">AI Growth</span>
             </Link>
-            <p className="mt-4 max-w-sm text-sm text-zinc-600">
+            <p className="mt-4 max-w-sm text-sm text-muted-foreground">
               End-to-End AI Business Automation Platform. Qualify leads, book
               appointments, and automate your growth.
             </p>
@@ -90,7 +90,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-zinc-600 transition-colors hover:text-foreground"
+                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                     >
                       {link.label}
                     </Link>
@@ -107,7 +107,7 @@ export function Footer() {
               <h3 className="text-sm font-semibold text-foreground">
                 Stay in the loop
               </h3>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-muted-foreground">
                 Get product updates and AI automation tips.
               </p>
             </div>
@@ -123,7 +123,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-border pt-8">
-          <p className="text-center text-xs text-zinc-500">
+          <p className="text-center text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} AI Growth Platform. All rights
             reserved.
           </p>

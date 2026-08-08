@@ -64,7 +64,7 @@ export function AIWorkflow() {
               Growth Engine
             </span>
           </h2>
-          <p className="mt-4 text-lg text-zinc-600">
+          <p className="mt-4 text-lg text-muted-foreground">
             From first touch to closed deal — our intelligent automation handles
             every step of your sales process.
           </p>
@@ -89,14 +89,14 @@ export function AIWorkflow() {
                       >
                         <step.icon className="size-6" />
                         {index < steps.length - 1 && (
-                          <ArrowRight className="absolute -bottom-8 size-5 text-zinc-300 rotate-90 lg:hidden" />
+                          <ArrowRight className="absolute -bottom-8 size-5 rotate-90 text-subtle lg:hidden" />
                         )}
                       </div>
                       <div className="lg:text-right">
                         <h3 className="text-lg font-semibold text-foreground">
                           {step.title}
                         </h3>
-                        <p className="mt-1 text-sm text-zinc-600">
+                        <p className="mt-1 text-sm text-muted-foreground">
                           {step.description}
                         </p>
                       </div>
@@ -104,7 +104,7 @@ export function AIWorkflow() {
                   </div>
                   <div className="hidden lg:flex lg:w-1/2 lg:items-center">
                     <div className="h-px w-12 bg-gradient-to-r from-primary/30 to-transparent" />
-                    <span className="mx-3 text-xs font-medium text-zinc-500">
+                    <span className="mx-3 text-xs font-medium text-muted-foreground">
                       STEP {index + 1}
                     </span>
                   </div>

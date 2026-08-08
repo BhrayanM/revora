@@ -22,7 +22,7 @@ export function CTA() {
             </span>{" "}
             Your Growth?
           </h2>
-          <p className="mt-4 text-lg text-zinc-600">
+          <p className="mt-4 text-lg text-muted-foreground">
             Join thousands of businesses using AI Growth Platform to qualify
             more leads, book more meetings, and close more deals.
           </p>
@@ -37,7 +37,7 @@ export function CTA() {
               Schedule a Demo
             </Button>
           </div>
-          <p className="mt-6 text-sm text-zinc-500">
+          <p className="mt-6 text-sm text-muted-foreground">
             No credit card required. Cancel anytime. Set up in minutes.
           </p>
         </div>

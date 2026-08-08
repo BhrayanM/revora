@@ -71,11 +71,11 @@ export function Testimonials() {
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Star
                         key={i}
-                        className={`size-5 ${i < testimonial.rating ? "fill-warning text-warning" : "fill-zinc-200 text-zinc-200"}`}
+                        className={`size-5 ${i < testimonial.rating ? "fill-warning text-warning" : "fill-surface-tertiary text-surface-tertiary"}`}
                       />
                     ))}
                   </div>
-                  <blockquote className="text-base leading-relaxed text-zinc-700">
+                  <blockquote className="text-base leading-relaxed text-foreground">
                     &ldquo;{testimonial.content}&rdquo;
                   </blockquote>
                   <div className="mt-6 flex items-center gap-3">
@@ -86,7 +86,7 @@ export function Testimonials() {
                       <p className="text-sm font-semibold text-foreground">
                         {testimonial.name}
                       </p>
-                      <p className="text-xs text-zinc-500">
+                      <p className="text-xs text-muted-foreground">
                         {testimonial.role}, {testimonial.company}
                       </p>
                     </div>

@@ -80,7 +80,7 @@ export function Features() {
               Scale
             </span>
           </h2>
-          <p className="mt-4 text-lg text-zinc-600">
+          <p className="mt-4 text-lg text-muted-foreground">
             From lead capture to closed deals — our AI platform handles the
             heavy lifting so your team can focus on what matters.
           </p>
@@ -103,7 +103,7 @@ export function Features() {
                   <h3 className="mt-4 text-base font-semibold text-foreground">
                     {feature.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     {feature.description}
                   </p>
                 </CardContent>

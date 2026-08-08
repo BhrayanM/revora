@@ -145,14 +145,14 @@ export function Sidebar({
         >
           <button
             onClick={onMobileClose}
-            className="rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground lg:hidden"
+            className="rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar lg:hidden"
             aria-label="Close sidebar"
           >
             <X className="size-4" />
           </button>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground transition-colors lg:block"
+            className="hidden rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar lg:block"
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
@@ -210,10 +210,10 @@ export function Sidebar({
                     href={item.href}
                     onClick={onMobileClose}
                     className={cn(
-                      "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                      "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                       isActive
-                        ? "bg-sidebar-active/15 text-sidebar-active"
-                        : "text-sidebar-muted hover:bg-white/4 hover:text-sidebar-foreground",
+                        ? "bg-sidebar-active-surface text-sidebar-active"
+                        : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground",
                       collapsed && "justify-center px-2",
                     )}
                   >
@@ -259,7 +259,7 @@ export function Sidebar({
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-error transition-colors"
+              className="rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-error focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
               aria-label="Sign out"
               title="Sign out"
             >
@@ -273,7 +273,7 @@ export function Sidebar({
             </div>
             <button
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-sidebar-muted hover:bg-white/5 hover:text-error transition-colors"
+              className="rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-error focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
               aria-label="Sign out"
             >
               <LogOut className="size-3.5" />
