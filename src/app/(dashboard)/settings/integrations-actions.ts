@@ -1,7 +1,7 @@
 "use server";
 
-import { getCurrentOrganization } from "@/lib/auth";
-import { createServiceClient } from "@/lib/supabase/server";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 const VALID_PROVIDERS = [
   "hubspot",
@@ -15,10 +15,13 @@ const VALID_PROVIDERS = [
 type Provider = (typeof VALID_PROVIDERS)[number];
 
 export async function getOrganizationIntegrations() {
-  const org = await getCurrentOrganization();
-  if (!org) return { data: null, error: "No organization found" };
+  const authorization =
+    await requireCurrentOrganizationPermission("integrations.read");
+  if (!authorization.data) return { data: null, error: authorization.error };
 
-  const supabase = await createServiceClient();
+  const org = authorization.data.organization;
+
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("integrations")
     .select("provider, is_active, config, created_at, updated_at")
@@ -29,14 +32,17 @@ export async function getOrganizationIntegrations() {
 }
 
 export async function getIntegration(provider: Provider) {
-  const org = await getCurrentOrganization();
-  if (!org) return { data: null, error: "No organization found" };
+  const authorization =
+    await requireCurrentOrganizationPermission("integrations.read");
+  if (!authorization.data) return { data: null, error: authorization.error };
+
+  const org = authorization.data.organization;
 
   if (!VALID_PROVIDERS.includes(provider)) {
     return { data: null, error: `Invalid provider: ${provider}` };
   }
 
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("integrations")
     .select("provider, is_active, config, created_at, updated_at")
@@ -52,13 +58,17 @@ export async function saveIntegration(
   provider: Provider,
   credentials: Record<string, unknown>,
 ) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  const org = authorization.data.organization;
   if (!VALID_PROVIDERS.includes(provider)) {
     return { error: `Invalid provider: ${provider}` };
   }
 
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("integrations").upsert(
     {
       organization_id: org.id,
@@ -74,10 +84,14 @@ export async function saveIntegration(
 }
 
 export async function deleteIntegration(provider: Provider) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
 
-  const supabase = await createServiceClient();
+  const org = authorization.data.organization;
+
+  const supabase = await createClient();
   const { error } = await supabase
     .from("integrations")
     .delete()
@@ -89,10 +103,14 @@ export async function deleteIntegration(provider: Provider) {
 }
 
 export async function testIntegration(provider: Provider) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
 
-  const supabase = await createServiceClient();
+  const org = authorization.data.organization;
+
+  const supabase = await createClient();
   const { data } = await supabase
     .from("integrations")
     .select("credentials")

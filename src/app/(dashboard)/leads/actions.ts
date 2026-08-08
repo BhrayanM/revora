@@ -2,12 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getCurrentOrganization } from "@/lib/auth";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { createLead, deleteLead, getLeadById } from "@/lib/queries/leads";
 
 export async function addLead(formData: FormData) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization =
+    await requireCurrentOrganizationPermission("leads.write");
+  if (!authorization.data) return { error: authorization.error };
+
+  const org = authorization.data.organization;
 
   const first_name = formData.get("first_name") as string;
   const last_name = formData.get("last_name") as string;
@@ -37,8 +40,11 @@ export async function addLead(formData: FormData) {
 }
 
 export async function removeLead(id: string) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "Unauthorized" };
+  const authorization =
+    await requireCurrentOrganizationPermission("leads.write");
+  if (!authorization.data) return { error: authorization.error };
+
+  const org = authorization.data.organization;
 
   const { data: lead, error: lookupError } = await getLeadById(id);
   if (lookupError || !lead) return { error: "Lead not found" };
