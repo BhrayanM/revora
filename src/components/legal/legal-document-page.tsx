@@ -32,9 +32,10 @@ export async function LegalDocumentPage({
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Effective{" "}
-          {new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(
-            new Date(document.effective_at),
-          )}
+          {new Intl.DateTimeFormat("en-US", {
+            dateStyle: "long",
+            timeZone: "UTC",
+          }).format(new Date(document.effective_at))}
         </p>
         <div className="mt-10 whitespace-pre-line text-sm leading-7 text-muted-foreground">
           {document.content}
