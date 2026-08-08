@@ -14,11 +14,41 @@ interface SlackAlertPayload {
   lead_url?: string;
 }
 
+const ALLOWED_SLACK_ORIGIN = "https://hooks.slack.com";
+
+function isSlackWebhookUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return (
+      parsed.origin === ALLOWED_SLACK_ORIGIN &&
+      parsed.pathname.startsWith("/services/") &&
+      parsed.protocol === "https:"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function escapeSlackMrkdwn(text: string): string {
+  return text.replace(/[<>&]/g, (ch) => {
+    if (ch === "<") return "&lt;";
+    if (ch === ">") return "&gt;";
+    if (ch === "&") return "&amp;";
+    return ch;
+  });
+}
+
 export async function sendHOTLeadAlert(
   webhookUrl: string,
   lead: SlackAlertPayload,
 ): Promise<{ success: boolean; error?: string }> {
-  const url = lead.lead_url ? `<${lead.lead_url}|View in Dashboard>` : "—";
+  if (!isSlackWebhookUrl(webhookUrl)) {
+    return { success: false, error: "Invalid Slack webhook URL" };
+  }
+
+  const url = lead.lead_url
+    ? `<${escapeSlackMrkdwn(lead.lead_url)}|View in Dashboard>`
+    : "—";
 
   const blocks = [
     {
@@ -35,25 +65,40 @@ export async function sendHOTLeadAlert(
       fields: [
         {
           type: "mrkdwn",
-          text: `*Name:* ${lead.first_name} ${lead.last_name}`,
+          text: `*Name:* ${escapeSlackMrkdwn(lead.first_name)} ${escapeSlackMrkdwn(lead.last_name)}`,
         },
         { type: "mrkdwn", text: `*Score:* ${lead.score}/100` },
-        { type: "mrkdwn", text: `*Email:* ${lead.email ?? "—"}` },
-        { type: "mrkdwn", text: `*Phone:* ${lead.phone ?? "—"}` },
-        { type: "mrkdwn", text: `*Company:* ${lead.company ?? "—"}` },
-        { type: "mrkdwn", text: `*Source:* ${lead.source}` },
+        {
+          type: "mrkdwn",
+          text: `*Email:* ${escapeSlackMrkdwn(lead.email ?? "—")}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `*Phone:* ${escapeSlackMrkdwn(lead.phone ?? "—")}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `*Company:* ${escapeSlackMrkdwn(lead.company ?? "—")}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `*Source:* ${escapeSlackMrkdwn(lead.source)}`,
+        },
       ],
     },
     { type: "divider" },
     {
       type: "section",
-      text: { type: "mrkdwn", text: `*Summary:* ${lead.summary}` },
+      text: {
+        type: "mrkdwn",
+        text: `*Summary:* ${escapeSlackMrkdwn(lead.summary)}`,
+      },
     },
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*Recommended Action:* ${lead.recommendedAction}`,
+        text: `*Recommended Action:* ${escapeSlackMrkdwn(lead.recommendedAction)}`,
       },
     },
     { type: "divider" },
