@@ -3,12 +3,9 @@
 import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import {
-  TurnstileWidget,
-  isTurnstileEnabled,
-} from "@/components/auth/turnstile";
+import { TurnstileWidget } from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +17,12 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const captchaEnabled = isTurnstileEnabled();
+  const turnstileResetRef = useRef<(() => void) | null>(null);
+
+  const resetCaptcha = () => {
+    setCaptchaToken(null);
+    turnstileResetRef.current?.();
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -42,6 +44,7 @@ export default function ForgotPasswordPage() {
 
     if (resetError) {
       setError(resetError.message);
+      resetCaptcha();
     } else {
       setSent(true);
     }
@@ -82,32 +85,38 @@ export default function ForgotPasswordPage() {
           )}
 
           {!sent && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                inputSize="lg"
-                required
-              />
-              <Button
-                type="submit"
-                size="xl"
-                className="w-full"
-                loading={loading}
-                disabled={captchaEnabled && !captchaToken}
-              >
-                Send Reset Link
-              </Button>
-            </form>
-          )}
+            <>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@company.com"
+                  inputSize="lg"
+                  required
+                />
+                <Button
+                  type="submit"
+                  size="xl"
+                  className="w-full"
+                  loading={loading}
+                  disabled={!captchaToken}
+                >
+                  Send Reset Link
+                </Button>
+              </form>
 
-          {captchaEnabled && !sent && (
-            <div className="mt-4">
-              <TurnstileWidget onVerify={setCaptchaToken} />
-            </div>
+              <div className="mt-4">
+                <TurnstileWidget
+                  onVerify={setCaptchaToken}
+                  onExpire={resetCaptcha}
+                  onResetReady={(reset) => {
+                    turnstileResetRef.current = reset;
+                  }}
+                />
+              </div>
+            </>
           )}
 
           {sent && (
@@ -116,7 +125,10 @@ export default function ForgotPasswordPage() {
                 variant="outline"
                 size="lg"
                 className="w-full"
-                onClick={() => setSent(false)}
+                onClick={() => {
+                  setSent(false);
+                  resetCaptcha();
+                }}
               >
                 Send another
               </Button>
