@@ -2,6 +2,21 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+async function requireAal2(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (data?.currentLevel !== "aal2") {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const hasVerified = factors?.all?.some(
+      (f: { status: string }) => f.status === "verified",
+    );
+    if (hasVerified) {
+      return "MFA verification required for this action. Please verify your identity.";
+    }
+  }
+  return null;
+}
+
 export async function enrollTotp() {
   const supabase = await createClient();
   const {
@@ -48,6 +63,9 @@ export async function verifyTotpEnrollment(factorId: string, code: string) {
 }
 
 export async function unenrollTotp(factorId: string) {
+  const aalError = await requireAal2();
+  if (aalError) return { error: aalError };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -68,45 +86,18 @@ export async function listFactors() {
 
   const { data, error } = await supabase.auth.mfa.listFactors();
   if (error) return { error: error.message };
-  return { data: { enrolled: data.all.length > 0, factors: data.all } };
-}
-
-export async function generateBackupCodes() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user)
-    return { error: "Not authenticated", codes: null as string[] | null };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: codes, error } = await (supabase.rpc as any)(
-    "generate_backup_codes",
-    {
-      p_profile_id: user.id,
-      p_count: 10,
+  const verifiedFactors =
+    data?.all?.filter((f: { status: string }) => f.status === "verified") ?? [];
+  return {
+    data: {
+      enrolled: verifiedFactors.length > 0,
+      factors: data?.all ?? [],
     },
-  );
-
-  if (error) return { error: error.message, codes: null };
-  return { error: null, codes: codes as string[] };
+  };
 }
 
-export async function countBackupCodes() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "Not authenticated", count: 0 };
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)("count_backup_codes", {
-    p_profile_id: user.id,
-  });
-
-  if (error) return { error: error.message, count: 0 };
-  return { error: null, count: data as number };
-}
+// Backup code RPCs — disabled pending proper recovery architecture (Model A).
+// The schema and RPCs exist but the UI marks them as not yet active.
 
 export async function verifyMfaChallenge(factorId: string, code: string) {
   const supabase = await createClient();

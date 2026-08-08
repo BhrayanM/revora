@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -52,6 +54,28 @@ export default async function DashboardLayout({
 
       if (rpcError) {
         console.error("Layout onboarding RPC error:", rpcError.message);
+      }
+    }
+
+    // MFA gate: if user has enrolled MFA but session is AAL1, redirect to challenge
+    if (user.factors && user.factors.length > 0) {
+      const hasVerifiedFactor = user.factors.some(
+        (f) => f.status === "verified",
+      );
+      if (hasVerifiedFactor) {
+        const { data: aalData } =
+          await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+        if (aalData?.currentLevel !== "aal2") {
+          const pathname =
+            (await headers()).get("x-current-path") ?? "/dashboard";
+          const mfaUrl = new URL(
+            "/auth/mfa",
+            process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+          );
+          mfaUrl.searchParams.set("redirect", pathname);
+          redirect(mfaUrl.toString().replace(mfaUrl.origin, ""));
+        }
       }
     }
   }

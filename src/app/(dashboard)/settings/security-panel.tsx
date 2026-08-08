@@ -2,8 +2,6 @@
 
 import {
   CheckCircle2,
-  Copy,
-  Download,
   Key,
   LogOut,
   QrCode,
@@ -24,9 +22,7 @@ import { changeEmail } from "../profile/actions";
 
 import { changePassword, signOutSessions } from "./actions";
 import {
-  countBackupCodes,
   enrollTotp,
-  generateBackupCodes,
   listFactors,
   unenrollTotp,
   verifyTotpEnrollment,
@@ -84,7 +80,7 @@ export function SecurityPanel() {
         <ChangePasswordSection />
         <ChangeEmailSection />
         <MfaSection />
-        <BackupCodesSection />
+        <RecoverySection />
         <PhoneSection />
         <RecoveryEmailSection />
         <SessionSection />
@@ -95,15 +91,12 @@ export function SecurityPanel() {
 
 function AccountProtection() {
   const [mfaActive, setMfaActive] = useState<boolean | null>(null);
-  const [backupCount, setBackupCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const f = await listFactors();
       if (!cancelled && f.data) setMfaActive(f.data.enrolled);
-      const b = await countBackupCodes();
-      if (!cancelled && !b.error) setBackupCount(b.count);
     })();
     return () => {
       cancelled = true;
@@ -113,14 +106,16 @@ function AccountProtection() {
   const checks = [
     { label: "Email verified", ok: true },
     { label: "Password configured", ok: true },
-    { label: "Authenticator MFA", ok: mfaActive === true },
-    { label: "Backup codes", ok: backupCount > 0 },
+    {
+      label: "Authenticator MFA",
+      ok: mfaActive === true,
+    },
     { label: "Phone verification", ok: false },
     { label: "Recovery email", ok: false },
   ];
 
   const okCount = checks.filter((c) => c.ok).length;
-  const level = okCount >= 5 ? "Strong" : okCount >= 4 ? "Good" : "Basic";
+  const level = okCount >= 4 ? "Strong" : okCount >= 3 ? "Good" : "Basic";
 
   return (
     <div>
@@ -336,8 +331,14 @@ function MfaSection() {
   const handleUnenroll = async () => {
     const factors = await listFactors();
     if (!factors.data?.factors.length) return;
+
+    const verifiedEnabled = factors.data.factors.filter(
+      (f) => f.status === "verified",
+    );
+    if (verifiedEnabled.length === 0) return;
+
     setMfaLoading(true);
-    const result = await unenrollTotp(factors.data.factors[0]!.id);
+    const result = await unenrollTotp(verifiedEnabled[0]!.id);
     setMfaLoading(false);
     if (result.error) {
       setMfaMessage(result.error);
@@ -359,7 +360,8 @@ function MfaSection() {
     <div>
       <SectionTitle>Multi-Factor Authentication</SectionTitle>
       <SectionDesc>
-        Add an extra layer of security with an authenticator app.
+        Add an extra layer of security with an authenticator app (Google
+        Authenticator, 1Password, etc.).
       </SectionDesc>
 
       {mfaMessage && (
@@ -409,14 +411,13 @@ function MfaSection() {
               </code>
             </div>
           )}
-          <div className="flex items-center gap-2 mt-4">
+          <div className="mt-4">
             <Input
               label="Verification Code"
               value={verifyCode}
               onChange={(e) => setVerifyCode(e.target.value)}
               placeholder="6-digit code"
               maxLength={6}
-              className="flex-1"
             />
           </div>
           <div className="flex items-center gap-2 mt-3">
@@ -435,127 +436,47 @@ function MfaSection() {
       )}
 
       {enrolled ? (
-        <Button variant="outline" onClick={handleUnenroll} loading={mfaLoading}>
-          Remove Authenticator
-        </Button>
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            onClick={handleUnenroll}
+            loading={mfaLoading}
+          >
+            Remove Authenticator
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            MFA verification (AAL2) is required to disable this.
+          </p>
+        </div>
       ) : !enrolling ? (
         <Button onClick={handleEnroll} loading={mfaLoading}>
           <QrCode className="size-4 mr-2" />
           Setup Authenticator
         </Button>
       ) : null}
+
+      {enrolled && (
+        <p className="text-xs text-muted-foreground mt-4">
+          Tip: Install a second authenticator app on another device as a backup.
+          Supabase supports enrolling multiple TOTP factors.
+        </p>
+      )}
     </div>
   );
 }
 
-function BackupCodesSection() {
-  const [codes, setCodes] = useState<string[] | null>(null);
-  const [codeCount, setCodeCount] = useState<number | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const result = await countBackupCodes();
-      if (!cancelled && !result.error) setCodeCount(result.count);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const handleGenerate = async () => {
-    setMessage(null);
-    setLoading(true);
-    const result = await generateBackupCodes();
-    setLoading(false);
-    if (result.error) {
-      setMessage(result.error);
-    } else if (result.codes) {
-      setCodes(result.codes);
-      setCodeCount(result.codes.length);
-    }
-  };
-
-  const handleCopy = () => {
-    if (!codes) return;
-    navigator.clipboard.writeText(codes.join("\n")).catch(() => {});
-    setMessage("Codes copied to clipboard.");
-  };
-
-  const handleDownload = () => {
-    if (!codes) return;
-    const blob = new Blob([codes.join("\n")], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ai-growth-backup-codes.txt";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDismiss = () => {
-    setCodes(null);
-    setMessage(null);
-  };
-
+function RecoverySection() {
   return (
     <div>
-      <SectionTitle>Backup Codes</SectionTitle>
+      <SectionTitle>Recovery Codes</SectionTitle>
       <SectionDesc>
-        One-time recovery codes for when you lose access to your authenticator.
+        One-time recovery codes are not yet available through the current
+        authentication provider. We recommend enrolling a second authenticator
+        app as a backup instead.
       </SectionDesc>
-
-      {codeCount !== null && codeCount > 0 && !codes && (
-        <p className="text-xs text-muted-foreground mb-3">
-          {codeCount} unused backup code{codeCount !== 1 ? "s" : ""} available.
-        </p>
-      )}
-
-      {codes && codes.length > 0 && (
-        <div className="rounded-xl border border-warning/20 bg-warning/5 p-4 mb-4 max-w-sm">
-          <div className="flex items-center gap-2 mb-2">
-            <Key className="size-4 text-warning" />
-            <span className="text-sm font-medium text-foreground">
-              Your Recovery Codes
-            </span>
-          </div>
-          <p className="text-xs text-warning mb-3">
-            These codes will only be shown once. Save them securely.
-          </p>
-          <div className="rounded-lg border border-border bg-surface p-3 font-mono text-xs text-foreground space-y-1">
-            {codes.map((code, i) => (
-              <div key={i} className="select-all">
-                {code}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2 mt-3">
-            <Button size="sm" variant="outline" onClick={handleCopy}>
-              <Copy className="size-3.5 mr-1" /> Copy All
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDownload}>
-              <Download className="size-3.5 mr-1" /> Download
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleDismiss}>
-              Done
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {message && !codes && (
-        <Alert variant="info" className="mb-4">
-          {message}
-        </Alert>
-      )}
-
-      <Button variant="outline" onClick={handleGenerate} loading={loading}>
+      <Button variant="outline" disabled className="opacity-50">
         <Key className="size-4 mr-2" />
-        {codeCount && codeCount > 0
-          ? "Regenerate Codes"
-          : "Generate Recovery Codes"}
+        Not Yet Available
       </Button>
     </div>
   );
@@ -634,8 +555,8 @@ function SessionSection() {
           Sign Out Other Sessions
         </Button>
         <p className="text-xs text-muted-foreground">
-          This will end all sessions on other devices. You will stay signed in
-          here.
+          This will end all sessions on other devices. Already-issued access
+          tokens remain valid until they expire.
         </p>
       </div>
       <div className="mt-4 space-y-2">
