@@ -104,7 +104,7 @@ function IntegrationCard({
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-zinc-500">{meta.desc}</p>
+              <p className="text-xs text-muted-foreground">{meta.desc}</p>
             </div>
           </div>
           <div className="flex gap-1.5">
@@ -142,7 +142,7 @@ function IntegrationCard({
             ) : (
               <XCircle className="size-3.5 text-error" />
             )}
-            <span className="text-xs text-zinc-600">{testResult}</span>
+            <span className="text-xs text-muted-foreground">{testResult}</span>
           </div>
         )}
       </CardContent>

@@ -24,7 +24,7 @@ export default function DashboardError({
       <h2 className="text-lg font-semibold text-foreground">
         Something went wrong
       </h2>
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-muted-foreground">
         An unexpected error occurred. Please try again.
       </p>
       <Button variant="outline" onClick={reset}>

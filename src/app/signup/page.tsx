@@ -59,7 +59,7 @@ export default function SignupPage() {
       <div className="flex items-center p-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-sm text-zinc-500 hover:text-foreground"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" />
           Back to Home
@@ -94,7 +94,7 @@ export default function SignupPage() {
             <h1 className="text-2xl font-bold text-foreground">
               Start Your Free Trial
             </h1>
-            <p className="mt-2 text-sm text-zinc-500">
+            <p className="mt-2 text-sm text-muted-foreground">
               14-day free trial. No credit card required.
             </p>
           </div>
@@ -161,7 +161,7 @@ export default function SignupPage() {
                 <ArrowRight className="size-5" />
               </Button>
 
-              <p className="text-center text-xs text-zinc-500">
+              <p className="text-center text-xs text-muted-foreground">
                 By signing up, you agree to our Terms of Service and Privacy
                 Policy.
               </p>
@@ -182,7 +182,7 @@ export default function SignupPage() {
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2 text-sm text-zinc-600"
+                  className="flex items-start gap-2 text-sm text-muted-foreground"
                 >
                   <Check className="mt-0.5 size-4 shrink-0 text-success" />
                   {item}
@@ -192,7 +192,7 @@ export default function SignupPage() {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted-foreground">
               Already have an account?{" "}
               <Link
                 href="/login"

@@ -47,7 +47,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
     <Container className="max-w-none px-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your account settings.
         </p>
       </div>
@@ -64,7 +64,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                     "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     activeSection === section.id
                       ? "bg-primary/10 text-primary"
-                      : "text-zinc-600 hover:bg-surface-secondary hover:text-foreground",
+                      : "text-muted-foreground hover:bg-surface-secondary hover:text-foreground",
                   )}
                 >
                   <section.icon className="size-4" />
@@ -82,7 +82,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                 <h3 className="text-base font-semibold text-foreground">
                   General Settings
                 </h3>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-muted-foreground">
                   Update your organization information.
                 </p>
               </CardHeader>
@@ -149,7 +149,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                 <h3 className="text-base font-semibold text-foreground">
                   Integrations
                 </h3>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-muted-foreground">
                   Connect your CRM, Slack, and automation tools.
                 </p>
               </CardHeader>
@@ -165,7 +165,7 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                 <h3 className="text-base font-semibold text-foreground">
                   API Keys
                 </h3>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-muted-foreground">
                   Manage API keys for external lead ingestion.
                 </p>
               </CardHeader>
@@ -177,8 +177,8 @@ export function SettingsContent({ org }: { org: Organization | null }) {
 
           {activeSection === "notifications" && (
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Bell className="size-8 text-zinc-300 mb-3" />
-              <p className="text-sm text-zinc-500">
+              <Bell className="size-8 text-muted mb-3" />
+              <p className="text-sm text-muted-foreground">
                 Notification preferences coming soon
               </p>
             </CardContent>
@@ -186,8 +186,8 @@ export function SettingsContent({ org }: { org: Organization | null }) {
 
           {activeSection === "security" && (
             <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Shield className="size-8 text-zinc-300 mb-3" />
-              <p className="text-sm text-zinc-500">
+              <Shield className="size-8 text-muted mb-3" />
+              <p className="text-sm text-muted-foreground">
                 Security settings coming soon
               </p>
             </CardContent>

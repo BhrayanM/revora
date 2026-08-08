@@ -1,7 +1,7 @@
-import { Plus } from "lucide-react";
+import { Layers, Plus } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { getCurrentOrganization } from "@/lib/auth";
@@ -38,7 +38,7 @@ export default async function PipelinePage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
         </div>
-        <p className="text-sm text-zinc-500">No organization found.</p>
+        <p className="text-sm text-muted-foreground">No organization found.</p>
       </Container>
     );
   }
@@ -53,13 +53,26 @@ export default async function PipelinePage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Visual overview of your sales pipeline.
             </p>
           </div>
         </div>
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-sm text-zinc-500">No pipeline configured.</p>
+          <Layers className="size-12 text-muted mb-4" />
+          <p className="text-sm font-medium text-foreground">
+            No pipeline configured
+          </p>
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-xs">
+            A pipeline will be created when your first lead is added. Go to
+            Leads to get started.
+          </p>
+          <Link
+            href="/leads"
+            className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-primary-600"
+          >
+            <Plus className="size-3.5" /> Add Your First Lead
+          </Link>
         </div>
       </Container>
     );
@@ -82,11 +95,16 @@ export default async function PipelinePage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
-          <p className="mt-1 text-sm text-zinc-500">{defaultPipeline.name}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {defaultPipeline.name}
+          </p>
         </div>
-        <Button size="sm">
-          <Plus className="size-3.5" /> Add Deal
-        </Button>
+        <Link
+          href="/leads"
+          className="inline-flex h-8 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-medium text-white shadow-sm transition-all duration-200 hover:bg-primary-600 active:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+        >
+          <Plus className="size-3.5" /> Add Lead
+        </Link>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
@@ -121,7 +139,7 @@ export default async function PipelinePage() {
                             <p className="text-sm font-medium text-foreground">
                               {lead.first_name} {lead.last_name}
                             </p>
-                            <p className="text-xs text-zinc-500">
+                            <p className="text-xs text-muted-foreground">
                               {lead.company ?? "—"}
                             </p>
                           </div>
@@ -139,7 +157,7 @@ export default async function PipelinePage() {
                           >
                             {lead.score}/100
                           </Badge>
-                          <span className="text-xs text-zinc-500">
+                          <span className="text-xs text-muted-foreground">
                             {daysInStage}d in stage
                           </span>
                         </div>

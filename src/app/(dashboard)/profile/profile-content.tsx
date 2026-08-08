@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Mail, User } from "lucide-react";
+import { Bell, Camera, Mail, User } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
@@ -41,7 +41,7 @@ export function ProfileContent({ profile }: { profile: Profile }) {
     <Container className="max-w-none px-0">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your personal information.
         </p>
       </div>
@@ -62,10 +62,10 @@ export function ProfileContent({ profile }: { profile: Profile }) {
             <h2 className="mt-4 text-lg font-semibold text-foreground">
               {profile.full_name}
             </h2>
-            <p className="text-sm text-zinc-500">
+            <p className="text-sm text-muted-foreground">
               {profile.role === "admin" ? "Administrator" : "Agent"}
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Joined{" "}
               {new Date(profile.created_at).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -74,12 +74,14 @@ export function ProfileContent({ profile }: { profile: Profile }) {
             </p>
             <div className="mt-6 w-full space-y-2">
               <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
-                <Mail className="size-4 text-zinc-500" />
-                <span className="text-zinc-600 truncate">{profile.email}</span>
+                <Mail className="size-4 text-muted-foreground" />
+                <span className="text-muted-foreground truncate">
+                  {profile.email}
+                </span>
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
-                <User className="size-4 text-zinc-500" />
-                <span className="text-zinc-600">
+                <User className="size-4 text-muted-foreground" />
+                <span className="text-muted-foreground">
                   {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}{" "}
                   Role
                 </span>
@@ -129,36 +131,17 @@ export function ProfileContent({ profile }: { profile: Profile }) {
             <CardHeader>
               <h3 className="text-base font-semibold">Preferences</h3>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {[
-                {
-                  label: "Email Notifications",
-                  desc: "Receive email updates about leads and pipeline changes",
-                  defaultChecked: true,
-                },
-                {
-                  label: "AI Insights Digest",
-                  desc: "Daily AI-powered insights and recommendations",
-                  defaultChecked: true,
-                },
-              ].map((pref) => (
-                <label
-                  key={pref.label}
-                  className="flex items-start gap-3 cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    defaultChecked={pref.defaultChecked}
-                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary/20"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">
-                      {pref.label}
-                    </p>
-                    <p className="text-xs text-zinc-500">{pref.desc}</p>
-                  </div>
-                </label>
-              ))}
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Bell className="size-8 text-muted mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  Notification preferences coming soon
+                </p>
+                <p className="text-xs text-muted mt-1">
+                  Email and AI digest settings will be available in a future
+                  update.
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

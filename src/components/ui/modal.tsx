@@ -97,7 +97,7 @@ export function Modal({
         {showCloseButton && (
           <button
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-md p-1 text-zinc-400 transition-colors hover:bg-surface-secondary hover:text-foreground"
+            className="absolute right-4 top-4 rounded-md p-1 text-muted transition-colors hover:bg-surface-secondary hover:text-foreground"
             aria-label="Close"
           >
             <X className="size-5" />
@@ -114,7 +114,10 @@ export function Modal({
               </h2>
             )}
             {description && (
-              <p id="modal-description" className="mt-1 text-sm text-zinc-500">
+              <p
+                id="modal-description"
+                className="mt-1 text-sm text-muted-foreground"
+              >
                 {description}
               </p>
             )}

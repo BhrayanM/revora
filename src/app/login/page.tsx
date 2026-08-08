@@ -70,7 +70,9 @@ function LoginForm() {
         <h1 className="mt-6 text-2xl font-bold text-foreground">
           Welcome back
         </h1>
-        <p className="mt-2 text-sm text-zinc-500">Sign in to your account</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Sign in to your account
+        </p>
       </div>
 
       {error && (
@@ -103,7 +105,7 @@ function LoginForm() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-zinc-500">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link
           href="/signup"
@@ -121,7 +123,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <Suspense
-          fallback={<div className="text-center text-zinc-500">Loading...</div>}
+          fallback={
+            <div className="text-center text-muted-foreground">Loading...</div>
+          }
         >
           <LoginForm />
         </Suspense>

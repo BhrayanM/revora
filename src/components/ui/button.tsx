@@ -54,15 +54,24 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+  const hasLeftSlot = loading || leftIcon;
+  const hasRightSlot = !loading && rightIcon;
+
   return (
     <button
       className={cn(buttonVariants({ variant, size, className }))}
       disabled={disabled || loading}
       {...props}
     >
-      {loading ? <Spinner size="sm" /> : leftIcon ? leftIcon : null}
+      {hasLeftSlot && (
+        <span className="inline-flex shrink-0">
+          {loading ? <Spinner size="sm" /> : leftIcon}
+        </span>
+      )}
       {children}
-      {!loading && rightIcon ? rightIcon : null}
+      {hasRightSlot && (
+        <span className="inline-flex shrink-0">{rightIcon}</span>
+      )}
     </button>
   );
 }

@@ -9,7 +9,9 @@ export default async function ProfilePage() {
     return (
       <div className="p-8">
         <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-        <p className="mt-2 text-sm text-zinc-500">Unable to load profile.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Unable to load profile.
+        </p>
       </div>
     );
   }

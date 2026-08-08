@@ -26,7 +26,9 @@ export default async function AutomationPage() {
     return (
       <Container className="max-w-none px-0">
         <h1 className="text-2xl font-bold text-foreground">Automation</h1>
-        <p className="text-sm text-zinc-500 mt-1">No organization found.</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          No organization found.
+        </p>
       </Container>
     );
   }
@@ -45,7 +47,7 @@ export default async function AutomationPage() {
         <h1 className="text-2xl font-bold text-foreground">
           Automation Activity
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Track webhook deliveries, CRM syncs, and AI operations.
         </p>
       </div>
@@ -54,11 +56,11 @@ export default async function AutomationPage() {
         <CardContent className="p-0">
           {!executions || executions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Activity className="size-8 text-zinc-300 mb-3" />
-              <p className="text-sm text-zinc-500">
+              <Activity className="size-8 text-muted mb-3" />
+              <p className="text-sm text-muted-foreground">
                 No automation activity yet
               </p>
-              <p className="text-xs text-zinc-400 mt-1">
+              <p className="text-xs text-muted mt-1">
                 Activity will appear here when automations run
               </p>
             </div>
@@ -67,22 +69,22 @@ export default async function AutomationPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-surface-secondary">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
                       Time
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
                       Provider
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
                       Action
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
                       Attempts
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-zinc-500">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
                       Error
                     </th>
                   </tr>
@@ -90,13 +92,13 @@ export default async function AutomationPage() {
                 <tbody>
                   {executions.map((exec) => (
                     <tr key={exec.id} className="border-b border-border">
-                      <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(exec.created_at).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-foreground">
                         {exec.provider}
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
                         {exec.action}
                       </td>
                       <td className="px-4 py-3">
@@ -107,10 +109,10 @@ export default async function AutomationPage() {
                           {exec.status}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-sm text-zinc-600">
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
                         {exec.attempts}
                       </td>
-                      <td className="px-4 py-3 text-xs text-zinc-500 max-w-[200px] truncate">
+                      <td className="px-4 py-3 text-xs text-muted-foreground max-w-[200px] truncate">
                         {exec.error_message ?? "—"}
                       </td>
                     </tr>

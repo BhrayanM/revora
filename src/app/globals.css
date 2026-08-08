@@ -2,9 +2,10 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
 
   --color-primary: #6366f1;
   --color-primary-50: #eef2ff;
@@ -85,7 +86,10 @@
   --color-surface-secondary: var(--surface-secondary);
   --color-surface-tertiary: var(--surface-tertiary);
   --color-border: var(--border);
-  --color-border-hover: var(--border-hover);
+  --color-border-strong: var(--border-strong);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -108,25 +112,33 @@
   --animate-slide-down: slide-down 0.3s ease-out;
   --animate-scale-in: scale-in 0.3s ease-out;
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.5s ease-in-out infinite;
 }
+
 :root {
+  --canvas: #f8f9fb;
   --background: #ffffff;
   --foreground: #0f172a;
   --surface: #ffffff;
   --surface-secondary: #f8fafc;
   --surface-tertiary: #f1f5f9;
   --border: #e2e8f0;
-  --border-hover: #cbd5e1;
+  --border-strong: #cbd5e1;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
 }
 
 .dark {
+  --canvas: #0a0f1a;
   --background: #0f172a;
   --foreground: #f1f5f9;
   --surface: #1e293b;
   --surface-secondary: #334155;
   --surface-tertiary: #475569;
   --border: #334155;
-  --border-hover: #475569;
+  --border-strong: #475569;
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
 }
 
 @keyframes fade-in {
@@ -181,8 +193,17 @@
   }
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 body {
-  background: var(--background);
+  background: var(--canvas);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -217,7 +238,8 @@ body {
   .animate-slide-up,
   .animate-slide-down,
   .animate-scale-in,
-  .animate-pulse-glow {
+  .animate-pulse-glow,
+  .animate-shimmer {
     animation: none !important;
     opacity: 1;
     transform: none;

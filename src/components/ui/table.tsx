@@ -84,7 +84,7 @@ export function Table<T>({
                 <th
                   key={col.key}
                   className={cn(
-                    "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-zinc-500",
+                    "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground",
                     col.sortable &&
                       "cursor-pointer select-none hover:text-foreground",
                     col.className,
@@ -94,7 +94,7 @@ export function Table<T>({
                   <div className="flex items-center gap-1">
                     {col.header}
                     {col.sortable && (
-                      <span className="text-zinc-400">
+                      <span className="text-muted">
                         {sortKey === col.key ? (
                           sortDir === "asc" ? (
                             <ChevronUp className="size-3.5" />
@@ -126,7 +126,7 @@ export function Table<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-4 py-12 text-center text-sm text-zinc-500"
+                  className="px-4 py-12 text-center text-sm text-muted-foreground"
                 >
                   {emptyMessage}
                 </td>
@@ -157,7 +157,7 @@ export function Table<T>({
       </div>
       {showPagination && totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-muted-foreground">
             Page {page + 1} of {totalPages}
           </p>
           <div className="flex gap-1">
