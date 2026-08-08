@@ -124,14 +124,14 @@ $$;
 
 -- Keep the legacy helper name so all existing policies gain active-membership
 -- semantics. It must no longer be interpreted as mere row existence.
-create or replace function public.is_org_member(p_organization_id uuid)
+create or replace function public.is_org_member(org_id uuid)
 returns boolean
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select public.is_active_org_member(p_organization_id);
+  select public.is_active_org_member(org_id);
 $$;
 
 create or replace function public.has_active_org_role(
