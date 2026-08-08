@@ -2,13 +2,19 @@
 -- Security hardening: prevent anon/authenticated roles from invoking
 -- SECURITY DEFINER functions directly via the Data API / RPC endpoint.
 
--- CRITICAL: onboard_user is called only via service_role from the auth callback
+-- CRITICAL: onboard_user is called only via service_role from the auth callback.
+-- Grant service_role explicitly BEFORE revoking public, so the service_role
+-- grant survives the public revocation (service_role is a member of PUBLIC).
+grant execute on function public.onboard_user(uuid, text, text, text) to service_role;
+
 revoke execute on function public.onboard_user(uuid, text, text, text) from public, anon, authenticated;
 
--- HIGH: is_org_member is a RLS helper; anon should never call it directly
+-- HIGH: is_org_member is a RLS helper; anon should never call it directly.
+-- authenticated still has access via PUBLIC (not revoked from public).
 revoke execute on function public.is_org_member(uuid) from anon;
 
--- HIGH: trigger functions should only fire via triggers, never be called directly
+-- HIGH: trigger functions should only fire via triggers, never be called directly.
+-- Triggers fire as the table owner regardless of execute privilege on caller.
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 revoke execute on function public.update_updated_at() from public, anon, authenticated;
 

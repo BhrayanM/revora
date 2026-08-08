@@ -5,6 +5,10 @@ import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState } from "react";
 
+import {
+  TurnstileWidget,
+  isTurnstileEnabled,
+} from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +19,8 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaEnabled = isTurnstileEnabled();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -26,7 +32,10 @@ export default function ForgotPasswordPage() {
 
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email,
-      { redirectTo: `${origin}/reset-password` },
+      {
+        redirectTo: `${origin}/reset-password`,
+        ...(captchaToken ? { captchaToken } : {}),
+      },
     );
 
     setLoading(false);
@@ -88,10 +97,17 @@ export default function ForgotPasswordPage() {
                 size="xl"
                 className="w-full"
                 loading={loading}
+                disabled={captchaEnabled && !captchaToken}
               >
                 Send Reset Link
               </Button>
             </form>
+          )}
+
+          {captchaEnabled && !sent && (
+            <div className="mt-4">
+              <TurnstileWidget onVerify={setCaptchaToken} />
+            </div>
           )}
 
           {sent && (

@@ -14,6 +14,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.5",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "class-variance-authority": "^0.7.1",
