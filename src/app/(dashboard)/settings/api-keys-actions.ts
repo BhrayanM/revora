@@ -1,19 +1,22 @@
 "use server";
 
-import { getCurrentOrganization } from "@/lib/auth";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { generateApiKey as createKey } from "@/lib/lead-ingestion/api-keys";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function createSourceApiKey(
   label: string,
   source: "website" | "tally" | "n8n" | "api",
 ) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization =
+    await requireCurrentOrganizationPermission("apiKeys.manage");
+  if (!authorization.data) return { error: authorization.error };
+
+  const org = authorization.data.organization;
 
   const { raw, hash } = createKey();
 
-  const supabase = await createServiceClient();
+  const supabase = await createClient();
   const { error } = await supabase.from("source_api_keys").insert({
     organization_id: org.id,
     source,
@@ -28,10 +31,13 @@ export async function createSourceApiKey(
 }
 
 export async function listSourceApiKeys() {
-  const org = await getCurrentOrganization();
-  if (!org) return { data: null, error: "No organization found" };
+  const authorization =
+    await requireCurrentOrganizationPermission("apiKeys.read");
+  if (!authorization.data) return { data: null, error: authorization.error };
 
-  const supabase = await createServiceClient();
+  const org = authorization.data.organization;
+
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("source_api_keys")
     .select("id, source, label, is_active, last_used_at, created_at")
@@ -43,10 +49,13 @@ export async function listSourceApiKeys() {
 }
 
 export async function revokeSourceApiKey(id: string) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization =
+    await requireCurrentOrganizationPermission("apiKeys.manage");
+  if (!authorization.data) return { error: authorization.error };
 
-  const supabase = await createServiceClient();
+  const org = authorization.data.organization;
+
+  const supabase = await createClient();
   const { error } = await supabase
     .from("source_api_keys")
     .update({ is_active: false })

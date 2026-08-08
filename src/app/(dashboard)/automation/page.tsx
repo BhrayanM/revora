@@ -4,8 +4,8 @@ import type { Metadata } from "next";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { getCurrentOrganization } from "@/lib/auth";
-import { createServiceClient } from "@/lib/supabase/server";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Automation — AI Growth",
@@ -20,9 +20,10 @@ const statusBadge: Record<string, "success" | "error" | "warning" | "default"> =
   };
 
 export default async function AutomationPage() {
-  const org = await getCurrentOrganization();
+  const authorization =
+    await requireCurrentOrganizationPermission("automation.read");
 
-  if (!org) {
+  if (!authorization.data) {
     return (
       <Container className="max-w-none px-0">
         <h1 className="text-2xl font-bold text-foreground">Automation</h1>
@@ -33,7 +34,9 @@ export default async function AutomationPage() {
     );
   }
 
-  const supabase = await createServiceClient();
+  const org = authorization.data.organization;
+
+  const supabase = await createClient();
   const { data: executions } = await supabase
     .from("automation_executions")
     .select("*")

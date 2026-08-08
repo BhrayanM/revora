@@ -9,11 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import type { OrganizationRole } from "@/lib/auth/permissions";
 import type { Database } from "@/lib/supabase/types";
 
 import { updateProfile } from "./actions";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+
+function formatOrganizationRole(role: OrganizationRole | undefined): string {
+  if (!role) return "Organization member";
+  if (role === "owner") return "Owner";
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
 
 function getInitials(name: string): string {
   const parts = name.split(" ");
@@ -21,10 +28,17 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function ProfileContent({ profile }: { profile: Profile }) {
+export function ProfileContent({
+  profile,
+  membershipRole,
+}: {
+  profile: Profile;
+  membershipRole?: OrganizationRole;
+}) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const initials = getInitials(profile.full_name);
+  const roleLabel = formatOrganizationRole(membershipRole);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,9 +76,7 @@ export function ProfileContent({ profile }: { profile: Profile }) {
             <h2 className="mt-4 text-lg font-semibold text-foreground">
               {profile.full_name}
             </h2>
-            <p className="text-sm text-muted-foreground">
-              {profile.role === "admin" ? "Administrator" : "Agent"}
-            </p>
+            <p className="text-sm text-muted-foreground">{roleLabel}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               Joined{" "}
               {new Date(profile.created_at).toLocaleDateString("en-US", {
@@ -75,10 +87,7 @@ export function ProfileContent({ profile }: { profile: Profile }) {
             <div className="mt-6 w-full space-y-2">
               <div className="flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-2 text-sm">
                 <User className="size-4 text-muted-foreground shrink-0" />
-                <span className="text-muted-foreground">
-                  {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}{" "}
-                  Role
-                </span>
+                <span className="text-muted-foreground">{roleLabel} role</span>
               </div>
             </div>
           </CardContent>

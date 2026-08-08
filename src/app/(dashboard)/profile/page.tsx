@@ -1,9 +1,12 @@
-import { getCurrentProfile } from "@/lib/auth";
+import { getActiveMembership, getCurrentProfile } from "@/lib/auth";
 
 import { ProfileContent } from "./profile-content";
 
 export default async function ProfilePage() {
-  const profile = await getCurrentProfile();
+  const [profile, membership] = await Promise.all([
+    getCurrentProfile(),
+    getActiveMembership(),
+  ]);
 
   if (!profile) {
     return (
@@ -16,5 +19,5 @@ export default async function ProfilePage() {
     );
   }
 
-  return <ProfileContent profile={profile} />;
+  return <ProfileContent profile={profile} membershipRole={membership?.role} />;
 }

@@ -47,9 +47,9 @@ export default async function DashboardLayout({
 
     const { data: memberships } = await supabase
       .from("memberships")
-      .select("id")
+      .select("id, status")
       .eq("profile_id", user.id)
-      .limit(1);
+      .limit(50);
 
     if (!memberships || memberships.length === 0) {
       const svc = await createServiceAdminClient();
@@ -69,6 +69,13 @@ export default async function DashboardLayout({
       if (rpcError) {
         console.error("Layout onboarding RPC error:", rpcError.message);
       }
+    } else if (
+      !memberships.some((membership) => membership.status === "active")
+    ) {
+      // A suspended/removed user keeps their account but must not fall through
+      // into an organization dashboard. A future organization switcher can
+      // offer another active membership here.
+      redirect("/");
     }
 
     // MFA gate: if user has enrolled MFA but session is AAL1, redirect to challenge

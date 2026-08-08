@@ -120,21 +120,33 @@
           id: string;
           profile_id: string;
           organization_id: string;
-          role: "owner" | "admin" | "manager" | "agent";
+          role: "owner" | "admin" | "manager" | "agent" | "viewer";
+          status: "active" | "suspended" | "removed";
+          joined_at: string;
+          suspended_at: string | null;
+          removed_at: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           profile_id: string;
           organization_id: string;
-          role?: "owner" | "admin" | "manager" | "agent";
+          role?: "owner" | "admin" | "manager" | "agent" | "viewer";
+          status?: "active" | "suspended" | "removed";
+          joined_at?: string;
+          suspended_at?: string | null;
+          removed_at?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           profile_id?: string;
           organization_id?: string;
-          role?: "owner" | "admin" | "manager" | "agent";
+          role?: "owner" | "admin" | "manager" | "agent" | "viewer";
+          status?: "active" | "suspended" | "removed";
+          joined_at?: string;
+          suspended_at?: string | null;
+          removed_at?: string | null;
           created_at?: string;
         };
         Relationships: [];

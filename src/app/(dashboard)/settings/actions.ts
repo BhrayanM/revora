@@ -2,12 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getCurrentOrganization } from "@/lib/auth";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateOrgSettings(formData: FormData) {
-  const org = await getCurrentOrganization();
-  if (!org) return { error: "No organization found" };
+  const authorization = await requireCurrentOrganizationPermission(
+    "organization.settings.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  const org = authorization.data.organization;
 
   const supabase = await createClient();
 

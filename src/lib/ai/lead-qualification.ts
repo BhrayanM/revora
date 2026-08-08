@@ -9,14 +9,17 @@ import {
   type QualificationResult,
   validateQualificationResult,
 } from "@/lib/ai/qualification";
-import { getCurrentOrganization } from "@/lib/auth";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById, updateLead } from "@/lib/queries/leads";
 import { createClient } from "@/lib/supabase/server";
 
 async function getLeadWithAuth(leadId: string) {
-  const org = await getCurrentOrganization();
-  if (!org) throw new Error("No organization found");
+  const authorization =
+    await requireCurrentOrganizationPermission("leads.qualify");
+  if (!authorization.data) throw new Error(authorization.error);
+
+  const org = authorization.data.organization;
 
   const { data: lead, error } = await getLeadById(leadId);
   if (error || !lead) throw new Error("Lead not found");
