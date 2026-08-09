@@ -105,27 +105,6 @@ function SignupForm() {
             </Alert>
           )}
 
-          <label className="mb-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-secondary p-4 text-sm text-muted-foreground">
-            <input
-              id="signup-legal-consent"
-              type="checkbox"
-              checked={legalConsentAccepted}
-              onChange={(event) =>
-                setLegalConsentAccepted(event.target.checked)
-              }
-              className="mt-0.5 size-4 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-            />
-            <span>
-              I agree to the{" "}
-              <AuthTextLink href="/terms">Terms of Service</AuthTextLink> and{" "}
-              <AuthTextLink href="/privacy">Privacy Policy</AuthTextLink>.
-              <span className="mt-1 block text-xs text-subtle">
-                Required before creating an account or continuing with a
-                provider.
-              </span>
-            </span>
-          </label>
-
           <SocialAuth
             returnTo={redirect}
             requireLegalConsent
@@ -175,6 +154,27 @@ function SignupForm() {
               required
               minLength={6}
             />
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-secondary p-4 text-sm text-muted-foreground">
+              <input
+                id="signup-legal-consent"
+                type="checkbox"
+                checked={legalConsentAccepted}
+                onChange={(event) =>
+                  setLegalConsentAccepted(event.target.checked)
+                }
+                className="mt-0.5 size-4 rounded border-border accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              />
+              <span>
+                I agree to the{" "}
+                <AuthTextLink href="/terms">Terms of Service</AuthTextLink> and{" "}
+                <AuthTextLink href="/privacy">Privacy Policy</AuthTextLink>.
+                <span className="mt-1 block text-xs text-subtle">
+                  Required before creating an account or continuing with a
+                  provider.
+                </span>
+              </span>
+            </label>
 
             <Button
               type="submit"
