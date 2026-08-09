@@ -91,7 +91,7 @@ export default async function PipelinePage() {
   }
 
   return (
-    <Container className="max-w-none px-0 flex flex-col h-full">
+    <Container className="max-w-none px-0 flex flex-1 flex-col min-h-0">
       <div className="mb-6 flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
@@ -107,92 +107,87 @@ export default async function PipelinePage() {
         </Link>
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-x-auto overflow-y-hidden pb-4">
-        <div className="flex min-h-full gap-4">
-          {(stages ?? []).map((stage) => {
-            const stageLeads = leadsByStage.get(stage.id) ?? [];
-            return (
+      <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto overflow-y-hidden pb-4">
+        {(stages ?? []).map((stage) => {
+          const stageLeads = leadsByStage.get(stage.id) ?? [];
+          return (
+            <div key={stage.id} className="flex min-w-[240px] flex-1 flex-col">
               <div
-                key={stage.id}
-                className="flex min-w-[240px] flex-1 flex-col"
+                className={`mb-3 flex shrink-0 items-center justify-between rounded-lg border-l-2 px-3 py-2 ${stageColors[stage.name] ?? "border-l-primary"} ${stageBgColors[stage.name] ?? "bg-primary/5"}`}
               >
-                <div
-                  className={`mb-3 flex shrink-0 items-center justify-between rounded-lg border-l-2 px-3 py-2 ${stageColors[stage.name] ?? "border-l-primary"} ${stageBgColors[stage.name] ?? "bg-primary/5"}`}
-                >
-                  <span className="text-sm font-semibold text-foreground">
-                    {stage.name}
-                  </span>
-                  <Badge variant="outline" size="sm">
-                    {stageLeads.length}
-                  </Badge>
-                </div>
-                <div className="flex min-h-0 flex-1 flex-col rounded-lg bg-surface-secondary/30 p-3">
-                  {stageLeads.length === 0 ? (
-                    <div className="flex flex-1 items-center justify-center">
-                      <p className="text-xs text-muted-foreground">
-                        No leads yet
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {stageLeads.map((lead) => {
-                        const daysInStage = Math.floor(
-                          (Date.now() - new Date(lead.updated_at).getTime()) /
-                            86400000,
-                        );
-                        return (
-                          <Card
-                            key={lead.id}
-                            className="cursor-pointer transition-all hover:shadow-md"
-                          >
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-foreground">
-                                    {lead.first_name} {lead.last_name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {lead.company ?? "—"}
-                                  </p>
-                                </div>
-                                <MoveStageButton
-                                  leadId={lead.id}
-                                  currentStageId={lead.pipeline_stage_id ?? ""}
-                                  pipelineId={defaultPipeline.id}
-                                  stages={stages ?? []}
-                                />
-                              </div>
-                              <div className="mt-3 flex items-center justify-between">
-                                {(lead.metadata as Record<string, unknown>)
-                                  .qualification ? (
-                                  <Badge
-                                    variant={
-                                      lead.score >= 80 ? "success" : "secondary"
-                                    }
-                                    size="sm"
-                                  >
-                                    {lead.score}/100
-                                  </Badge>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    Not qualified
-                                  </span>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {daysInStage}d in stage
-                                </span>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                <span className="text-sm font-semibold text-foreground">
+                  {stage.name}
+                </span>
+                <Badge variant="outline" size="sm">
+                  {stageLeads.length}
+                </Badge>
               </div>
-            );
-          })}
-        </div>
+              <div className="flex min-h-0 flex-1 flex-col rounded-lg bg-surface-secondary/30 p-3">
+                {stageLeads.length === 0 ? (
+                  <div className="flex flex-1 items-center justify-center">
+                    <p className="text-xs text-muted-foreground">
+                      No leads yet
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {stageLeads.map((lead) => {
+                      const daysInStage = Math.floor(
+                        (Date.now() - new Date(lead.updated_at).getTime()) /
+                          86400000,
+                      );
+                      return (
+                        <Card
+                          key={lead.id}
+                          className="cursor-pointer transition-all hover:shadow-md"
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">
+                                  {lead.first_name} {lead.last_name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {lead.company ?? "—"}
+                                </p>
+                              </div>
+                              <MoveStageButton
+                                leadId={lead.id}
+                                currentStageId={lead.pipeline_stage_id ?? ""}
+                                pipelineId={defaultPipeline.id}
+                                stages={stages ?? []}
+                              />
+                            </div>
+                            <div className="mt-3 flex items-center justify-between">
+                              {(lead.metadata as Record<string, unknown>)
+                                .qualification ? (
+                                <Badge
+                                  variant={
+                                    lead.score >= 80 ? "success" : "secondary"
+                                  }
+                                  size="sm"
+                                >
+                                  {lead.score}/100
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">
+                                  Not qualified
+                                </span>
+                              )}
+                              <span className="text-xs text-muted-foreground">
+                                {daysInStage}d in stage
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </Container>
   );
