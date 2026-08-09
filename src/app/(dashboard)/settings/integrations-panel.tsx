@@ -21,8 +21,14 @@ import type {
 
 import {
   deleteIntegration,
+  disconnectHubSpot,
+  disconnectGHL,
   getOrganizationIntegrations,
   saveIntegration,
+  startGHLOAuth,
+  startHubSpotOAuth,
+  testGHL,
+  testHubSpot,
   testIntegration,
 } from "./integrations-actions";
 
@@ -75,21 +81,49 @@ function IntegrationCard({
 
   const configured = connection !== null && connection.status === "connected";
 
+  const handleConnect = async () => {
+    if (providerId === "hubspot") {
+      const result = await startHubSpotOAuth();
+      if (result.url) window.location.href = result.url;
+      else setTestResult(result.error ?? "OAuth setup failed");
+    } else if (providerId === "gohighlevel") {
+      const result = await startGHLOAuth();
+      if (result.url) window.location.href = result.url;
+      else setTestResult(result.error ?? "OAuth setup failed");
+    } else {
+      onConfigure();
+    }
+  };
+
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
-    const result = await testIntegration(providerId);
+    let success: boolean;
+    let errorMsg: string | undefined;
+    if (providerId === "hubspot") {
+      const r = (await testHubSpot()) as { success: boolean; error?: string };
+      success = r.success;
+      errorMsg = r.error;
+    } else if (providerId === "gohighlevel") {
+      const r = (await testGHL()) as { success: boolean; error?: string };
+      success = r.success;
+      errorMsg = r.error;
+    } else {
+      const r = await testIntegration(providerId);
+      success = "success" in r && r.success === true;
+      errorMsg = r.error;
+    }
     setTestResult(
-      result.success
-        ? "Connection successful"
-        : (result.error ?? "Connection failed"),
+      success ? "Connection successful" : (errorMsg ?? "Connection failed"),
     );
     setTesting(false);
   };
 
   const handleDisconnect = () => {
     startDelete(async () => {
-      await deleteIntegration(providerId);
+      if (providerId === "hubspot") await disconnectHubSpot();
+      else if (providerId === "gohighlevel") await disconnectGHL();
+      else await deleteIntegration(providerId);
       onRefresh();
     });
   };
@@ -142,7 +176,7 @@ function IntegrationCard({
               </>
             )}
             {!configured && (
-              <Button variant="outline" size="sm" onClick={onConfigure}>
+              <Button variant="outline" size="sm" onClick={handleConnect}>
                 <Plug className="size-3.5" /> Connect
               </Button>
             )}

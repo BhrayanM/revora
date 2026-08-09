@@ -171,3 +171,96 @@ export async function getSafeConnections(): Promise<SafeConnection[]> {
     updatedAt: c.updatedAt,
   }));
 }
+
+export async function startHubSpotOAuth() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const org = authorization.data.organization;
+
+  try {
+    const { getHubSpotAuthorizationUrl } =
+      await import("@/lib/integrations/adapters/hubspot");
+    const { url } = await getHubSpotAuthorizationUrl(
+      org.id,
+      "/settings?tab=integrations",
+      authorization.data.membership.profile_id,
+    );
+    return { url, error: null };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "HubSpot OAuth setup failed",
+    };
+  }
+}
+
+export async function startGHLOAuth() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const org = authorization.data.organization;
+
+  try {
+    const { getGHLAuthorizationUrl } =
+      await import("@/lib/integrations/adapters/gohighlevel");
+    const { url } = await getGHLAuthorizationUrl(
+      org.id,
+      "/settings?tab=integrations",
+      authorization.data.membership.profile_id,
+    );
+    return { url, error: null };
+  } catch (err) {
+    return {
+      error:
+        err instanceof Error ? err.message : "GoHighLevel OAuth setup failed",
+    };
+  }
+}
+
+export async function disconnectHubSpot() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { disconnectHubSpot } =
+    await import("@/lib/integrations/adapters/hubspot");
+  return disconnectHubSpot(
+    authorization.data.organization.id,
+    authorization.data.membership.profile_id,
+  );
+}
+
+export async function disconnectGHL() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { disconnectGHL } =
+    await import("@/lib/integrations/adapters/gohighlevel");
+  return disconnectGHL(
+    authorization.data.organization.id,
+    authorization.data.membership.profile_id,
+  );
+}
+
+export async function testHubSpot() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { testHubSpotConnection } =
+    await import("@/lib/integrations/adapters/hubspot");
+  return testHubSpotConnection(authorization.data.organization.id);
+}
+
+export async function testGHL() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { testGHLConnection } =
+    await import("@/lib/integrations/adapters/gohighlevel");
+  return testGHLConnection(authorization.data.organization.id);
+}
