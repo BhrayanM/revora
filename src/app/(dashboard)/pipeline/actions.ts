@@ -41,5 +41,6 @@ export async function moveLeadStage(
   revalidatePath("/pipeline");
   revalidatePath("/leads");
   revalidatePath("/dashboard");
+  revalidatePath("/analytics");
   return { error: null };
 }

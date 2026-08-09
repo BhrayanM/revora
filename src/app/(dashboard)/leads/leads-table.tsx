@@ -174,6 +174,13 @@ export function LeadsTable({ leads }: LeadsTableProps) {
           "qualification"
         ] as Record<string, unknown> | undefined;
         const temp = qual?.["temperature"] as string | undefined;
+
+        if (!temp) {
+          return (
+            <span className="text-xs text-muted-foreground">Not qualified</span>
+          );
+        }
+
         return (
           <div className="flex items-center gap-1.5">
             <span
@@ -185,20 +192,18 @@ export function LeadsTable({ leads }: LeadsTableProps) {
             >
               {lead.score}/100
             </span>
-            {temp && (
-              <Badge
-                variant={
-                  temp === "HOT"
-                    ? "error"
-                    : temp === "WARM"
-                      ? "warning"
-                      : "default"
-                }
-                size="sm"
-              >
-                {temp}
-              </Badge>
-            )}
+            <Badge
+              variant={
+                temp === "HOT"
+                  ? "error"
+                  : temp === "WARM"
+                    ? "warning"
+                    : "default"
+              }
+              size="sm"
+            >
+              {temp}
+            </Badge>
           </div>
         );
       },

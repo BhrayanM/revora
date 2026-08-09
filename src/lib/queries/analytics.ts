@@ -17,7 +17,8 @@ export interface PipelineMetrics {
 
 export interface RecentActivity {
   id: string;
-  type: "lead_created" | "lead_updated" | "conversation" | "automation";
+  type:
+    "lead_created" | "lead_updated" | "lead_stage_changed" | "lead_qualified";
   description: string;
   leadName: string | null;
   timestamp: string;
@@ -40,7 +41,7 @@ export async function getLeadMetrics(
 
   const { data, error } = await supabase
     .from("leads")
-    .select("status, score")
+    .select("status, score, metadata")
     .eq("organization_id", organizationId);
 
   if (error) {
@@ -55,17 +56,15 @@ export async function getLeadMetrics(
   }
 
   const total = data.length;
-  const qualified = data.filter(
-    (l) =>
-      l.status === "qualified" ||
-      l.status === "proposal" ||
-      l.status === "negotiation" ||
-      l.status === "won",
-  ).length;
+  const qualifiedLeads = data.filter((lead) => {
+    const metadata = lead.metadata as Record<string, unknown>;
+    return Boolean(metadata?.qualification);
+  });
+  const qualified = qualifiedLeads.length;
   const won = data.filter((l) => l.status === "won").length;
   const conversionRate = total > 0 ? Math.round((won / total) * 1000) / 10 : 0;
-  const totalScore = data.reduce((sum, l) => sum + l.score, 0);
-  const avgScore = total > 0 ? Math.round(totalScore / total) : 0;
+  const totalScore = qualifiedLeads.reduce((sum, lead) => sum + lead.score, 0);
+  const avgScore = qualified > 0 ? Math.round(totalScore / qualified) : 0;
 
   return {
     data: { total, qualified, won, conversionRate, avgScore },
@@ -169,49 +168,82 @@ export async function getRecentActivity(
 ): Promise<QueryResult<RecentActivity[]>> {
   const supabase = await createClient();
 
-  const { data: leads, error: leadsError } = await supabase
-    .from("leads")
-    .select("id, first_name, last_name, created_at, updated_at, status")
+  const { data: events, error: eventsError } = await supabase
+    .from("conversations")
+    .select("id, lead_id, subject, content, metadata, created_at")
     .eq("organization_id", organizationId)
+    .eq("type", "note")
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (eventsError) {
+    return {
+      data: null,
+      error: sanitizeError("fetch recent activity", eventsError),
+    };
+  }
+
+  if (!events || events.length === 0) {
+    return { data: [], error: null };
+  }
+
+  const leadIds = [...new Set(events.map((event) => event.lead_id))];
+  const { data: leads, error: leadsError } = await supabase
+    .from("leads")
+    .select("id, first_name, last_name")
+    .in("id", leadIds);
 
   if (leadsError) {
     return {
       data: null,
-      error: sanitizeError("fetch recent activity", leadsError),
+      error: sanitizeError("fetch activity leads", leadsError),
     };
   }
 
-  if (!leads || leads.length === 0) {
-    return { data: [], error: null };
-  }
-
-  const activities: RecentActivity[] = [];
-
-  for (const lead of leads) {
-    activities.push({
-      id: `lead-created-${lead.id}`,
-      type: "lead_created",
-      description: `${lead.first_name} ${lead.last_name} was created`,
-      leadName: `${lead.first_name} ${lead.last_name}`,
-      timestamp: lead.created_at,
-    });
-
-    if (lead.status !== "new" && lead.updated_at !== lead.created_at) {
-      activities.push({
-        id: `lead-updated-${lead.id}`,
-        type: "lead_updated",
-        description: `${lead.first_name} ${lead.last_name} moved to ${lead.status}`,
-        leadName: `${lead.first_name} ${lead.last_name}`,
-        timestamp: lead.updated_at,
-      });
-    }
-  }
-
-  activities.sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+  const leadNames = new Map(
+    (leads ?? []).map((lead) => [
+      lead.id,
+      `${lead.first_name} ${lead.last_name}`,
+    ]),
   );
 
-  return { data: activities.slice(0, limit), error: null };
+  const eventDetails: Record<
+    string,
+    { type: RecentActivity["type"]; description: string }
+  > = {
+    "lead.created": { type: "lead_created", description: "was created" },
+    "lead.updated": { type: "lead_updated", description: "was updated" },
+    "lead.stage_changed": {
+      type: "lead_stage_changed",
+      description: "moved to a new pipeline stage",
+    },
+    "lead.qualified": {
+      type: "lead_qualified",
+      description: "was qualified by AI",
+    },
+  };
+
+  const activities = events.flatMap((event) => {
+    const metadata = event.metadata as Record<string, unknown>;
+    const eventType =
+      typeof metadata?.event_type === "string"
+        ? metadata.event_type
+        : event.subject;
+    const details = eventType ? eventDetails[eventType] : undefined;
+    const leadName = leadNames.get(event.lead_id) ?? null;
+
+    if (!details || !leadName) return [];
+
+    return [
+      {
+        id: event.id,
+        type: details.type,
+        description: `${leadName} ${details.description}`,
+        leadName,
+        timestamp: event.created_at,
+      },
+    ];
+  });
+
+  return { data: activities, error: null };
 }

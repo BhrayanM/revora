@@ -6,7 +6,7 @@ export const aiConfig = {
   timeoutMs: 60_000,
 
   retry: {
-    maxRetries: 3,
+    maxRetries: 1,
     baseDelayMs: 1000,
     maxDelayMs: 10_000,
     backoffMultiplier: 2,

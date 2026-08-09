@@ -113,8 +113,54 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const [{ data: workspace }, { data: pipeline }] = await Promise.all([
+    supabase
+      .from("workspaces")
+      .select("id")
+      .eq("organization_id", orgId)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("pipelines")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("is_default", true)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  if (!workspace || !pipeline) {
+    console.error("[Leads API] Organization CRM defaults are not configured");
+    return NextResponse.json(
+      { error: "Organization CRM defaults are not configured" },
+      { status: 409 },
+    );
+  }
+
+  const { data: stage } = await supabase
+    .from("pipeline_stages")
+    .select("id")
+    .eq("pipeline_id", pipeline.id)
+    .order("order_index", { ascending: true })
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (!stage) {
+    console.error("[Leads API] Default pipeline has no stages");
+    return NextResponse.json(
+      { error: "Organization CRM defaults are not configured" },
+      { status: 409 },
+    );
+  }
+
   const insertPayload: Database["public"]["Tables"]["leads"]["Insert"] = {
     organization_id: orgId,
+    workspace_id: workspace.id,
+    pipeline_id: pipeline.id,
+    pipeline_stage_id: stage.id,
     first_name: normalized.first_name,
     last_name: normalized.last_name,
     email: normalized.email,
@@ -123,7 +169,7 @@ export async function POST(request: NextRequest) {
     source: leadSource,
     source_external_id: normalized.source_external_id,
     status: "new",
-    score: 50,
+    score: 0,
     metadata: {
       ...normalized.metadata,
       message: normalized.message,

@@ -128,10 +128,14 @@ export default async function LeadDetailPage({
                     value: (
                       <span
                         className={
-                          lead.score >= 80 ? "font-medium text-success" : ""
+                          existingQualification && lead.score >= 80
+                            ? "font-medium text-success"
+                            : ""
                         }
                       >
-                        {lead.score}/100
+                        {existingQualification
+                          ? `${lead.score}/100`
+                          : "Not qualified"}
                       </span>
                     ),
                   },
@@ -192,7 +196,6 @@ export default async function LeadDetailPage({
         <div className="space-y-6">
           <AIQualificationPanel
             leadId={id}
-            currentScore={lead.score}
             existingQualification={existingQualification}
           />
         </div>

@@ -3,6 +3,7 @@ import "server-only";
 import { OpenAI } from "openai";
 
 import { aiConfig } from "@/lib/ai/config";
+import { AIConfigurationError } from "@/lib/ai/errors";
 
 let clientInstance: OpenAI | null = null;
 
@@ -14,7 +15,7 @@ export function getOpenAIClient(): OpenAI {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    throw new Error(
+    throw new AIConfigurationError(
       "OPENAI_API_KEY is not configured. AI features are unavailable.",
     );
   }

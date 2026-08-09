@@ -1,6 +1,12 @@
 import "server-only";
 
 import { generateStructuredOutput } from "@/lib/ai";
+import { getSafeAIErrorMessage } from "@/lib/ai/errors";
+import {
+  buildLeadQualificationMessage,
+  buildQualificationMetadata,
+  buildQualificationTags,
+} from "@/lib/ai/lead-qualification-context";
 import {
   LEAD_QUALIFICATION_PROMPT,
   LEAD_QUALIFICATION_SCHEMA,
@@ -9,7 +15,10 @@ import {
   type QualificationResult,
   validateQualificationResult,
 } from "@/lib/ai/qualification";
-import { getLeadConversations } from "@/lib/queries/conversations";
+import {
+  completeExecution,
+  startLeadQualificationExecution,
+} from "@/lib/automation/executions";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export async function qualifyLeadForOrg(
@@ -29,88 +38,66 @@ export async function qualifyLeadForOrg(
     throw new Error("Lead not found");
   }
 
-  const { data: conversations } = await getLeadConversations(leadId);
+  const { data: conversations } = await supabase
+    .from("conversations")
+    .select("*")
+    .eq("organization_id", organizationId)
+    .eq("lead_id", leadId)
+    .order("created_at", { ascending: false });
 
-  const conversationContext =
-    conversations && conversations.length > 0
-      ? conversations
-          .slice(0, 5)
-          .map((c) => `[${c.type} / ${c.direction}] ${c.content.slice(0, 200)}`)
-          .join("\n")
-      : "No conversations recorded yet.";
-
-  const userMessage = `Please qualify the following lead:
-
-Name: ${lead.first_name} ${lead.last_name}
-Email: ${lead.email ?? "Unknown"}
-Phone: ${lead.phone ?? "Unknown"}
-Company: ${lead.company ?? "Unknown"}
-Source: ${lead.source}
-Current Status: ${lead.status}
-Current Score: ${lead.score}
-
-Recent Conversations:
-${conversationContext}
-
-Analyze this lead and return the qualification result.`;
-
-  const result = await generateStructuredOutput<QualificationResult>({
-    messages: [
-      { role: "system", content: LEAD_QUALIFICATION_PROMPT },
-      { role: "user", content: userMessage },
-    ],
-    temperature: 0.3,
-    maxTokens: 1000,
-    responseSchema: LEAD_QUALIFICATION_SCHEMA,
+  const started = await startLeadQualificationExecution({
+    organizationId,
+    leadId,
   });
 
-  const validated = validateQualificationResult(result.data);
-
-  const tags = [
-    ...new Set([
-      validated.temperature.toLowerCase(),
-      ...validated.buyingSignals.map((s) => s.slice(0, 30)),
-      validated.intent,
-    ]),
-  ].slice(0, 10);
-
-  const metadata = lead.metadata || {};
-  (metadata as Record<string, unknown>)["qualification"] = {
-    temperature: validated.temperature,
-    intent: validated.intent,
-    confidence: validated.confidence,
-    buyingSignals: validated.buyingSignals,
-    risks: validated.risks,
-    recommendedAction: validated.recommendedAction,
-    summary: validated.summary,
-    qualifiedAt: new Date().toISOString(),
-    model: result.model,
-    tokens: result.usage?.totalTokens ?? null,
-  };
-
-  const { error: updateError } = await supabase
-    .from("leads")
-    .update({
-      score: validated.score,
-      tags,
-      metadata: metadata as Record<string, unknown>,
-    })
-    .eq("id", leadId);
-
-  if (updateError) {
-    throw new Error(`Failed to update lead: ${updateError.message}`);
+  if (!started.execution) {
+    throw new Error(started.error ?? "Unable to start AI qualification.");
   }
 
-  if (validated.temperature === "HOT" && lead.status === "new") {
-    await supabase.from("conversations").insert({
-      organization_id: organizationId,
-      lead_id: leadId,
-      type: "ai_summary",
-      direction: "outbound",
-      subject: "AI Qualification",
-      content: `AI Qualification complete. Score: ${validated.score}/100 (${validated.temperature}). ${validated.summary}`,
+  try {
+    const result = await generateStructuredOutput<QualificationResult>({
+      messages: [
+        { role: "system", content: LEAD_QUALIFICATION_PROMPT },
+        {
+          role: "user",
+          content: buildLeadQualificationMessage(lead, conversations),
+        },
+      ],
+      temperature: 0.2,
+      maxTokens: 700,
+      responseSchema: LEAD_QUALIFICATION_SCHEMA,
     });
-  }
 
-  return { ...validated, leadId };
+    const validated = validateQualificationResult(result.data);
+    const { error: updateError } = await supabase
+      .from("leads")
+      .update({
+        score: validated.score,
+        tags: buildQualificationTags(validated),
+        metadata: buildQualificationMetadata(
+          lead.metadata,
+          validated,
+          result.model,
+          result.usage?.totalTokens ?? null,
+        ),
+      })
+      .eq("id", leadId)
+      .eq("organization_id", organizationId);
+
+    if (updateError) {
+      throw new Error("Could not persist AI qualification.");
+    }
+
+    await completeExecution(started.execution.id, "success", undefined, {
+      model: result.model,
+      total_tokens: result.usage?.totalTokens ?? null,
+      duration_ms: result.durationMs,
+    });
+
+    return { ...validated, leadId };
+  } catch (error) {
+    const safeMessage = getSafeAIErrorMessage(error);
+    await completeExecution(started.execution.id, "failed", safeMessage);
+    throw new Error(safeMessage);
+  }
 }
