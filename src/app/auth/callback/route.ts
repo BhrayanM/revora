@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { getInvitationContext } from "@/lib/invitations/context";
 import {
   getSafeInternalPath,
   hasCurrentLegalConsent,
@@ -93,6 +94,12 @@ export async function GET(request: NextRequest) {
   if (!(await hasCurrentLegalConsent(supabase, user.id))) {
     const consentPath = `/legal/consent?next=${encodeURIComponent(nextPath)}`;
     return NextResponse.redirect(safeRedirect(request, consentPath));
+  }
+
+  // A valid, revalidated invitation takes precedence over normal first-user
+  // provisioning. Invalid or forged cookies never suppress onboarding.
+  if ((await getInvitationContext()).state === "valid") {
+    return NextResponse.redirect(safeRedirect(request, "/invite/accept"));
   }
 
   const { data: memberships } = await supabase

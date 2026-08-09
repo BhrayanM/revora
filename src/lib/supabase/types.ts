@@ -151,6 +151,57 @@
         };
         Relationships: [];
       };
+      organization_invitations: {
+        Row: {
+          id: string;
+          organization_id: string;
+          email_normalized: string;
+          role: "admin" | "manager" | "agent" | "viewer";
+          token_hash: string;
+          invited_by: string;
+          created_at: string;
+          updated_at: string;
+          expires_at: string;
+          accepted_at: string | null;
+          accepted_by: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          last_sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          email_normalized: string;
+          role: "admin" | "manager" | "agent" | "viewer";
+          token_hash: string;
+          invited_by: string;
+          created_at?: string;
+          updated_at?: string;
+          expires_at: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          last_sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          email_normalized?: string;
+          role?: "admin" | "manager" | "agent" | "viewer";
+          token_hash?: string;
+          invited_by?: string;
+          created_at?: string;
+          updated_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          last_sent_at?: string;
+        };
+        Relationships: [];
+      };
       workspaces: {
         Row: {
           id: string;
@@ -624,6 +675,36 @@
               error: string;
               slug: string;
             };
+      };
+      create_organization_invitation: {
+        Args: {
+          p_organization_id: string;
+          p_email_normalized: string;
+          p_role: "admin" | "manager" | "agent" | "viewer";
+          p_token_hash: string;
+          p_expires_at: string;
+        };
+        Returns: string;
+      };
+      rotate_organization_invitation: {
+        Args: {
+          p_invitation_id: string;
+          p_token_hash: string;
+          p_expires_at: string;
+        };
+        Returns: string;
+      };
+      revoke_organization_invitation: {
+        Args: {
+          p_invitation_id: string;
+        };
+        Returns: "invalid" | "accepted" | "revoked";
+      };
+      accept_organization_invitation: {
+        Args: {
+          p_token_hash: string;
+        };
+        Returns: Record<string, unknown>;
       };
     };
     Enums: Record<string, never>;

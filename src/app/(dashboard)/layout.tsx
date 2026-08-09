@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { getInvitationContext } from "@/lib/invitations/context";
 import {
   getSafeInternalPath,
   hasCurrentLegalConsent,
@@ -43,6 +44,13 @@ export default async function DashboardLayout({
       );
       consentPath.searchParams.set("next", getSafeInternalPath(pathname));
       redirect(consentPath.toString().replace(consentPath.origin, ""));
+    }
+
+    // Recovery provisioning must retain its normal behavior for ordinary new
+    // users, but a database-revalidated invitation must be accepted instead of
+    // creating an unrelated owner organization.
+    if ((await getInvitationContext()).state === "valid") {
+      redirect("/invite/accept");
     }
 
     const { data: memberships } = await supabase
