@@ -22,7 +22,7 @@ import {
 } from "@/lib/automation/executions";
 import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById } from "@/lib/queries/leads";
-import { createServiceClient } from "@/lib/supabase/server";
+import { createServiceAdminClient } from "@/lib/supabase/server";
 
 async function getLeadWithAuth(leadId: string) {
   const authorization =
@@ -68,7 +68,7 @@ export async function qualifyLead(
     });
 
     const validated = validateQualificationResult(result.data);
-    const supabase = await createServiceClient();
+    const supabase = await createServiceAdminClient();
     const { error: updateError } = await supabase
       .from("leads")
       .update({
