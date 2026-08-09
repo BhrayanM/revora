@@ -761,6 +761,30 @@
         };
         Relationships: [];
       };
+      organization_ai_qualification_windows: {
+        Row: {
+          organization_id: string;
+          window_started_at: string;
+          request_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          organization_id: string;
+          window_started_at: string;
+          request_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          organization_id?: string;
+          window_started_at?: string;
+          request_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -917,6 +941,13 @@
           p_status: "suspended" | "removed";
         };
         Returns: string;
+      };
+      reserve_organization_ai_qualification_slot: {
+        Args: {
+          p_organization_id: string;
+          p_limit: number;
+        };
+        Returns: boolean;
       };
     };
     Enums: Record<string, never>;
