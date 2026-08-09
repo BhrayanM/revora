@@ -22,13 +22,13 @@ type ProviderConfig = {
 
 const allProviders: ProviderConfig[] = [
   { provider: "google", label: "Continue with Google", icon: GoogleIcon },
-  { provider: "apple", label: "Continue with Apple", icon: AppleIcon },
   {
     provider: "azure",
     label: "Continue with Microsoft",
     icon: MicrosoftIcon,
     scopes: "email",
   },
+  { provider: "apple", label: "Continue with Apple", icon: AppleIcon },
 ];
 
 function getActiveProviders(): OAuthProvider[] {

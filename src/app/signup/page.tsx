@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { Suspense, useRef, useState } from "react";
@@ -89,8 +89,8 @@ function SignupForm() {
           Back to home
         </AuthBackLink>
         <AuthPageHeader
-          title="Start your free trial"
-          description="14-day free trial. No credit card required."
+          title="Start building with Revora"
+          description="Create your workspace and organize your revenue workflow."
         />
 
         <div className="mt-8">
@@ -105,8 +105,9 @@ function SignupForm() {
             </Alert>
           )}
 
-          <label className="mb-6 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-secondary p-4 text-sm text-muted-foreground">
+          <label className="mb-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface-secondary p-4 text-sm text-muted-foreground">
             <input
+              id="signup-legal-consent"
               type="checkbox"
               checked={legalConsentAccepted}
               onChange={(event) =>
@@ -118,6 +119,10 @@ function SignupForm() {
               I agree to the{" "}
               <AuthTextLink href="/terms">Terms of Service</AuthTextLink> and{" "}
               <AuthTextLink href="/privacy">Privacy Policy</AuthTextLink>.
+              <span className="mt-1 block text-xs text-subtle">
+                Required before creating an account or continuing with a
+                provider.
+              </span>
             </span>
           </label>
 
@@ -178,7 +183,7 @@ function SignupForm() {
               loading={loading}
               disabled={!captchaToken || !legalConsentAccepted}
             >
-              Create Free Account
+              Create Account
               <ArrowRight className="size-5" />
             </Button>
 
@@ -192,29 +197,6 @@ function SignupForm() {
               />
             </div>
           </form>
-        </div>
-
-        <div className="mt-8 rounded-xl border border-border bg-surface-secondary/80 p-5">
-          <h3 className="text-sm font-semibold text-foreground">
-            Your free trial includes:
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {[
-              "Up to 500 leads with AI qualification",
-              "Email automation with pre-built sequences",
-              "GoHighLevel & HubSpot integration",
-              "Basic analytics and reporting",
-              "Email support within 24 hours",
-            ].map((item) => (
-              <li
-                key={item}
-                className="flex items-start gap-2 text-sm text-muted-foreground"
-              >
-                <Check className="mt-0.5 size-4 shrink-0 text-success" />
-                {item}
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="mt-6 text-center">
