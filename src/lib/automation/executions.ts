@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { createServiceAdminClient } from "@/lib/supabase/server";
 
 // A development safety ceiling rather than a commercial entitlement. The
 // database function makes reservations atomically across all app instances.
@@ -29,7 +29,7 @@ export async function startExecution(params: {
   provider: string;
   action: string;
 }): Promise<ExecutionRecord | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createServiceAdminClient();
 
   const { data: existing } = await supabase
     .from("automation_executions")
@@ -76,7 +76,7 @@ export async function startLeadQualificationExecution(params: {
   organizationId: string;
   leadId: string;
 }): Promise<{ execution: ExecutionRecord | null; error: string | null }> {
-  const supabase = await createServiceClient();
+  const supabase = await createServiceAdminClient();
   const minuteBucket = Math.floor(Date.now() / 60_000);
 
   const { data, error } = await supabase
@@ -142,7 +142,7 @@ export async function completeExecution(
   errorMessage?: string,
   responseMetadata?: Record<string, unknown>,
 ): Promise<void> {
-  const supabase = await createServiceClient();
+  const supabase = await createServiceAdminClient();
 
   await supabase
     .from("automation_executions")
