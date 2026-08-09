@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById } from "@/lib/queries/leads";
 
@@ -30,9 +31,19 @@ export default async function LeadDetailPage({
 }) {
   const { id } = await params;
 
+  const authorization =
+    await requireCurrentOrganizationPermission("leads.read");
+  if (!authorization.data) {
+    notFound();
+  }
+
   const { data: lead, error } = await getLeadById(id);
 
-  if (error || !lead) {
+  if (
+    error ||
+    !lead ||
+    lead.organization_id !== authorization.data.organization.id
+  ) {
     notFound();
   }
 

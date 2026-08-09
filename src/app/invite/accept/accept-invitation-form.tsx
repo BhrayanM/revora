@@ -47,9 +47,8 @@ export function AcceptInvitationForm({
     return (
       <div className="space-y-5 text-center">
         <Alert variant="success">
-          You joined {resultName} successfully. If you belong to more than one
-          organization, organization switching will be available in a later
-          update.
+          You joined {resultName} successfully. It is now your active
+          organization.
         </Alert>
         <Link
           href="/dashboard"

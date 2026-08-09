@@ -4,11 +4,16 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import {
+  getActiveOrganizationContext,
+  getAvailableActiveOrganizations,
+} from "@/lib/auth";
 import { getInvitationContext } from "@/lib/invitations/context";
 import {
   getSafeInternalPath,
   hasCurrentLegalConsent,
 } from "@/lib/legal/consent";
+import type { ActiveOrganizationOption } from "@/lib/organizations/types";
 import { createClient, createServiceAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -30,6 +35,8 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
+  let activeOrganization: ActiveOrganizationOption | null = null;
+  let organizations: ActiveOrganizationOption[] = [];
   const supabase = await createClient();
   const {
     data: { user },
@@ -105,7 +112,27 @@ export default async function DashboardLayout({
         }
       }
     }
+
+    // The HttpOnly organization selection is validated again on every
+    // dashboard request. A stale, removed, or foreign selection falls back to
+    // another active membership or safely exits the dashboard.
+    const context = await getActiveOrganizationContext();
+    if (!context) redirect("/");
+    activeOrganization = {
+      id: context.organization.id,
+      name: context.organization.name,
+      role: context.membership.role,
+    };
+    organizations = await getAvailableActiveOrganizations();
   }
 
-  return <DashboardShell user={user}>{children}</DashboardShell>;
+  return (
+    <DashboardShell
+      user={user}
+      activeOrganization={activeOrganization}
+      organizations={organizations}
+    >
+      {children}
+    </DashboardShell>
+  );
 }
