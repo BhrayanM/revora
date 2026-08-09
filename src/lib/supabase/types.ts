@@ -122,6 +122,7 @@
           organization_id: string;
           role: "owner" | "admin" | "manager" | "agent" | "viewer";
           status: "active" | "suspended" | "removed";
+          active_owner_organization_id: string | null;
           joined_at: string;
           suspended_at: string | null;
           removed_at: string | null;
@@ -202,6 +203,57 @@
         };
         Relationships: [];
       };
+      organization_ownership_transfers: {
+        Row: {
+          id: string;
+          organization_id: string;
+          initiator_membership_id: string;
+          target_membership_id: string;
+          token_hash: string;
+          created_at: string;
+          expires_at: string;
+          accepted_at: string | null;
+          accepted_by: string | null;
+          rejected_at: string | null;
+          rejected_by: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          expired_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          initiator_membership_id: string;
+          target_membership_id: string;
+          token_hash: string;
+          created_at?: string;
+          expires_at: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          expired_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          initiator_membership_id?: string;
+          target_membership_id?: string;
+          token_hash?: string;
+          created_at?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          rejected_at?: string | null;
+          rejected_by?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          expired_at?: string | null;
+        };
+        Relationships: [];
+      };
       team_audit_events: {
         Row: {
           id: string;
@@ -209,7 +261,14 @@
           actor_profile_id: string | null;
           subject_profile_id: string | null;
           event_type:
-            "member_role_changed" | "member_suspended" | "member_removed";
+            | "member_role_changed"
+            | "member_suspended"
+            | "member_removed"
+            | "ownership_transfer_requested"
+            | "ownership_transfer_cancelled"
+            | "ownership_transfer_rejected"
+            | "ownership_transfer_expired"
+            | "ownership_transferred";
           metadata: Record<string, unknown>;
           created_at: string;
         };
@@ -219,7 +278,14 @@
           actor_profile_id?: string | null;
           subject_profile_id?: string | null;
           event_type:
-            "member_role_changed" | "member_suspended" | "member_removed";
+            | "member_role_changed"
+            | "member_suspended"
+            | "member_removed"
+            | "ownership_transfer_requested"
+            | "ownership_transfer_cancelled"
+            | "ownership_transfer_rejected"
+            | "ownership_transfer_expired"
+            | "ownership_transferred";
           metadata?: Record<string, unknown>;
           created_at?: string;
         };
@@ -229,7 +295,14 @@
           actor_profile_id?: string | null;
           subject_profile_id?: string | null;
           event_type?:
-            "member_role_changed" | "member_suspended" | "member_removed";
+            | "member_role_changed"
+            | "member_suspended"
+            | "member_removed"
+            | "ownership_transfer_requested"
+            | "ownership_transfer_cancelled"
+            | "ownership_transfer_rejected"
+            | "ownership_transfer_expired"
+            | "ownership_transferred";
           metadata?: Record<string, unknown>;
           created_at?: string;
         };
@@ -739,6 +812,32 @@
         };
         Returns: Record<string, unknown>;
       };
+      create_organization_ownership_transfer: {
+        Args: {
+          p_target_membership_id: string;
+          p_token_hash: string;
+          p_expires_at: string;
+        };
+        Returns: string;
+      };
+      cancel_organization_ownership_transfer: {
+        Args: {
+          p_transfer_id: string;
+        };
+        Returns: "invalid" | "accepted" | "rejected" | "cancelled" | "expired";
+      };
+      reject_organization_ownership_transfer: {
+        Args: {
+          p_token_hash: string;
+        };
+        Returns: Record<string, unknown>;
+      };
+      accept_organization_ownership_transfer: {
+        Args: {
+          p_token_hash: string;
+        };
+        Returns: Record<string, unknown>;
+      };
       list_organization_team_members: {
         Args: {
           p_organization_id: string;
@@ -769,6 +868,20 @@
           last_sent_at: string;
         }[];
       };
+      list_organization_pending_ownership_transfers: {
+        Args: {
+          p_organization_id: string;
+        };
+        Returns: {
+          transfer_id: string;
+          target_membership_id: string;
+          target_full_name: string;
+          target_email: string;
+          created_at: string;
+          expires_at: string;
+          status: "pending" | "expired";
+        }[];
+      };
       list_organization_team_audit_events: {
         Args: {
           p_organization_id: string;
@@ -777,7 +890,14 @@
         Returns: {
           event_id: string;
           event_type:
-            "member_role_changed" | "member_suspended" | "member_removed";
+            | "member_role_changed"
+            | "member_suspended"
+            | "member_removed"
+            | "ownership_transfer_requested"
+            | "ownership_transfer_cancelled"
+            | "ownership_transfer_rejected"
+            | "ownership_transfer_expired"
+            | "ownership_transferred";
           metadata: Record<string, unknown>;
           created_at: string;
           actor_name: string | null;

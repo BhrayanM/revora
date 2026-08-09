@@ -25,9 +25,27 @@ export type PendingInvitation = {
   lastSentAt: string;
 };
 
+export type PendingOwnershipTransfer = {
+  transferId: string;
+  targetMembershipId: string;
+  targetFullName: string;
+  targetEmail: string;
+  createdAt: string;
+  expiresAt: string;
+  status: "pending" | "expired";
+};
+
 export type TeamAuditEvent = {
   eventId: string;
-  eventType: "member_role_changed" | "member_suspended" | "member_removed";
+  eventType:
+    | "member_role_changed"
+    | "member_suspended"
+    | "member_removed"
+    | "ownership_transfer_requested"
+    | "ownership_transfer_cancelled"
+    | "ownership_transfer_rejected"
+    | "ownership_transfer_expired"
+    | "ownership_transferred";
   metadata: Record<string, unknown>;
   createdAt: string;
   actorName: string | null;

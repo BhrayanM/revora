@@ -5,6 +5,7 @@ import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { hasOrganizationPermission } from "@/lib/auth/permissions";
 import {
   getOrganizationPendingInvitations,
+  getOrganizationPendingOwnershipTransfers,
   getOrganizationTeamAuditEvents,
   getOrganizationTeamMembers,
 } from "@/lib/team/service";
@@ -23,12 +24,20 @@ export default async function TeamManagementPage() {
   const { organization, membership } = authorization.data;
   const canInvite = hasOrganizationPermission(membership.role, "team.invite");
   const canManage = hasOrganizationPermission(membership.role, "team.manage");
+  const canTransferOwnership = hasOrganizationPermission(
+    membership.role,
+    "team.transferOwnership",
+  );
 
-  const [members, invitations, auditEvents] = await Promise.all([
-    getOrganizationTeamMembers(organization.id),
-    canInvite ? getOrganizationPendingInvitations(organization.id) : [],
-    canManage ? getOrganizationTeamAuditEvents(organization.id) : [],
-  ]);
+  const [members, invitations, ownershipTransfers, auditEvents] =
+    await Promise.all([
+      getOrganizationTeamMembers(organization.id),
+      canInvite ? getOrganizationPendingInvitations(organization.id) : [],
+      canTransferOwnership
+        ? getOrganizationPendingOwnershipTransfers(organization.id)
+        : [],
+      canManage ? getOrganizationTeamAuditEvents(organization.id) : [],
+    ]);
 
   return (
     <TeamManagementContent
@@ -37,9 +46,11 @@ export default async function TeamManagementPage() {
       currentRole={membership.role}
       members={members}
       invitations={invitations}
+      ownershipTransfers={ownershipTransfers}
       auditEvents={auditEvents}
       canInvite={canInvite}
       canManage={canManage}
+      canTransferOwnership={canTransferOwnership}
     />
   );
 }

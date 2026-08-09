@@ -3,12 +3,14 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type {
   PendingInvitation,
+  PendingOwnershipTransfer,
   TeamAuditEvent,
   TeamMember,
 } from "@/lib/team/types";
 
 export type {
   PendingInvitation,
+  PendingOwnershipTransfer,
   TeamAuditEvent,
   TeamMember,
 } from "@/lib/team/types";
@@ -70,6 +72,45 @@ export async function getOrganizationPendingInvitations(
     createdAt: invitation.created_at,
     lastSentAt: invitation.last_sent_at,
   }));
+}
+
+/**
+ * This owner-only read model intentionally exposes no transfer token or hash.
+ * The database function repeats the owner, tenant, and current-consent checks.
+ */
+export async function getOrganizationPendingOwnershipTransfers(
+  organizationId: string,
+): Promise<PendingOwnershipTransfer[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc(
+    "list_organization_pending_ownership_transfers",
+    { p_organization_id: organizationId },
+  );
+
+  if (error) {
+    console.error("Failed to load pending ownership transfers:", error.message);
+    throw new Error(
+      "We could not load pending ownership transfers. Please try again.",
+    );
+  }
+
+  return (data ?? []).flatMap((transfer) => {
+    if (transfer.status !== "pending" && transfer.status !== "expired") {
+      return [];
+    }
+
+    return [
+      {
+        transferId: transfer.transfer_id,
+        targetMembershipId: transfer.target_membership_id,
+        targetFullName: transfer.target_full_name,
+        targetEmail: transfer.target_email,
+        createdAt: transfer.created_at,
+        expiresAt: transfer.expires_at,
+        status: transfer.status,
+      },
+    ];
+  });
 }
 
 export async function getOrganizationTeamAuditEvents(
