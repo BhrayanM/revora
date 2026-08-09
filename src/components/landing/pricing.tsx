@@ -7,34 +7,33 @@ import { Container } from "@/components/ui/container";
 
 const paths = [
   {
-    title: "Start focused",
+    title: "Captura y califica",
     description:
-      "Build a clear foundation for lead qualification and revenue workflow visibility.",
+      "Centraliza tus leads y utiliza IA para identificar cuáles requieren atención primero.",
     items: [
-      "Lead and pipeline workspace",
-      "AI qualification context",
-      "Workflow activity",
+      "Leads y oportunidades en un mismo espacio",
+      "Contexto y puntuación de cualificación",
+      "Pipeline visible para todo el equipo",
     ],
   },
   {
-    title: "Scale the motion",
+    title: "Automatiza y conecta",
     description:
-      "Connect the team and the operating detail behind a growing revenue process.",
+      "Conecta tus herramientas y coordina las acciones que siguen después de cada señal.",
     items: [
-      "Organization-aware collaboration",
-      "Integration configuration",
-      "Operational insights",
+      "Integraciones con CRM y automatización",
+      "Actividad del flujo de trabajo",
+      "Acciones y seguimiento coordinados",
     ],
-    featured: true,
   },
   {
-    title: "Govern the system",
+    title: "Escala con control",
     description:
-      "Bring more people, responsibilities, and sensitive operating decisions into one workspace.",
+      "Añade miembros, define responsabilidades y mantén el acceso a los datos bajo control.",
     items: [
-      "Role-aware access",
-      "Team management controls",
-      "Security settings",
+      "Roles y permisos por organización",
+      "Gestión segura del equipo",
+      "Configuración y seguridad centralizadas",
     ],
   },
 ];
@@ -48,37 +47,22 @@ export function Pricing() {
             variant="outline"
             className="mb-4 border-border bg-surface text-foreground"
           >
-            Built to grow with the workflow
+            CAPTURAR / AUTOMATIZAR / ESCALAR
           </Badge>
           <h2 className="text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
-            Start with the revenue motion you need today.
+            Empieza con tus leads. Automatiza el proceso. Escala con control.
           </h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            Create a workspace and shape Revora around the way your team works.
+            Revora reúne la cualificación, el seguimiento y la coordinación del
+            equipo en un mismo flujo de trabajo.
           </p>
         </div>
 
         <div className="mt-14 grid gap-4 lg:grid-cols-3">
           {paths.map((path) => (
-            <Card
-              key={path.title}
-              className={
-                path.featured
-                  ? "border-border-strong bg-surface-elevated shadow-lg shadow-black/5"
-                  : ""
-              }
-            >
+            <Card key={path.title}>
               <CardContent className="flex h-full flex-col p-7">
-                {path.featured && (
-                  <Badge
-                    variant="outline"
-                    size="sm"
-                    className="w-fit border-border bg-surface-secondary text-foreground"
-                  >
-                    Revenue workflow
-                  </Badge>
-                )}
-                <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-foreground">
+                <h3 className="text-xl font-semibold tracking-[-0.03em] text-foreground">
                   {path.title}
                 </h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -102,7 +86,7 @@ export function Pricing() {
                   href="/signup"
                   className="mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground outline-none transition-colors hover:bg-primary-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
-                  Start building
+                  Comienza a construir
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </Link>
               </CardContent>
