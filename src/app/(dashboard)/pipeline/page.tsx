@@ -91,8 +91,8 @@ export default async function PipelinePage() {
   }
 
   return (
-    <Container className="max-w-none px-0">
-      <div className="mb-6 flex items-center justify-between">
+    <Container className="max-w-none px-0 flex flex-col h-full">
+      <div className="mb-6 flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -107,7 +107,7 @@ export default async function PipelinePage() {
         </Link>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto pb-4">
         {(stages ?? []).map((stage) => {
           const stageLeads = leadsByStage.get(stage.id) ?? [];
           return (
