@@ -18,31 +18,31 @@ import { cn } from "@/lib/utils";
 const steps = [
   {
     icon: UsersRound,
-    eyebrow: "01 / Capture",
-    title: "Bring signals into one operating view",
+    eyebrow: "01 / CAPTURAR",
+    title: "Unifica las señales en una sola vista.",
     description:
-      "Start with the lead and the context your team needs for a confident next step.",
+      "Reúne el lead, su contexto y la información necesaria para decidir qué hacer después.",
   },
   {
     icon: BrainCircuit,
-    eyebrow: "02 / Qualify",
-    title: "Use AI to clarify priority",
+    eyebrow: "02 / CALIFICAR",
+    title: "Prioriza con contexto de IA.",
     description:
-      "Surface the information that helps your team focus attention where it matters most.",
+      "Utiliza la información disponible para identificar qué oportunidades requieren atención primero.",
   },
   {
     icon: MessagesSquare,
-    eyebrow: "03 / Coordinate",
-    title: "Turn insight into an accountable action",
+    eyebrow: "03 / COORDINAR",
+    title: "Convierte la decisión en una siguiente acción.",
     description:
-      "Keep the team, the workflow, and the revenue motion connected as work progresses.",
+      "Mantén conectado al equipo con el lead, el pipeline y las acciones que deben ejecutarse.",
   },
   {
     icon: Check,
-    eyebrow: "04 / Learn",
-    title: "See what moved the workflow forward",
+    eyebrow: "04 / APRENDER",
+    title: "Entiende qué ocurrió.",
     description:
-      "Use a shared record of activity to improve the next revenue decision.",
+      "Consulta la actividad del flujo para saber qué impulsó el resultado y qué debería pasar después.",
   },
 ];
 
@@ -68,15 +68,14 @@ export function AIWorkflow() {
             variant="outline"
             className="mb-4 border-border bg-surface/70 text-foreground"
           >
-            How Revora works
+            Cómo funciona Revora
           </Badge>
           <h2 className="text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
-            A revenue workflow that stays clear from first signal to next
-            action.
+            Un flujo de trabajo claro, desde la señal hasta la siguiente acción.
           </h2>
           <p className="mt-4 text-lg leading-8 text-muted-foreground">
-            Follow the signal through a focused operating loop instead of a
-            collection of disconnected tools.
+            Sigue cada señal en un mismo flujo, en lugar de repartir el trabajo
+            entre herramientas desconectadas.
           </p>
         </div>
 
@@ -121,58 +120,60 @@ export function AIWorkflow() {
             })}
           </div>
 
-          <div className="relative min-h-[23rem] overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
+          <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8">
             <div
               className="absolute -right-10 -top-10 size-44 rounded-full bg-foreground/[0.035] blur-3xl"
               aria-hidden="true"
             />
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const active = activeIndex === index;
-              return (
-                <div
-                  key={step.title}
-                  className={cn(
-                    "transition-all duration-500",
-                    active
-                      ? "relative opacity-100"
-                      : "pointer-events-none absolute inset-0 translate-y-2 opacity-0",
-                  )}
-                  aria-hidden={!active}
-                >
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-foreground text-canvas shadow-lg shadow-black/10">
-                    <Icon className="size-5" aria-hidden="true" />
-                  </div>
-                  <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-subtle">
-                    {step.eyebrow}
-                  </p>
-                  <h3 className="mt-3 max-w-lg text-2xl font-semibold tracking-[-0.035em] text-foreground sm:text-3xl">
-                    {step.title}
-                  </h3>
-                  <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
-                    {step.description}
-                  </p>
-                  <div className="mt-10 flex items-center gap-3 text-sm font-medium text-foreground">
-                    <span className="flex size-7 items-center justify-center rounded-full border border-border bg-surface-secondary">
-                      {index + 1}
-                    </span>
-                    <span>
-                      {index === steps.length - 1
-                        ? "Ready for the next signal"
-                        : "Continue through the workflow"}
-                    </span>
-                    {index < steps.length - 1 && (
-                      <ArrowRight
-                        className="size-4 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+            <div className="relative grid">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                const active = activeIndex === index;
+                return (
+                  <div
+                    key={step.title}
+                    className={cn(
+                      "col-start-1 row-start-1 transition-[opacity,transform] duration-500 ease-out",
+                      active
+                        ? "z-10 translate-y-0 opacity-100"
+                        : "pointer-events-none z-0 translate-y-2 opacity-0",
                     )}
+                    aria-hidden={!active}
+                  >
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-foreground text-canvas shadow-lg shadow-black/10">
+                      <Icon className="size-5" aria-hidden="true" />
+                    </div>
+                    <p className="mt-8 text-xs font-semibold uppercase tracking-[0.16em] text-subtle">
+                      {step.eyebrow}
+                    </p>
+                    <h3 className="mt-3 max-w-lg text-2xl font-semibold tracking-[-0.035em] text-foreground sm:text-3xl">
+                      {step.title}
+                    </h3>
+                    <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground">
+                      {step.description}
+                    </p>
+                    <div className="mt-8 flex items-center gap-3 text-sm font-medium text-foreground">
+                      <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface-secondary">
+                        {index + 1}
+                      </span>
+                      <span>
+                        {index === steps.length - 1
+                          ? "Listo para la siguiente señal"
+                          : "Continúa con el flujo de trabajo"}
+                      </span>
+                      {index < steps.length - 1 && (
+                        <ArrowRight
+                          className="size-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
             <div
-              className="absolute bottom-8 left-8 right-8 flex items-center gap-2"
+              className="relative mt-8 flex items-center gap-2"
               aria-hidden="true"
             >
               {steps.map((step, index) => (
