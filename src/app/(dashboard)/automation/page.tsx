@@ -8,7 +8,7 @@ import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Automation — AI Growth",
+  title: "Automation",
 };
 
 const statusBadge: Record<string, "success" | "error" | "warning" | "default"> =

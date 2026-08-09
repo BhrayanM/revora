@@ -81,7 +81,8 @@ export function Toast({
 
   return (
     <div
-      role="alert"
+      role={variant === "error" ? "alert" : "status"}
+      aria-atomic="true"
       className={cn(
         toastVariants({ variant }),
         isVisible
@@ -114,7 +115,11 @@ export function Toast({
 
 export function ToastContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="pointer-events-none fixed bottom-0 right-0 z-50 flex flex-col gap-2 p-4">
+    <div
+      className="pointer-events-none fixed bottom-0 right-0 z-50 flex flex-col gap-2 p-4"
+      aria-live="polite"
+      aria-relevant="additions text"
+    >
       {children}
     </div>
   );

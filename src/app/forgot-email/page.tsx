@@ -62,7 +62,7 @@ export default function ForgotEmailPage() {
           </AuthTextLink>
           <AuthTextLink
             href="/login"
-            className="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-600 focus-visible:ring-offset-surface"
+            className="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary-600 focus-visible:ring-offset-surface"
           >
             Back to login
           </AuthTextLink>

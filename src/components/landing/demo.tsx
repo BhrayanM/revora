@@ -1,123 +1,128 @@
 import {
   ArrowRight,
-  BarChart3,
-  Brain,
-  Calendar,
+  BrainCircuit,
   CheckCircle2,
-  Play,
+  ListChecks,
+  Workflow,
 } from "lucide-react";
+import Link from "next/link";
 
 import { BackgroundPattern } from "@/components/shared/background-pattern";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 
-const stats = [
-  { label: "Leads Processed", value: "2.4M+", icon: BarChart3 },
-  { label: "Meetings Booked", value: "850K+", icon: Calendar },
-  { label: "AI Accuracy", value: "97.3%", icon: Brain },
+const signals = [
+  {
+    label: "Signal captured",
+    detail: "Lead context is ready for review",
+    icon: ListChecks,
+  },
+  {
+    label: "Priority clarified",
+    detail: "Qualification information is visible",
+    icon: BrainCircuit,
+  },
+  {
+    label: "Next action coordinated",
+    detail: "Workflow activity stays connected",
+    icon: Workflow,
+  },
 ];
 
 export function Demo() {
   return (
     <section className="relative py-24 sm:py-32">
       <BackgroundPattern variant="gradient" />
-      <Container>
-        <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div
-            className="animate-slide-up"
-            style={{ animationFillMode: "both" }}
-          >
-            <Badge variant="default" className="mb-4">
-              See It In Action
+      <Container className="relative">
+        <div className="grid items-center gap-12 lg:grid-cols-[0.88fr_1.12fr]">
+          <div>
+            <Badge
+              variant="outline"
+              className="mb-4 border-border bg-surface/70 text-foreground"
+            >
+              A clearer operating view
             </Badge>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Watch AI Growth{" "}
-              <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Transform
-              </span>{" "}
-              Your Sales
+            <h2 className="text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
+              Keep the signal, the decision, and the next action together.
             </h2>
-            <p className="mt-4 text-lg text-muted-foreground">
-              See how our AI automatically qualifies leads, sends personalized
-              outreach, and books meetings — all without human intervention.
+            <p className="mt-5 text-lg leading-8 text-muted-foreground">
+              Revora is designed to make the revenue workflow easier to follow
+              without adding another disconnected dashboard.
             </p>
-            <ul className="mt-6 space-y-3">
+            <ul className="mt-7 space-y-3">
               {[
-                "AI lead scoring in real-time",
-                "Automated email & SMS sequences",
-                "Smart calendar scheduling",
-                "Pipeline automation with n8n",
-                "Real-time analytics dashboard",
+                "Lead and pipeline context in one workspace",
+                "Qualification detail that supports prioritization",
+                "Automation activity visible alongside the work",
               ].map((item) => (
                 <li
                   key={item}
-                  className="flex items-center gap-2 text-sm text-foreground"
+                  className="flex items-start gap-2 text-sm text-foreground"
                 >
-                  <CheckCircle2 className="size-4 text-success shrink-0" />
+                  <CheckCircle2
+                    className="mt-0.5 size-4 shrink-0 text-success"
+                    aria-hidden="true"
+                  />
                   {item}
                 </li>
               ))}
             </ul>
-            <div className="mt-8 flex gap-3">
-              <Button>
-                Start Free Trial
-                <ArrowRight className="size-4" />
-              </Button>
-              <Button variant="outline">
-                <Play className="size-4" />
-                Watch Demo
-              </Button>
-            </div>
+            <Link
+              href="/signup"
+              className="mt-8 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground outline-none transition-colors hover:bg-primary-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+            >
+              Start building
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
           </div>
-          <div
-            className="animate-slide-up"
-            style={{ animationDelay: "0.2s", animationFillMode: "both" }}
-          >
-            <div className="relative">
-              <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20 blur-2xl" />
-              <Card className="relative overflow-hidden">
-                <div className="flex items-center gap-1.5 border-b border-border bg-surface-secondary px-4 py-2">
-                  <div className="size-2.5 rounded-full bg-error/60" />
-                  <div className="size-2.5 rounded-full bg-warning/60" />
-                  <div className="size-2.5 rounded-full bg-success/60" />
+
+          <div className="relative">
+            <div
+              className="absolute -inset-6 rounded-[2rem] bg-foreground/[0.04] blur-3xl"
+              aria-hidden="true"
+            />
+            <div className="relative rounded-[1.5rem] border border-border bg-surface p-3 shadow-xl shadow-black/10">
+              <div className="rounded-[1.1rem] border border-border bg-background p-5 sm:p-7">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-subtle">
+                      Revenue workflow
+                    </p>
+                    <p className="mt-1 text-base font-semibold text-foreground">
+                      Working signal
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    In progress
+                  </span>
                 </div>
-                <CardContent className="space-y-4 p-6">
-                  {stats.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="flex items-center justify-between rounded-lg bg-surface-secondary p-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                          <stat.icon className="size-4 text-primary" />
-                        </div>
-                        <span className="text-sm font-medium text-foreground">
-                          {stat.label}
+                <div className="mt-7 space-y-3">
+                  {signals.map((signal, index) => {
+                    const Icon = signal.icon;
+                    return (
+                      <div
+                        key={signal.label}
+                        className="flex items-center gap-4 rounded-xl border border-border bg-surface p-4"
+                      >
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground text-canvas">
+                          <Icon className="size-4" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-medium text-foreground">
+                            {signal.label}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {signal.detail}
+                          </span>
+                        </span>
+                        <span className="text-xs font-medium text-subtle">
+                          0{index + 1}
                         </span>
                       </div>
-                      <span className="text-lg font-bold text-primary">
-                        {stat.value}
-                      </span>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between rounded-lg bg-success/5 border border-success/20 p-4">
-                    <span className="text-sm font-medium text-success">
-                      AI Active — Processing Leads
-                    </span>
-                    <div className="flex gap-1">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="size-1.5 rounded-full bg-success animate-pulse"
-                          style={{ animationDelay: `${i * 0.2}s` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>

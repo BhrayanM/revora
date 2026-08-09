@@ -69,7 +69,7 @@ export function ProfileContent({
                   {initials}
                 </span>
               </div>
-              <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-white hover:bg-primary-600 transition-colors">
+              <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-primary-foreground hover:bg-primary-600 transition-colors">
                 <Camera className="size-4" />
               </button>
             </div>

@@ -1,27 +1,50 @@
+import { BrainCircuit, ChartNoAxesCombined, Workflow } from "lucide-react";
+
 import { Container } from "@/components/ui/container";
 
-const stats = [
-  { value: "10,000+", label: "Active Users" },
-  { value: "2.4M+", label: "Leads Processed" },
-  { value: "97.3%", label: "AI Accuracy" },
-  { value: "850K+", label: "Meetings Booked" },
-  { value: "99.9%", label: "Uptime SLA" },
+const principles = [
+  {
+    icon: BrainCircuit,
+    title: "Signal clarity",
+    description: "Surface the information behind the next revenue decision.",
+  },
+  {
+    icon: Workflow,
+    title: "Workflow continuity",
+    description:
+      "Keep lead work, automation activity, and team action connected.",
+  },
+  {
+    icon: ChartNoAxesCombined,
+    title: "Operational visibility",
+    description:
+      "Give the team a clearer view of movement through the pipeline.",
+  },
 ];
 
 export function TrustedBy() {
   return (
-    <section className="border-y border-border bg-surface-secondary py-12">
+    <section className="border-y border-border bg-surface-secondary/70 py-10">
       <Container>
-        <p className="text-center text-sm font-medium text-muted-foreground">
-          Trusted by innovative companies worldwide
-        </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-16 gap-y-6">
-          {stats.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
+        <div className="grid gap-6 sm:grid-cols-3">
+          {principles.map((principle) => {
+            const Icon = principle.icon;
+            return (
+              <div key={principle.title} className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-foreground">
+                  <Icon className="size-4" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {principle.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {principle.description}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Container>
     </section>

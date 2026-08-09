@@ -17,51 +17,51 @@ import { Container } from "@/components/ui/container";
 const features = [
   {
     icon: Brain,
-    title: "AI Lead Qualification",
+    title: "AI Qualification Context",
     description:
-      "Automatically score and qualify leads using AI that learns from your sales history and customer data.",
+      "Review qualification context alongside lead information so the team can make a more focused next decision.",
   },
   {
     icon: Workflow,
-    title: "Multi-Channel Automation",
+    title: "Revenue Workflow Activity",
     description:
-      "Orchestrate email, SMS, and voice campaigns across your entire funnel with intelligent workflows.",
+      "Keep workflow activity visible as lead work moves between qualification, pipeline, and team action.",
   },
   {
     icon: Users,
-    title: "Smart CRM",
+    title: "Lead Workspace",
     description:
-      "Manage contacts, track interactions, and nurture relationships with an AI-enhanced CRM built for growth.",
+      "Bring lead details, pipeline status, and qualification information into a shared operating view.",
   },
   {
     icon: MessageSquare,
-    title: "Conversational AI",
+    title: "Team Coordination",
     description:
-      "Engage leads 24/7 with AI chatbots that qualify, book meetings, and hand off to your sales team.",
+      "Give revenue teams a clearer view of the next action and the workflow that supports it.",
   },
   {
     icon: Calendar,
-    title: "Automated Booking",
+    title: "Pipeline Visibility",
     description:
-      "AI-powered scheduling that finds the perfect meeting time across time zones and calendars.",
+      "Track lead movement through the stages that matter to your revenue process.",
   },
   {
     icon: BarChart3,
-    title: "Advanced Analytics",
+    title: "Operational Insights",
     description:
-      "Real-time dashboards with predictive insights, conversion tracking, and ROI measurement.",
+      "Use a focused dashboard and analytics surface to understand pipeline and lead activity.",
   },
   {
     icon: Zap,
-    title: "Instant Integrations",
+    title: "Workflow Integrations",
     description:
-      "Connect with GoHighLevel, HubSpot, Slack, Twilio, and 100+ tools through n8n workflows.",
+      "Configure supported CRM, notification, and automation services from your organization workspace.",
   },
   {
     icon: LineChart,
-    title: "Pipeline Management",
+    title: "Organization-Aware Workspaces",
     description:
-      "Visual kanban boards with AI-powered deal predictions and automated stage progression.",
+      "Keep revenue data scoped to the selected organization and the people authorized to work with it.",
   },
 ];
 
@@ -75,14 +75,12 @@ export function Features() {
             Features
           </Badge>
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Everything You Need to{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Scale
-            </span>
+            A calmer system for{" "}
+            <span className="text-muted-foreground">revenue operations.</span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            From lead capture to closed deals — our AI platform handles the
-            heavy lifting so your team can focus on what matters.
+            Revora brings the key signals and revenue workflow surfaces into a
+            more deliberate operating view.
           </p>
         </div>
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -95,10 +93,10 @@ export function Features() {
                 animationFillMode: "both",
               }}
             >
-              <Card className="h-full transition-all duration-300 hover:border-primary/30 hover:shadow-lg">
+              <Card className="h-full">
                 <CardContent className="p-6">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <feature.icon className="size-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground text-canvas">
+                    <feature.icon className="size-4" />
                   </div>
                   <h3 className="mt-4 text-base font-semibold text-foreground">
                     {feature.title}

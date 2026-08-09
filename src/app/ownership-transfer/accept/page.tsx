@@ -14,7 +14,7 @@ import { getOwnershipTransferContext } from "@/lib/ownership-transfers/context";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = {
-  title: "Organization ownership transfer — AI Growth",
+  title: "Organization ownership transfer",
 };
 
 function isTerminalState(
@@ -76,7 +76,7 @@ function OwnershipTransferState({ state }: { state: string }) {
     >
       <Link
         href="/"
-        className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         Return home
       </Link>
@@ -123,7 +123,7 @@ export default async function OwnershipTransferAcceptancePage({
           <div className="mt-7 space-y-3">
             <Link
               href="/login?redirect=%2Fownership-transfer%2Faccept"
-              className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               Sign in
             </Link>

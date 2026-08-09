@@ -1,45 +1,41 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { RevoraMark } from "@/components/brand";
 import { BackgroundPattern } from "@/components/shared/background-pattern";
-import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 
 export function CTA() {
   return (
-    <section className="relative overflow-hidden border-y border-border/70 bg-gradient-to-b from-surface-secondary via-surface to-surface py-24 sm:py-32">
+    <section className="relative overflow-hidden border-y border-border bg-surface-secondary/60 py-24 sm:py-32">
       <BackgroundPattern variant="gradient" />
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
       <Container className="relative">
-        <div
-          className="mx-auto max-w-3xl text-center animate-slide-up"
-          style={{ animationFillMode: "both" }}
-        >
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Ready to{" "}
-            <span className="bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent">
-              Automate
-            </span>{" "}
-            Your Growth?
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-foreground text-canvas shadow-lg shadow-black/10">
+            <RevoraMark className="size-5" />
+          </span>
+          <h2 className="mt-6 text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
+            Give your revenue workflow a clearer next move.
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Join thousands of businesses using AI Growth to qualify more leads,
-            book more meetings, and close more deals.
+          <p className="mx-auto mt-4 max-w-2xl text-lg leading-8 text-muted-foreground">
+            Bring qualification, workflow activity, and team action into one
+            focused workspace.
           </p>
-          <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Link href="/signup">
-              <Button size="xl" className="shadow-lg shadow-primary/25">
-                Start Free Trial
-                <ArrowRight className="size-5" />
-              </Button>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/signup"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-black/10 outline-none transition-all hover:-translate-y-0.5 hover:bg-primary-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+            >
+              Start building with Revora
+              <ArrowRight className="size-4" aria-hidden="true" />
             </Link>
-            <Button variant="outline" size="xl">
-              Book a Demo
-            </Button>
+            <Link
+              href="/login"
+              className="inline-flex h-12 items-center justify-center rounded-xl border border-border bg-surface px-5 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-surface-hover focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+            >
+              Sign in to your workspace
+            </Link>
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">
-            No credit card required. Cancel anytime. Set up in minutes.
-          </p>
         </div>
       </Container>
     </section>

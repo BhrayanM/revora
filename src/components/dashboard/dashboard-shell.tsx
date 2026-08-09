@@ -21,7 +21,7 @@ export function DashboardShell({
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-canvas">
+    <div className="min-h-screen bg-canvas [background-image:radial-gradient(circle_at_82%_-10%,color-mix(in_srgb,var(--foreground)_4%,transparent),transparent_28%)]">
       <Sidebar
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}

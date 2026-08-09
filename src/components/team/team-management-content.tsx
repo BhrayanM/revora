@@ -574,7 +574,7 @@ export function TeamManagementContent({
           {members.length === 0 ? (
             <EmptyState
               icon={<UsersRound className="size-7" />}
-              title="Build your AI Growth team"
+              title="Build your Revora team"
               description="Invite teammates to collaborate on lead qualification and automation."
               action={
                 canInvite

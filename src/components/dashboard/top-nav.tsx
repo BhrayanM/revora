@@ -29,7 +29,7 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
   const initials = getInitials(userMeta?.full_name, user?.email);
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-canvas/95 backdrop-blur-md px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-canvas/90 backdrop-blur-xl px-4 sm:px-6">
       <button
         onClick={onMenuClick}
         className="rounded-lg p-1.5 text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:hidden"
@@ -43,7 +43,7 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
       <div className="hidden sm:flex sm:flex-1 sm:max-w-md">
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
-          <div className="flex h-8 w-full items-center rounded-lg border border-border bg-surface-secondary pl-9 pr-3">
+          <div className="flex h-9 w-full items-center rounded-xl border border-border bg-surface pl-9 pr-3 shadow-sm">
             <span className="text-xs text-muted-foreground">
               Search leads, contacts...
             </span>
@@ -59,19 +59,20 @@ export function TopNav({ onMenuClick, user }: TopNavProps) {
       <div className="flex items-center gap-1.5">
         <ThemeToggle />
 
-        <Link href="/notifications" className="relative">
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-          >
-            <Bell className="size-4" />
-          </button>
+        <Link
+          href="/notifications"
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          aria-label="Notifications"
+        >
+          <Bell className="size-4" />
         </Link>
 
-        <Link href="/profile">
-          <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20 transition-all hover:ring-primary/30 hover:shadow-sm">
-            {initials}
-          </div>
+        <Link
+          href="/profile"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20 outline-none transition-all hover:ring-primary/30 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          aria-label="Open profile"
+        >
+          {initials}
         </Link>
       </div>
     </header>

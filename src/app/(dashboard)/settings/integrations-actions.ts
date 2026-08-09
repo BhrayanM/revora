@@ -150,7 +150,7 @@ export async function testIntegration(provider: Provider) {
       const res = await fetch(creds["webhook_url"] as string, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: "AI Growth — Integration test" }),
+        body: JSON.stringify({ text: "Revora — Integration test" }),
       });
       return { success: res.ok, provider };
     }

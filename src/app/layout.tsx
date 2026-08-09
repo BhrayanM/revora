@@ -18,26 +18,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Growth | End-to-End AI Business Automation",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  ),
+  title: {
+    default: "Revora | AI Revenue Automation Platform",
+    template: "%s | Revora",
+  },
   description:
-    "Automate your business with AI-powered lead qualification, appointment booking, and multi-channel outreach. Integrates with GoHighLevel, HubSpot, Slack, Twilio, and n8n.",
+    "Revora is an AI revenue automation platform for qualifying leads, coordinating revenue workflows, and giving teams a clearer path from signal to action.",
   keywords: [
-    "AI automation",
-    "business automation",
+    "AI revenue automation",
+    "revenue operations",
     "lead qualification",
-    "CRM",
-    "GoHighLevel",
-    "HubSpot",
-    "n8n",
+    "revenue workflows",
     "AI platform",
-    "SaaS",
   ],
-  authors: [{ name: "AI Growth" }],
+  applicationName: "Revora",
+  authors: [{ name: "Revora" }],
   openGraph: {
-    title: "AI Growth",
+    title: "Revora — AI Revenue Automation Platform",
     description:
-      "End-to-End AI Business Automation Platform. Qualify leads, book appointments, and automate outreach.",
+      "Turn every qualified signal into a repeatable revenue workflow.",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Revora — AI Revenue Automation Platform",
+    description:
+      "Turn every qualified signal into a repeatable revenue workflow.",
   },
 };
 
@@ -54,7 +63,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </Script>
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white focus:shadow-lg"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg"
         >
           Skip to content
         </a>

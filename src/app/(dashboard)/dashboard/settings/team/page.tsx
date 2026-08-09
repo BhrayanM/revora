@@ -11,7 +11,7 @@ import {
 } from "@/lib/team/service";
 
 export const metadata = {
-  title: "Team Management — AI Growth",
+  title: "Team Management",
 };
 
 export default async function TeamManagementPage() {
