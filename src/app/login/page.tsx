@@ -149,7 +149,9 @@ function LoginForm() {
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
-        <AuthTextLink href="/signup">Sign up free</AuthTextLink>
+        <AuthTextLink href={`/signup?redirect=${encodeURIComponent(redirect)}`}>
+          Sign up free
+        </AuthTextLink>
       </p>
     </>
   );

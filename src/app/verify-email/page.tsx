@@ -15,6 +15,7 @@ import {
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getSafeInternalPath } from "@/lib/navigation/safe-internal-path";
 import { createClient } from "@/lib/supabase/client";
 
 const RESEND_COOLDOWN_MS = 30_000;
@@ -22,6 +23,7 @@ const RESEND_COOLDOWN_MS = 30_000;
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
   const emailFromParam = searchParams.get("email");
+  const redirect = getSafeInternalPath(searchParams.get("redirect"));
 
   const [email, setEmail] = useState(() => {
     if (emailFromParam) return emailFromParam;
@@ -82,7 +84,7 @@ function VerifyEmailForm() {
 
     // Full-page redirect to the callback route handler for session check + provisioning
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = "/auth/callback?next=/dashboard";
+    window.location.href = `/auth/callback?next=${encodeURIComponent(redirect)}`;
   };
 
   const handleResend = async () => {
@@ -194,7 +196,9 @@ function VerifyEmailForm() {
             : "Resend code"}
         </button>
 
-        <AuthBackLink href="/signup">Back to signup</AuthBackLink>
+        <AuthBackLink href={`/signup?redirect=${encodeURIComponent(redirect)}`}>
+          Back to signup
+        </AuthBackLink>
       </div>
     </>
   );

@@ -1,9 +1,9 @@
 "use client";
 
 import { ArrowRight, Check } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
-import { useRef, useState } from "react";
+import { Suspense, useRef, useState } from "react";
 
 import {
   AuthBackLink,
@@ -17,10 +17,13 @@ import { TurnstileWidget } from "@/components/auth/turnstile";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getSafeInternalPath } from "@/lib/navigation/safe-internal-path";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = getSafeInternalPath(searchParams.get("redirect"));
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,7 +63,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirect)}`,
         ...(captchaToken ? { captchaToken } : {}),
       },
     });
@@ -73,7 +76,9 @@ export default function SignupPage() {
       if (typeof sessionStorage !== "undefined") {
         sessionStorage.setItem("pendingSignupEmail", email);
       }
-      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      router.push(
+        `/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirect)}`,
+      );
     }
   };
 
@@ -117,6 +122,7 @@ export default function SignupPage() {
           </label>
 
           <SocialAuth
+            returnTo={redirect}
             requireLegalConsent
             legalConsentAccepted={legalConsentAccepted}
           />
@@ -214,10 +220,28 @@ export default function SignupPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
             Already have an account?{" "}
-            <AuthTextLink href="/login">Sign in</AuthTextLink>
+            <AuthTextLink
+              href={`/login?redirect=${encodeURIComponent(redirect)}`}
+            >
+              Sign in
+            </AuthTextLink>
           </p>
         </div>
       </AuthCard>
     </AuthShell>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthShell size="md">
+          <AuthCard>Loading signup...</AuthCard>
+        </AuthShell>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }
