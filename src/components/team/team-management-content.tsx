@@ -5,6 +5,7 @@ import {
   Check,
   Clipboard,
   Clock3,
+  Crown,
   Mail,
   RotateCw,
   ShieldCheck,
@@ -21,7 +22,9 @@ import { type FormEvent, useMemo, useState, useTransition } from "react";
 import {
   changeTeamMemberRoleAction,
   changeTeamMemberStatusAction,
+  cancelTeamOwnershipTransferAction,
   createTeamInvitationAction,
+  createTeamOwnershipTransferAction,
   resendTeamInvitationAction,
   revokeTeamInvitationAction,
 } from "@/app/(dashboard)/dashboard/settings/team/actions";
@@ -39,6 +42,7 @@ import {
 } from "@/lib/auth/permissions";
 import type {
   PendingInvitation,
+  PendingOwnershipTransfer,
   TeamAuditEvent,
   TeamMember,
 } from "@/lib/team/types";
@@ -58,7 +62,9 @@ type PendingAction =
     }
   | { kind: "suspend"; member: TeamMember }
   | { kind: "remove"; member: TeamMember }
-  | { kind: "revoke"; invitation: PendingInvitation };
+  | { kind: "revoke"; invitation: PendingInvitation }
+  | { kind: "transfer"; member: TeamMember }
+  | { kind: "cancel-transfer"; transfer: PendingOwnershipTransfer };
 
 type TeamManagementContentProps = {
   organizationName: string;
@@ -66,9 +72,11 @@ type TeamManagementContentProps = {
   currentRole: OrganizationRole;
   members: TeamMember[];
   invitations: PendingInvitation[];
+  ownershipTransfers: PendingOwnershipTransfer[];
   auditEvents: TeamAuditEvent[];
   canInvite: boolean;
   canManage: boolean;
+  canTransferOwnership: boolean;
 };
 
 const ROLE_LABELS: Record<OrganizationRole, string> = {
@@ -144,6 +152,26 @@ function eventDescription(event: TeamAuditEvent) {
     return `${actor} suspended ${subject}.`;
   }
 
+  if (event.eventType === "ownership_transfer_requested") {
+    return `${actor} requested ownership transfer to ${subject}.`;
+  }
+
+  if (event.eventType === "ownership_transfer_cancelled") {
+    return `${actor} cancelled the ownership transfer to ${subject}.`;
+  }
+
+  if (event.eventType === "ownership_transfer_rejected") {
+    return `${actor} declined ownership transfer from ${subject}.`;
+  }
+
+  if (event.eventType === "ownership_transfer_expired") {
+    return `The ownership transfer for ${subject} expired.`;
+  }
+
+  if (event.eventType === "ownership_transferred") {
+    return `${actor} accepted ownership from ${subject}.`;
+  }
+
   return `${actor} removed ${subject}.`;
 }
 
@@ -165,9 +193,11 @@ export function TeamManagementContent({
   currentRole,
   members,
   invitations,
+  ownershipTransfers,
   auditEvents,
   canInvite,
   canManage,
+  canTransferOwnership,
 }: TeamManagementContentProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -177,6 +207,12 @@ export function TeamManagementContent({
     useState<Exclude<OrganizationRole, "owner">>("agent");
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [developmentInviteUrl, setDevelopmentInviteUrl] = useState<
+    string | null
+  >(null);
+  const [ownershipTransferOpen, setOwnershipTransferOpen] = useState(false);
+  const [ownershipTransferTargetId, setOwnershipTransferTargetId] =
+    useState("");
+  const [developmentTransferUrl, setDevelopmentTransferUrl] = useState<
     string | null
   >(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(
@@ -193,6 +229,17 @@ export function TeamManagementContent({
         canManageMembershipRole(currentRole, role, role),
       ),
     [currentRole],
+  );
+
+  const ownershipTransferTargets = useMemo(
+    () =>
+      members.filter(
+        (member) =>
+          member.status === "active" &&
+          member.role !== "owner" &&
+          member.profileId !== currentProfileId,
+      ),
+    [currentProfileId, members],
   );
 
   const addToast = (
@@ -283,6 +330,21 @@ export function TeamManagementContent({
     }
   };
 
+  const handleCopyOwnershipTransferLink = async () => {
+    if (!developmentTransferUrl) return;
+
+    try {
+      await navigator.clipboard.writeText(developmentTransferUrl);
+      addToast("Ownership transfer link copied", "success");
+    } catch {
+      addToast(
+        "Could not copy ownership transfer link",
+        "error",
+        "Copy it from the field instead.",
+      );
+    }
+  };
+
   const confirmAction = () => {
     if (!pendingAction) return;
 
@@ -330,6 +392,44 @@ export function TeamManagementContent({
           return;
         }
         addToast("Invitation revoked", "success");
+      }
+
+      if (pendingAction.kind === "transfer") {
+        const result = await createTeamOwnershipTransferAction(
+          pendingAction.member.membershipId,
+        );
+        if (result.error || !result.data) {
+          addToast(
+            "Ownership transfer was not started",
+            "error",
+            result.error ??
+              "We could not start the ownership transfer. Please try again.",
+          );
+          return;
+        }
+
+        setDevelopmentTransferUrl(result.data.developmentTransferUrl ?? null);
+        setOwnershipTransferOpen(true);
+        addToast(
+          "Ownership transfer requested",
+          "success",
+          "The selected member must securely accept the transfer.",
+        );
+      }
+
+      if (pendingAction.kind === "cancel-transfer") {
+        const result = await cancelTeamOwnershipTransferAction(
+          pendingAction.transfer.transferId,
+        );
+        if (result.error) {
+          addToast(
+            "Ownership transfer was not cancelled",
+            "error",
+            result.error,
+          );
+          return;
+        }
+        addToast("Ownership transfer cancelled", "success");
       }
 
       setPendingAction(null);
@@ -380,7 +480,11 @@ export function TeamManagementContent({
         ? "Suspend team member"
         : pendingAction?.kind === "remove"
           ? "Remove team member"
-          : "Revoke invitation";
+          : pendingAction?.kind === "transfer"
+            ? "Start ownership transfer"
+            : pendingAction?.kind === "cancel-transfer"
+              ? "Cancel ownership transfer"
+              : "Revoke invitation";
 
   const actionDescription =
     pendingAction?.kind === "role"
@@ -389,9 +493,13 @@ export function TeamManagementContent({
         ? `${pendingAction.member.fullName} will lose access to ${organizationName} until an administrator resolves the suspension.`
         : pendingAction?.kind === "remove"
           ? `${pendingAction.member.fullName} will lose access to ${organizationName}. Their membership record remains for audit history.`
-          : pendingAction
-            ? `Revoke the pending invitation for ${pendingAction.invitation.email}? The invitation link will stop working immediately.`
-            : "";
+          : pendingAction?.kind === "transfer"
+            ? `Request that ${pendingAction.member.fullName} become the sole owner of ${organizationName}? They must securely accept before any role changes occur.`
+            : pendingAction?.kind === "cancel-transfer"
+              ? `Cancel the pending ownership transfer to ${pendingAction.transfer.targetFullName}? The one-time acceptance link will stop working immediately.`
+              : pendingAction
+                ? `Revoke the pending invitation for ${pendingAction.invitation.email}? The invitation link will stop working immediately.`
+                : "";
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -414,19 +522,37 @@ export function TeamManagementContent({
             Manage access, roles, and invitations for {organizationName}.
           </p>
         </div>
-        {canInvite && (
-          <Button
-            leftIcon={<UserPlus />}
-            onClick={() => {
-              setDevelopmentInviteUrl(null);
-              setInviteError(null);
-              setInviteRole(assignableInvitationRoles[0] ?? "agent");
-              setInviteOpen(true);
-            }}
-          >
-            Invite teammate
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {canTransferOwnership && (
+            <Button
+              variant="outline"
+              leftIcon={<Crown />}
+              disabled={ownershipTransferTargets.length === 0}
+              onClick={() => {
+                setDevelopmentTransferUrl(null);
+                setOwnershipTransferTargetId(
+                  ownershipTransferTargets[0]?.membershipId ?? "",
+                );
+                setOwnershipTransferOpen(true);
+              }}
+            >
+              Transfer ownership
+            </Button>
+          )}
+          {canInvite && (
+            <Button
+              leftIcon={<UserPlus />}
+              onClick={() => {
+                setDevelopmentInviteUrl(null);
+                setInviteError(null);
+                setInviteRole(assignableInvitationRoles[0] ?? "agent");
+                setInviteOpen(true);
+              }}
+            >
+              Invite teammate
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -584,6 +710,89 @@ export function TeamManagementContent({
           )}
         </CardContent>
       </Card>
+
+      {canTransferOwnership && (
+        <Card>
+          <CardHeader className="flex-row items-start justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-foreground">
+                Ownership transfer
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Only the current owner can request a successor. The selected
+                active member must accept before ownership changes.
+              </p>
+            </div>
+            <Crown
+              className="mt-0.5 size-5 shrink-0 text-primary"
+              aria-hidden="true"
+            />
+          </CardHeader>
+          <CardContent className="p-0">
+            {ownershipTransfers.length === 0 ? (
+              <EmptyState
+                icon={<Crown className="size-7" />}
+                title="No ownership transfer is pending"
+                description="A requested transfer remains pending until the selected active member accepts, declines, expires, or you cancel it."
+                className="py-12"
+              />
+            ) : (
+              <div className="divide-y divide-border">
+                {ownershipTransfers.map((transfer) => {
+                  const expired =
+                    transfer.status === "expired" ||
+                    isExpired(transfer.expiresAt);
+                  return (
+                    <div
+                      key={transfer.transferId}
+                      className="flex flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {transfer.targetFullName || transfer.targetEmail}
+                        </p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span className="truncate">
+                            {transfer.targetEmail}
+                          </span>
+                          <Badge
+                            variant={expired ? "warning" : "success"}
+                            size="sm"
+                          >
+                            {expired ? "Expired" : "Pending acceptance"}
+                          </Badge>
+                          <span className="inline-flex items-center gap-1">
+                            <Clock3 className="size-3.5" />{" "}
+                            {expired
+                              ? "Expired"
+                              : `Expires ${formatDateTime(transfer.expiresAt)}`}
+                          </span>
+                        </div>
+                      </div>
+                      {!expired && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="shrink-0 text-error hover:bg-error/10 hover:text-error"
+                          disabled={isPending}
+                          onClick={() =>
+                            setPendingAction({
+                              kind: "cancel-transfer",
+                              transfer,
+                            })
+                          }
+                        >
+                          <Trash2 /> Cancel transfer
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {canInvite && (
         <Card>
@@ -818,6 +1027,115 @@ export function TeamManagementContent({
       </Modal>
 
       <Modal
+        open={ownershipTransferOpen}
+        onClose={() => {
+          if (!isPending) setOwnershipTransferOpen(false);
+        }}
+        title={
+          developmentTransferUrl
+            ? "Ownership transfer ready"
+            : "Transfer organization ownership"
+        }
+        description={
+          developmentTransferUrl
+            ? "Copy this development-only link for the selected member to securely review the transfer."
+            : "Choose an active member. They must independently confirm the transfer before ownership changes."
+        }
+        size="md"
+      >
+        {developmentTransferUrl ? (
+          <div className="space-y-4">
+            <Alert variant="warning" title="Development delivery">
+              This one-time link is shown only in development. Production
+              ownership transfers require configured transactional delivery.
+            </Alert>
+            <Input
+              label="Ownership transfer link"
+              value={developmentTransferUrl}
+              readOnly
+              onFocus={(event) => event.currentTarget.select()}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setDevelopmentTransferUrl(null)}
+              >
+                Start another
+              </Button>
+              <Button
+                onClick={handleCopyOwnershipTransferLink}
+                leftIcon={<Clipboard />}
+              >
+                Copy link
+              </Button>
+            </div>
+          </div>
+        ) : ownershipTransferTargets.length === 0 ? (
+          <Alert variant="warning">
+            Add or reactivate another member before transferring ownership.
+            Owners cannot transfer ownership to themselves, inactive members, or
+            another owner.
+          </Alert>
+        ) : (
+          <form
+            className="space-y-5"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const target = ownershipTransferTargets.find(
+                (member) => member.membershipId === ownershipTransferTargetId,
+              );
+              if (!target) return;
+              setPendingAction({ kind: "transfer", member: target });
+              setOwnershipTransferOpen(false);
+            }}
+          >
+            <Alert variant="warning" title="High-impact change">
+              The selected member receives a one-time link and must confirm it.
+              Until then, you remain the owner. After acceptance, you become an
+              administrator and ordinary role controls cannot reverse it.
+            </Alert>
+            <div>
+              <label
+                htmlFor="ownership-transfer-target"
+                className="mb-1.5 block text-sm font-medium text-foreground"
+              >
+                New owner
+              </label>
+              <select
+                id="ownership-transfer-target"
+                value={ownershipTransferTargetId}
+                onChange={(event) =>
+                  setOwnershipTransferTargetId(event.target.value)
+                }
+                disabled={isPending}
+                className="flex h-10 w-full rounded-lg border border-input-border bg-input px-3 text-sm text-foreground outline-none transition-colors focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {ownershipTransferTargets.map((member) => (
+                  <option key={member.membershipId} value={member.membershipId}>
+                    {member.fullName || member.email} — {member.email} (
+                    {ROLE_LABELS[member.role]})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isPending}
+                onClick={() => setOwnershipTransferOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" leftIcon={<Crown />}>
+                Review transfer
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      <Modal
         open={selectedMember !== null}
         onClose={() => {
           if (!isPending) setSelectedMember(null);
@@ -907,6 +1225,22 @@ export function TeamManagementContent({
               through direct requests.
             </Alert>
           )}
+          {pendingAction?.kind === "transfer" && (
+            <Alert variant="warning" title="Two independent confirmations">
+              This creates a one-time transfer request only. Your selected
+              member must sign in, satisfy legal and MFA requirements, and
+              explicitly accept before the database changes either role.
+            </Alert>
+          )}
+          {pendingAction?.kind === "cancel-transfer" && (
+            <Alert
+              variant="warning"
+              title="The acceptance link will stop working"
+            >
+              Cancelling is immediate and leaves both current membership roles
+              unchanged.
+            </Alert>
+          )}
           <div className="flex justify-end gap-2">
             <Button
               variant="outline"
@@ -918,7 +1252,8 @@ export function TeamManagementContent({
             <Button
               variant={
                 pendingAction?.kind === "remove" ||
-                pendingAction?.kind === "revoke"
+                pendingAction?.kind === "revoke" ||
+                pendingAction?.kind === "cancel-transfer"
                   ? "destructive"
                   : "primary"
               }

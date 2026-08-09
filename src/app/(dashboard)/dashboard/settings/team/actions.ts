@@ -12,6 +12,10 @@ import {
   isOrganizationRole,
   type OrganizationRole,
 } from "@/lib/auth/permissions";
+import {
+  cancelOrganizationOwnershipTransfer,
+  createOrganizationOwnershipTransfer,
+} from "@/lib/ownership-transfers/service";
 import { createClient } from "@/lib/supabase/server";
 
 const TEAM_PATH = "/dashboard/settings/team";
@@ -193,4 +197,84 @@ export async function changeTeamMemberStatusAction({
 
   revalidateTeamManagement();
   return { data: undefined, error: null };
+}
+
+export async function createTeamOwnershipTransferAction(
+  targetMembershipId: string,
+): Promise<ActionResult<{ developmentTransferUrl?: string }>> {
+  if (!isUuid(targetMembershipId)) {
+    return {
+      data: null,
+      error: "That ownership transfer target is not valid.",
+    };
+  }
+
+  const authorization = await requireCurrentOrganizationPermission(
+    "team.transferOwnership",
+  );
+  if (!authorization.data) {
+    return {
+      data: null,
+      error:
+        authorization.error ??
+        "You do not have permission to transfer ownership.",
+    };
+  }
+
+  try {
+    const result = await createOrganizationOwnershipTransfer({
+      targetMembershipId,
+    });
+    revalidateTeamManagement();
+    return {
+      data: {
+        developmentTransferUrl: result.delivery.developmentTransferUrl,
+      },
+      error: null,
+    };
+  } catch {
+    return {
+      data: null,
+      error:
+        "We could not start the ownership transfer. Confirm the member is active and try again.",
+    };
+  }
+}
+
+export async function cancelTeamOwnershipTransferAction(
+  transferId: string,
+): Promise<ActionResult> {
+  if (!isUuid(transferId)) {
+    return { data: null, error: "That ownership transfer is not valid." };
+  }
+
+  const authorization = await requireCurrentOrganizationPermission(
+    "team.transferOwnership",
+  );
+  if (!authorization.data) {
+    return {
+      data: null,
+      error:
+        authorization.error ??
+        "You do not have permission to cancel this ownership transfer.",
+    };
+  }
+
+  try {
+    const status = await cancelOrganizationOwnershipTransfer(transferId);
+    if (status !== "cancelled") {
+      return {
+        data: null,
+        error: "That ownership transfer can no longer be cancelled.",
+      };
+    }
+
+    revalidateTeamManagement();
+    return { data: undefined, error: null };
+  } catch {
+    return {
+      data: null,
+      error: "We could not cancel that ownership transfer. Please try again.",
+    };
+  }
 }
