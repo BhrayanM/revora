@@ -12,13 +12,11 @@ import { aiQualifyLead } from "./actions";
 
 interface AIQualificationPanelProps {
   leadId: string;
-  currentScore: number;
   existingQualification: Record<string, unknown> | null;
 }
 
 export function AIQualificationPanel({
   leadId,
-  currentScore,
   existingQualification,
 }: AIQualificationPanelProps) {
   const [isPending, startTransition] = useTransition();
@@ -156,62 +154,6 @@ export function AIQualificationPanel({
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <h3 className="text-base font-semibold">AI Score Breakdown</h3>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              {
-                label: "Purchase Intent",
-                pct: currentScore > 60 ? 75 : Math.min(currentScore * 1.2, 70),
-                color: "var(--color-primary)",
-              },
-              {
-                label: "Contact Data",
-                pct: Math.min(currentScore * 0.9, 85),
-                color: "var(--color-success)",
-              },
-              {
-                label: "Engagement",
-                pct:
-                  currentScore > 50
-                    ? Math.min(currentScore * 1.1, 80)
-                    : currentScore * 0.6,
-                color: "var(--color-secondary)",
-              },
-              {
-                label: "Timeline Fit",
-                pct:
-                  currentScore > 70
-                    ? Math.min(currentScore * 1.1, 85)
-                    : currentScore * 0.8,
-                color: "var(--color-warning)",
-              },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span className="text-muted-foreground">{item.label}</span>
-                  <span className="text-muted-foreground">
-                    {Math.round(item.pct)}%
-                  </span>
-                </div>
-                <div className="h-1.5 w-full rounded-full bg-surface-secondary">
-                  <div
-                    className="h-1.5 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${item.pct}%`,
-                      backgroundColor: item.color,
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </div>

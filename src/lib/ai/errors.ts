@@ -153,3 +153,29 @@ export function getRetryDelay(
   const jitter = delay * 0.2 * Math.random();
   return Math.floor(delay + jitter);
 }
+
+export function getSafeAIErrorMessage(error: unknown): string {
+  const aiError = classifyAIError(error);
+
+  if (aiError instanceof AIConfigurationError) {
+    return "AI qualification is not configured. Contact your administrator.";
+  }
+
+  if (aiError instanceof AIAuthenticationError) {
+    return "AI qualification is temporarily unavailable. Contact your administrator.";
+  }
+
+  if (aiError instanceof AIRateLimitError) {
+    return "AI qualification is temporarily busy. Please try again shortly.";
+  }
+
+  if (aiError instanceof AITimeoutError) {
+    return "AI qualification timed out. Please try again.";
+  }
+
+  if (aiError instanceof AIResponseValidationError) {
+    return "AI qualification returned an invalid result. Please try again.";
+  }
+
+  return "AI qualification could not be completed. Please try again.";
+}

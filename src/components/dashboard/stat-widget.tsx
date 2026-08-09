@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 interface StatWidgetProps {
   label: string;
   value: string | number;
-  change: number;
+  change?: number;
   changeLabel?: string;
   icon: React.ReactNode;
   className?: string;
@@ -27,7 +27,7 @@ export function StatWidget({
   accentColor = "primary",
 }: StatWidgetProps) {
   const borderClass = accentBorders[accentColor] ?? accentBorders.primary;
-  const isPositive = change >= 0;
+  const isPositive = (change ?? 0) >= 0;
 
   return (
     <div
@@ -48,20 +48,22 @@ export function StatWidget({
         <p className="mt-3 text-[1.75rem] font-bold leading-none tracking-tight text-foreground">
           {value}
         </p>
-        <div className="mt-2.5 flex items-center gap-1.5">
-          <span
-            className={cn(
-              "inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.625rem] font-semibold",
-              isPositive
-                ? "bg-success/10 text-success"
-                : "bg-error/10 text-error",
-            )}
-          >
-            {isPositive ? "+" : ""}
-            {change}%
-          </span>
-          <span className="text-xs text-muted-foreground">{changeLabel}</span>
-        </div>
+        {change !== undefined && (
+          <div className="mt-2.5 flex items-center gap-1.5">
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.625rem] font-semibold",
+                isPositive
+                  ? "bg-success/10 text-success"
+                  : "bg-error/10 text-error",
+              )}
+            >
+              {isPositive ? "+" : ""}
+              {change}%
+            </span>
+            <span className="text-xs text-muted-foreground">{changeLabel}</span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -61,11 +61,11 @@ export default async function PipelinePage() {
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <Layers className="size-12 text-muted-foreground mb-4" />
           <p className="text-sm font-medium text-foreground">
-            No pipeline configured
+            Default pipeline unavailable
           </p>
           <p className="text-xs text-muted-foreground mt-1.5 max-w-xs">
-            A pipeline will be created when your first lead is added. Go to
-            Leads to get started.
+            Your organization needs a default pipeline before leads can be
+            created. Contact an organization administrator.
           </p>
           <Link
             href="/leads"
@@ -151,12 +151,21 @@ export default async function PipelinePage() {
                           />
                         </div>
                         <div className="mt-3 flex items-center justify-between">
-                          <Badge
-                            variant={lead.score >= 80 ? "success" : "secondary"}
-                            size="sm"
-                          >
-                            {lead.score}/100
-                          </Badge>
+                          {(lead.metadata as Record<string, unknown>)
+                            .qualification ? (
+                            <Badge
+                              variant={
+                                lead.score >= 80 ? "success" : "secondary"
+                              }
+                              size="sm"
+                            >
+                              {lead.score}/100
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              Not qualified
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground">
                             {daysInStage}d in stage
                           </span>

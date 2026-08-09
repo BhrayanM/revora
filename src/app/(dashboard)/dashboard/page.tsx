@@ -1,9 +1,7 @@
 import {
   ArrowRight,
   BarChart3,
-  Bell,
   Brain,
-  MessageSquare,
   TrendingUp,
   UserPlus,
   Users,
@@ -104,10 +102,10 @@ export default async function DashboardPage() {
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <div className="mb-2">
             <h3 className="text-sm font-semibold text-foreground">
-              Automation Flow
+              Core Lead Workflow
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              How leads are processed
+              Persisted CRM events
             </p>
           </div>
           <div className="flex items-center justify-center gap-2 py-6">
@@ -123,20 +121,10 @@ export default async function DashboardPage() {
               color="bg-secondary/10 ring-secondary/10"
             />
             <ArrowRight className="size-3 text-muted-foreground/30 shrink-0" />
-            <FlowStep
-              icon={<MessageSquare className="size-4 text-success" />}
-              label="CRM Sync"
-              color="bg-success/10 ring-success/10"
-            />
-            <ArrowRight className="size-3 text-muted-foreground/30 shrink-0" />
-            <FlowStep
-              icon={<Bell className="size-4 text-accent" />}
-              label="Notify"
-              color="bg-accent/10 ring-accent/10"
-            />
           </div>
           <p className="text-center text-xs text-muted-foreground">
-            Automation runs when leads are created
+            Lead creation, stage changes, and AI qualification are recorded in
+            the activity timeline.
           </p>
         </div>
 
@@ -207,8 +195,7 @@ export default async function DashboardPage() {
               <BarChart3 className="size-8 text-muted-foreground/40 mb-3" />
               <p className="text-sm text-muted-foreground">No activity yet</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Automation events will appear here after your first lead is
-                processed
+                Create or update a lead to record the first CRM event.
               </p>
             </div>
           )}
@@ -223,7 +210,7 @@ export default async function DashboardPage() {
               Actionable intelligence
             </p>
           </div>
-          <AIInsights />
+          <AIInsights qualifiedCount={qualified} />
         </div>
       </div>
 

@@ -68,6 +68,48 @@ export async function startExecution(params: {
   return data as ExecutionRecord;
 }
 
+export async function startLeadQualificationExecution(params: {
+  organizationId: string;
+  leadId: string;
+}): Promise<{ execution: ExecutionRecord | null; error: string | null }> {
+  const supabase = await createServiceClient();
+  const minuteBucket = Math.floor(Date.now() / 60_000);
+
+  const { data, error } = await supabase
+    .from("automation_executions")
+    .insert({
+      organization_id: params.organizationId,
+      event_type: "lead.qualified",
+      event_id: `lead.qualified:${params.leadId}:${minuteBucket}`,
+      lead_id: params.leadId,
+      provider: "openai",
+      action: "lead_qualification",
+      status: "processing",
+      attempts: 1,
+      started_at: new Date().toISOString(),
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      return {
+        execution: null,
+        error:
+          "A qualification is already running or was just completed. Try again in a minute.",
+      };
+    }
+
+    console.error("[Executions] Failed to start AI qualification:", error.code);
+    return {
+      execution: null,
+      error: "Unable to start AI qualification. Please try again.",
+    };
+  }
+
+  return { execution: data as ExecutionRecord, error: null };
+}
+
 export async function completeExecution(
   executionId: string,
   status: "success" | "failed",

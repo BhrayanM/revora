@@ -73,14 +73,16 @@ export default async function AutomationPage() {
                 </div>
               </div>
               <h3 className="text-sm font-semibold text-foreground">
-                Automation Flow
+                No automation executions yet
               </h3>
               <p className="mt-1.5 max-w-md text-sm text-muted-foreground">
-                When a lead is created, the automation engine processes
-                qualification, syncs to your CRM, and sends notifications.
+                This page records completed AI qualification requests and
+                external delivery attempts when those integrations are
+                configured.
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Add your first lead to see the automation pipeline in action.
+                Internal lead events are available from each lead&apos;s
+                activity timeline.
               </p>
             </div>
           ) : (

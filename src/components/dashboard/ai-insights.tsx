@@ -2,7 +2,13 @@ import { Brain, Sparkles } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-export function AIInsights({ className }: { className?: string }) {
+export function AIInsights({
+  className,
+  qualifiedCount,
+}: {
+  className?: string;
+  qualifiedCount: number;
+}) {
   return (
     <div
       className={cn(
@@ -16,15 +22,16 @@ export function AIInsights({ className }: { className?: string }) {
           <Brain className="size-7 text-primary" />
         </div>
         <h4 className="mt-4 text-sm font-semibold text-foreground">
-          AI Insights
+          AI Qualification
         </h4>
         <p className="mt-1.5 max-w-xs text-sm text-muted-foreground">
-          Insights will appear here after leads are created and qualified with
-          AI. Add your first lead to get started.
+          {qualifiedCount > 0
+            ? `${qualifiedCount} lead${qualifiedCount === 1 ? " has" : "s have"} persisted AI qualification results. Review each lead for signals, risks, and next actions.`
+            : "Qualify a lead to store its score, signals, risks, and recommended next action."}
         </p>
         <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary">
           <Sparkles className="size-3" />
-          Ready to analyze
+          {qualifiedCount > 0 ? "Results available" : "Ready to qualify"}
         </div>
       </div>
     </div>
