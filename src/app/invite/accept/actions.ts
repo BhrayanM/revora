@@ -1,5 +1,6 @@
 "use server";
 
+import { setActiveOrganizationSelection } from "@/lib/auth";
 import {
   clearInvitationContext,
   getInvitationContext,
@@ -115,17 +116,24 @@ export async function acceptOrganizationInvitation(
 
   const record = data as Record<string, unknown>;
   const status = toAcceptanceStatus(record.status);
+  const joinedOrganization =
+    status === "accepted" ||
+    status === "membership_exists" ||
+    status === "reactivated";
+
+  // The acceptance RPC has atomically verified the invitation and created (or
+  // confirmed) the trusted membership. Select that organization through the
+  // same server-side active-membership check used by the dashboard switcher.
+  if (joinedOrganization && context.organizationId) {
+    await setActiveOrganizationSelection(context.organizationId);
+  }
+
   if (TERMINAL_CONTEXT_STATES.has(status)) {
     await clearInvitationContext();
   }
 
   return {
     status,
-    organizationName:
-      status === "accepted" ||
-      status === "membership_exists" ||
-      status === "reactivated"
-        ? context.organizationName
-        : undefined,
+    organizationName: joinedOrganization ? context.organizationName : undefined,
   };
 }

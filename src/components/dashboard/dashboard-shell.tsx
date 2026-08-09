@@ -5,13 +5,18 @@ import { useState, type ReactNode } from "react";
 
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { TopNav } from "@/components/dashboard/top-nav";
+import type { ActiveOrganizationOption } from "@/lib/organizations/types";
 
 export function DashboardShell({
   children,
   user,
+  activeOrganization,
+  organizations,
 }: {
   children: ReactNode;
   user: User | null;
+  activeOrganization: ActiveOrganizationOption | null;
+  organizations: ActiveOrganizationOption[];
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -21,6 +26,8 @@ export function DashboardShell({
         mobileOpen={mobileSidebarOpen}
         onMobileClose={() => setMobileSidebarOpen(false)}
         user={user}
+        activeOrganization={activeOrganization}
+        organizations={organizations}
       />
       <div className="lg:pl-60">
         <TopNav onMenuClick={() => setMobileSidebarOpen(true)} user={user} />

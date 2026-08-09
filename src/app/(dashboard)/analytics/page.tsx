@@ -1,12 +1,13 @@
 import { BarChart3, TrendingUp, Users } from "lucide-react";
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { BarChart, DonutChart } from "@/components/dashboard/charts";
 import { StatWidget } from "@/components/dashboard/stat-widget";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { getCurrentOrganization } from "@/lib/auth";
+import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { getLeadMetrics, getPipelineMetrics } from "@/lib/queries/analytics";
 import { getLeads } from "@/lib/queries/leads";
 
@@ -15,18 +16,13 @@ export const metadata: Metadata = {
 };
 
 export default async function AnalyticsPage() {
-  const org = await getCurrentOrganization();
-
-  if (!org) {
-    return (
-      <Container className="max-w-none px-0">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-        </div>
-        <p className="text-sm text-muted-foreground">No organization found.</p>
-      </Container>
-    );
+  const authorization =
+    await requireCurrentOrganizationPermission("analytics.read");
+  if (!authorization.data) {
+    redirect("/dashboard");
   }
+
+  const org = authorization.data.organization;
 
   const { data: metrics } = await getLeadMetrics(org.id);
   const { data: pipeline } = await getPipelineMetrics(org.id);

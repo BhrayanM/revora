@@ -21,6 +21,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { OrganizationSwitcher } from "@/components/dashboard/organization-switcher";
+import type { ActiveOrganizationOption } from "@/lib/organizations/types";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +79,8 @@ interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   user: User | null;
+  activeOrganization: ActiveOrganizationOption | null;
+  organizations: ActiveOrganizationOption[];
 }
 
 function getInitials(
@@ -96,6 +100,8 @@ export function Sidebar({
   mobileOpen = false,
   onMobileClose,
   user,
+  activeOrganization,
+  organizations,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -164,6 +170,14 @@ export function Sidebar({
             )}
           </button>
         </div>
+      </div>
+
+      <div className="border-b border-sidebar-border px-3 py-2">
+        <OrganizationSwitcher
+          activeOrganization={activeOrganization}
+          organizations={organizations}
+          compact={collapsed}
+        />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3">
