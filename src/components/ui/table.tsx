@@ -83,17 +83,26 @@ export function Table<T>({
               {columns.map((col) => (
                 <th
                   key={col.key}
+                  scope="col"
+                  aria-sort={
+                    col.sortable && sortKey === col.key
+                      ? sortDir === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
                   className={cn(
                     "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                    col.sortable &&
-                      "cursor-pointer select-none hover:text-foreground",
                     col.className,
                   )}
-                  onClick={() => col.sortable && handleSort(col.key)}
                 >
-                  <div className="flex items-center gap-1">
-                    {col.header}
-                    {col.sortable && (
+                  {col.sortable ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSort(col.key)}
+                      className="-m-1 flex w-full items-center gap-1 rounded p-1 text-left outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {col.header}
                       <span className="text-subtle">
                         {sortKey === col.key ? (
                           sortDir === "asc" ? (
@@ -105,8 +114,10 @@ export function Table<T>({
                           <ChevronsUpDown className="size-3.5" />
                         )}
                       </span>
-                    )}
-                  </div>
+                    </button>
+                  ) : (
+                    col.header
+                  )}
                 </th>
               ))}
             </tr>

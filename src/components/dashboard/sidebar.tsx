@@ -121,12 +121,12 @@ export function Sidebar({
 
   const sidebarContent = (
     <>
-      <div className="flex h-14 items-center justify-between border-b border-sidebar-border px-4">
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sidebar-active shadow-sm shadow-sidebar-active/25">
               <svg
-                className="h-3.5 w-3.5 text-white"
+                className="h-3.5 w-3.5 text-primary-foreground"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -140,7 +140,7 @@ export function Sidebar({
               </svg>
             </div>
             <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
-              AI Growth
+              Revora
             </span>
           </Link>
         )}
@@ -225,7 +225,7 @@ export function Sidebar({
                     href={item.href}
                     onClick={onMobileClose}
                     className={cn(
-                      "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                      "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                       isActive
                         ? "bg-sidebar-active-surface text-sidebar-active"
                         : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground",

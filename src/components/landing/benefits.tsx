@@ -1,88 +1,67 @@
-import {
-  ArrowUpRight,
-  Clock,
-  DollarSign,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { ArrowUpRight, Clock3, Focus, ShieldCheck } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Container } from "@/components/ui/container";
 
 const benefits = [
   {
-    icon: Clock,
-    stat: "40+",
-    label: "Hours Saved Per Week",
+    icon: Focus,
+    title: "Prioritize with context",
     description:
-      "Our automation handles repetitive tasks so your team can focus on high-value activities that drive revenue.",
+      "Bring lead signals, qualification detail, and pipeline status into a focused working view.",
   },
   {
-    icon: TrendingUp,
-    stat: "3.2x",
-    label: "Average Pipeline Growth",
+    icon: Clock3,
+    title: "Keep motion visible",
     description:
-      "AI-qualified leads convert faster. Our customers see their pipeline grow 3.2x within the first 90 days.",
+      "Make it easier to see what has happened, what is underway, and what needs a decision.",
   },
   {
-    icon: DollarSign,
-    stat: "67%",
-    label: "Cost Reduction",
+    icon: ArrowUpRight,
+    title: "Move from signal to action",
     description:
-      "Replace multiple tools with one intelligent platform and reduce your SaaS spend by over two thirds.",
+      "Coordinate next steps across your revenue workflow instead of losing context between tools.",
   },
   {
-    icon: Users,
-    stat: "10k+",
-    label: "Active Users",
+    icon: ShieldCheck,
+    title: "Work with confidence",
     description:
-      "Join over 10,000 businesses already using AI Growth to automate their sales and marketing.",
+      "Organization-aware access and role-based controls keep sensitive work scoped to the right team.",
   },
 ];
 
 export function Benefits() {
   return (
-    <section className="bg-surface-secondary py-24 sm:py-32">
+    <section className="border-y border-border bg-surface-secondary/60 py-24 sm:py-32">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="secondary" className="mb-4">
-            Why Choose Us
+          <Badge
+            variant="outline"
+            className="mb-4 border-border bg-surface text-foreground"
+          >
+            Why Revora
           </Badge>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Results That{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Speak
-            </span>{" "}
-            for Themselves
+          <h2 className="text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
+            Built for the operating rhythm of a revenue team.
           </h2>
         </div>
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {benefits.map((benefit, index) => (
-            <div
-              key={benefit.label}
-              className="animate-slide-up"
-              style={{
-                animationDelay: `${index * 0.1}s`,
-                animationFillMode: "both",
-              }}
-            >
-              <div className="group text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 transition-colors group-hover:bg-primary/20">
-                  <benefit.icon className="size-6 text-primary" />
-                </div>
-                <div className="mt-4 text-4xl font-bold tracking-tight text-foreground">
-                  {benefit.stat}
-                  <ArrowUpRight className="ml-1 inline size-5 text-success" />
-                </div>
-                <p className="mt-1 text-sm font-semibold text-foreground">
-                  {benefit.label}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+        <div className="mt-16 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
+          {benefits.map((benefit) => {
+            const Icon = benefit.icon;
+            return (
+              <div key={benefit.title}>
+                <span className="flex size-11 items-center justify-center rounded-2xl border border-border bg-surface text-foreground">
+                  <Icon className="size-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-5 text-base font-semibold text-foreground">
+                  {benefit.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {benefit.description}
                 </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Container>
     </section>

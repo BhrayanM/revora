@@ -2,7 +2,7 @@
 
 import { type VariantProps, cva } from "class-variance-authority";
 import { X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -62,20 +62,66 @@ export function Modal({
   showCloseButton = true,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    if (!open) return;
+
+    previouslyFocusedElement.current = document.activeElement as HTMLElement;
+    const dialog = dialogRef.current;
+    const focusableSelector = [
+      "a[href]",
+      "button:not([disabled])",
+      "textarea:not([disabled])",
+      "input:not([disabled])",
+      "select:not([disabled])",
+      '[tabindex]:not([tabindex="-1"])',
+    ].join(",");
+    const focusInitialElement = () => {
+      const focusable =
+        dialog?.querySelectorAll<HTMLElement>(focusableSelector);
+      (focusable?.[0] ?? dialog)?.focus();
+    };
+    const frame = window.requestAnimationFrame(focusInitialElement);
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(focusableSelector),
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
-    if (open) {
-      document.addEventListener("keydown", handleEscape);
-      document.body.style.overflow = "hidden";
-    }
-
+    document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
+      previouslyFocusedElement.current?.focus();
     };
   }, [open, onClose]);
 
@@ -90,10 +136,18 @@ export function Modal({
       }}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? "modal-title" : undefined}
-      aria-describedby={description ? "modal-description" : undefined}
+      aria-labelledby={title ? titleId : undefined}
+      aria-describedby={description ? descriptionId : undefined}
     >
-      <div className={cn(panelVariants({ size }), "rounded-xl", className)}>
+      <div
+        ref={dialogRef}
+        tabIndex={-1}
+        className={cn(
+          panelVariants({ size }),
+          "rounded-2xl outline-none",
+          className,
+        )}
+      >
         {showCloseButton && (
           <button
             onClick={onClose}
@@ -107,7 +161,7 @@ export function Modal({
           <div className="border-b border-border px-6 py-4">
             {title && (
               <h2
-                id="modal-title"
+                id={titleId}
                 className="text-lg font-semibold text-foreground"
               >
                 {title}
@@ -115,7 +169,7 @@ export function Modal({
             )}
             {description && (
               <p
-                id="modal-description"
+                id={descriptionId}
                 className="mt-1 text-sm text-muted-foreground"
               >
                 {description}

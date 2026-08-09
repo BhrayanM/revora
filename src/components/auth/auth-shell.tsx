@@ -10,11 +10,11 @@ import {
   LoaderCircle,
   Mail,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
+import { RevoraLockup } from "@/components/brand";
 import { BackgroundPattern } from "@/components/shared/background-pattern";
 import { cn } from "@/lib/utils";
 
@@ -123,10 +123,7 @@ export function AuthBrand({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shadow-primary/30">
-        <Sparkles className="size-4.5 text-white" aria-hidden="true" />
-      </span>
-      <span>AI Growth</span>
+      <RevoraLockup wordmarkClassName="text-xl" />
     </Link>
   );
 }

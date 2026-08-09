@@ -71,11 +71,15 @@ export function PageLoader({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4",
+        "flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-border bg-surface-secondary/40",
         fullScreen ? "min-h-screen" : "min-h-[400px]",
       )}
+      role="status"
+      aria-live="polite"
     >
-      <Spinner size="xl" />
+      <div className="relative flex size-12 items-center justify-center rounded-2xl border border-border bg-surface shadow-sm">
+        <Spinner size="md" />
+      </div>
       <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );

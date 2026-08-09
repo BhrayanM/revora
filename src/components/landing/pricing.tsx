@@ -1,147 +1,111 @@
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
-import { cn } from "@/lib/utils";
 
-const plans = [
+const paths = [
   {
-    name: "Starter",
-    price: "49",
-    description: "Perfect for small teams getting started with AI automation.",
-    features: [
-      "Up to 1,000 leads/month",
-      "Basic AI lead scoring",
-      "Email automation",
-      "GoHighLevel integration",
-      "Basic analytics",
-      "Email support",
+    title: "Start focused",
+    description:
+      "Build a clear foundation for lead qualification and revenue workflow visibility.",
+    items: [
+      "Lead and pipeline workspace",
+      "AI qualification context",
+      "Workflow activity",
     ],
-    cta: "Start Free Trial",
-    popular: false,
   },
   {
-    name: "Professional",
-    price: "149",
-    description: "For growing businesses that need advanced automation.",
-    features: [
-      "Up to 10,000 leads/month",
-      "Advanced AI lead scoring",
-      "Email + SMS automation",
-      "All CRM integrations",
-      "n8n workflow builder",
-      "Calendar booking",
-      "Advanced analytics",
-      "Priority support",
+    title: "Scale the motion",
+    description:
+      "Connect the team and the operating detail behind a growing revenue process.",
+    items: [
+      "Organization-aware collaboration",
+      "Integration configuration",
+      "Operational insights",
     ],
-    cta: "Start Free Trial",
-    popular: true,
+    featured: true,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    description: "For large organizations with complex automation needs.",
-    features: [
-      "Unlimited leads",
-      "Custom AI models",
-      "Full multi-channel automation",
-      "All integrations + custom",
-      "Dedicated n8n instance",
-      "White-label option",
-      "SLA guarantee",
-      "Dedicated account manager",
-      "Custom onboarding",
+    title: "Govern the system",
+    description:
+      "Bring more people, responsibilities, and sensitive operating decisions into one workspace.",
+    items: [
+      "Role-aware access",
+      "Team management controls",
+      "Security settings",
     ],
-    cta: "Contact Sales",
-    popular: false,
   },
 ];
 
 export function Pricing() {
   return (
-    <section id="pricing" className="py-24 sm:py-32">
+    <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
       <Container>
         <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="default" className="mb-4">
-            Pricing
+          <Badge
+            variant="outline"
+            className="mb-4 border-border bg-surface text-foreground"
+          >
+            Built to grow with the workflow
           </Badge>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Simple,{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Transparent
-            </span>{" "}
-            Pricing
+          <h2 className="text-balance text-3xl font-semibold tracking-[-0.045em] text-foreground sm:text-5xl">
+            Start with the revenue motion you need today.
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Start free for 14 days. No credit card required. Upgrade, downgrade,
-            or cancel anytime.
+          <p className="mt-4 text-lg leading-8 text-muted-foreground">
+            Create a workspace and shape Revora around the way your team works.
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 lg:grid-cols-3">
-          {plans.map((plan) => (
+        <div className="mt-14 grid gap-4 lg:grid-cols-3">
+          {paths.map((path) => (
             <Card
-              key={plan.name}
-              className={cn(
-                "relative flex flex-col",
-                plan.popular &&
-                  "border-primary/50 shadow-lg shadow-primary/10 ring-2 ring-primary/20",
-              )}
+              key={path.title}
+              className={
+                path.featured
+                  ? "border-border-strong bg-surface-elevated shadow-lg shadow-black/5"
+                  : ""
+              }
             >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge variant="default" size="md">
-                    Most Popular
+              <CardContent className="flex h-full flex-col p-7">
+                {path.featured && (
+                  <Badge
+                    variant="outline"
+                    size="sm"
+                    className="w-fit border-border bg-surface-secondary text-foreground"
+                  >
+                    Revenue workflow
                   </Badge>
-                </div>
-              )}
-              <CardHeader className="text-center">
-                <h3 className="text-lg font-semibold text-foreground">
-                  {plan.name}
+                )}
+                <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-foreground">
+                  {path.title}
                 </h3>
-                <div className="mt-3">
-                  <span className="text-4xl font-bold text-foreground">
-                    {plan.price === "Custom" ? plan.price : <>${plan.price}</>}
-                  </span>
-                  {plan.price !== "Custom" && (
-                    <span className="text-sm text-muted-foreground">
-                      /month
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {plan.description}
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  {path.description}
                 </p>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <ul className="space-y-3">
-                  {plan.features.map((feature) => (
+                <ul className="mt-7 flex-1 space-y-3">
+                  {path.items.map((item) => (
                     <li
-                      key={feature}
-                      className="flex items-start gap-2 text-sm text-foreground"
+                      key={item}
+                      className="flex gap-2 text-sm text-foreground"
                     >
-                      <Check className="mt-0.5 size-4 shrink-0 text-success" />
-                      {feature}
+                      <Check
+                        className="mt-0.5 size-4 shrink-0 text-success"
+                        aria-hidden="true"
+                      />
+                      {item}
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-              <CardFooter>
-                <Button
-                  variant={plan.popular ? "primary" : "outline"}
-                  className="w-full"
-                  size="lg"
+                <Link
+                  href="/signup"
+                  className="mt-8 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground outline-none transition-colors hover:bg-primary-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
-                  {plan.cta}
-                </Button>
-              </CardFooter>
+                  Start building
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+              </CardContent>
             </Card>
           ))}
         </div>

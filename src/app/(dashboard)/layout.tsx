@@ -17,7 +17,7 @@ import type { ActiveOrganizationOption } from "@/lib/organizations/types";
 import { createClient, createServiceAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Dashboard — AI Growth",
+  title: "Dashboard",
 };
 
 function generateSlug(email: string): string {

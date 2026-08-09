@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-  title: "Dashboard — AI Growth",
+  title: "Dashboard",
 };
 
 export default async function DashboardPage() {
@@ -244,7 +244,7 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/leads"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-white shadow-sm transition-colors hover:bg-primary-600"
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-600"
             >
               <UserPlus className="size-3.5" /> Add Lead
             </Link>

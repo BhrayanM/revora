@@ -69,7 +69,7 @@ export default async function PipelinePage() {
           </p>
           <Link
             href="/leads"
-            className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-primary-600"
+            className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary-600"
           >
             <Plus className="size-3.5" /> Add Your First Lead
           </Link>
@@ -101,7 +101,7 @@ export default async function PipelinePage() {
         </div>
         <Link
           href="/leads"
-          className="inline-flex h-8 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-medium text-white shadow-sm transition-all duration-200 hover:bg-primary-600 active:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+          className="inline-flex h-8 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary-600 active:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
         >
           <Plus className="size-3.5" /> Add Lead
         </Link>

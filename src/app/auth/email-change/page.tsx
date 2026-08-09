@@ -44,7 +44,7 @@ export default function EmailChangePage() {
           >
             <AuthTextLink
               href="/login"
-              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-600"
+              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary-600"
             >
               Go to login
             </AuthTextLink>
@@ -64,7 +64,7 @@ export default function EmailChangePage() {
         >
           <AuthTextLink
             href="/dashboard"
-            className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-600"
+            className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary-600"
           >
             Go to dashboard
           </AuthTextLink>

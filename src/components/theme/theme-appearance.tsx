@@ -58,7 +58,7 @@ export function ThemeAppearance() {
           Appearance
         </h4>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose how AI Growth looks on this device.
+          Choose how Revora looks on this device.
         </p>
       </div>
 

@@ -50,23 +50,23 @@ export function SettingsContent({ org }: { org: Organization | null }) {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your account settings.
+          Configure your organization workspace and personal preferences.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-4">
-        <Card className="lg:col-span-1 h-fit">
-          <CardContent className="p-2">
+        <Card className="h-fit lg:col-span-1">
+          <CardContent className="p-2.5">
             <nav className="space-y-0.5">
               {sections.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
                     "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
                     activeSection === section.id
-                      ? "bg-accent-surface text-primary shadow-sm"
+                      ? "bg-foreground text-canvas shadow-sm"
                       : "text-muted-foreground hover:bg-surface-secondary hover:text-foreground",
                   )}
                 >
