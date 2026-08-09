@@ -1,6 +1,7 @@
 import "server-only";
 
-import { createServiceClient } from "@/lib/supabase/server";
+import { decryptCredentialsObject } from "@/lib/integrations/encryption";
+import { createServiceAdminClient } from "@/lib/supabase/server";
 
 export async function getIntegrationCredentials(
   organizationId: string,
@@ -13,7 +14,7 @@ export async function getIntegrationCredentials(
     | "sendgrid"
     | "openai",
 ): Promise<Record<string, unknown> | null> {
-  const supabase = await createServiceClient();
+  const supabase = await createServiceAdminClient();
 
   const { data, error } = await supabase
     .from("integrations")
@@ -27,5 +28,14 @@ export async function getIntegrationCredentials(
     return null;
   }
 
-  return data.credentials as Record<string, unknown>;
+  const creds = data.credentials as Record<string, unknown>;
+  const hasEncryptedKey = Object.keys(creds).some((k) =>
+    k.startsWith("encrypted_"),
+  );
+
+  if (hasEncryptedKey) {
+    return decryptCredentialsObject(creds);
+  }
+
+  return creds;
 }

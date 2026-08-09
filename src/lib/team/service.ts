@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { OrganizationRole } from "@/lib/auth/permissions";
 import { createClient } from "@/lib/supabase/server";
 import type {
   PendingInvitation,
@@ -39,8 +40,8 @@ export async function getOrganizationTeamMembers(
     fullName: member.full_name,
     email: member.email,
     avatarUrl: member.avatar_url,
-    role: member.role,
-    status: member.status,
+    role: member.role as OrganizationRole,
+    status: member.status as TeamMember["status"],
     joinedAt: member.joined_at,
     suspendedAt: member.suspended_at,
     removedAt: member.removed_at,
@@ -67,7 +68,7 @@ export async function getOrganizationPendingInvitations(
   return (data ?? []).map((invitation) => ({
     invitationId: invitation.invitation_id,
     email: invitation.email_normalized,
-    role: invitation.role,
+    role: invitation.role as PendingInvitation["role"],
     expiresAt: invitation.expires_at,
     createdAt: invitation.created_at,
     lastSentAt: invitation.last_sent_at,
@@ -134,8 +135,8 @@ export async function getOrganizationTeamAuditEvents(
 
   return (data ?? []).map((event) => ({
     eventId: event.event_id,
-    eventType: event.event_type,
-    metadata: event.metadata,
+    eventType: event.event_type as TeamAuditEvent["eventType"],
+    metadata: event.metadata as Record<string, unknown>,
     createdAt: event.created_at,
     actorName: event.actor_name,
     subjectName: event.subject_name,

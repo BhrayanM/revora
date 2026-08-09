@@ -1,18 +1,16 @@
 "use server";
 
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import {
+  disconnectConnection,
+  getDecryptedCredentials,
+  listConnections,
+  saveConnection,
+} from "@/lib/integrations/connections";
+import { recordAuditEvent } from "@/lib/integrations/oauth";
+import { INTEGRATION_PROVIDER_IDS } from "@/lib/integrations/types";
+import type { IntegrationProviderId } from "@/lib/integrations/types";
 import { createClient } from "@/lib/supabase/server";
-
-const VALID_PROVIDERS = [
-  "hubspot",
-  "gohighlevel",
-  "slack",
-  "twilio",
-  "sendgrid",
-  "openai",
-  "n8n",
-] as const;
-type Provider = (typeof VALID_PROVIDERS)[number];
 
 export async function getOrganizationIntegrations() {
   const authorization =
@@ -20,32 +18,28 @@ export async function getOrganizationIntegrations() {
   if (!authorization.data) return { data: null, error: authorization.error };
 
   const org = authorization.data.organization;
+  const connections = await listConnections(org.id);
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("integrations")
-    .select("provider, is_active, config, created_at, updated_at")
-    .eq("organization_id", org.id);
-
-  if (error) return { data: null, error: error.message };
-  return { data: data ?? [], error: null };
+  return { data: connections, error: null };
 }
 
-export async function getIntegration(provider: Provider) {
+export async function getIntegration(provider: IntegrationProviderId) {
   const authorization =
     await requireCurrentOrganizationPermission("integrations.read");
   if (!authorization.data) return { data: null, error: authorization.error };
 
   const org = authorization.data.organization;
 
-  if (!VALID_PROVIDERS.includes(provider)) {
+  if (!INTEGRATION_PROVIDER_IDS.includes(provider)) {
     return { data: null, error: `Invalid provider: ${provider}` };
   }
 
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("integrations")
-    .select("provider, is_active, config, created_at, updated_at")
+    .select(
+      "provider, is_active, status, health_status, connected_at, external_account_id, external_account_name, scopes, config, created_at, updated_at",
+    )
     .eq("organization_id", org.id)
     .eq("provider", provider)
     .single();
@@ -55,7 +49,7 @@ export async function getIntegration(provider: Provider) {
 }
 
 export async function saveIntegration(
-  provider: Provider,
+  provider: IntegrationProviderId,
   credentials: Record<string, unknown>,
 ) {
   const authorization = await requireCurrentOrganizationPermission(
@@ -64,26 +58,39 @@ export async function saveIntegration(
   if (!authorization.data) return { error: authorization.error };
 
   const org = authorization.data.organization;
-  if (!VALID_PROVIDERS.includes(provider)) {
+  if (!INTEGRATION_PROVIDER_IDS.includes(provider)) {
     return { error: `Invalid provider: ${provider}` };
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.from("integrations").upsert(
-    {
-      organization_id: org.id,
-      provider,
-      credentials: credentials as Record<string, unknown>,
-      is_active: true,
-    },
-    { onConflict: "organization_id, provider" },
-  );
+  const profileId = authorization.data.membership.profile_id;
+  const result = await saveConnection(org.id, provider, credentials, profileId);
 
-  if (error) return { error: error.message };
-  return { error: null };
+  if (!result.error) {
+    await recordAuditEvent(org.id, provider, "connected", profileId);
+  }
+
+  return result;
 }
 
-export async function deleteIntegration(provider: Provider) {
+export async function deleteIntegration(provider: IntegrationProviderId) {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  const org = authorization.data.organization;
+  const profileId = authorization.data.membership.profile_id;
+
+  const result = await disconnectConnection(org.id, provider);
+
+  if (!result.error) {
+    await recordAuditEvent(org.id, provider, "disconnected", profileId);
+  }
+
+  return result;
+}
+
+export async function testIntegration(provider: IntegrationProviderId) {
   const authorization = await requireCurrentOrganizationPermission(
     "integrations.manage",
   );
@@ -91,41 +98,13 @@ export async function deleteIntegration(provider: Provider) {
 
   const org = authorization.data.organization;
 
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("integrations")
-    .delete()
-    .eq("organization_id", org.id)
-    .eq("provider", provider);
+  const creds = await getDecryptedCredentials(org.id, provider);
 
-  if (error) return { error: error.message };
-  return { error: null };
-}
-
-export async function testIntegration(provider: Provider) {
-  const authorization = await requireCurrentOrganizationPermission(
-    "integrations.manage",
-  );
-  if (!authorization.data) return { error: authorization.error };
-
-  const org = authorization.data.organization;
-
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("integrations")
-    .select("credentials")
-    .eq("organization_id", org.id)
-    .eq("provider", provider)
-    .eq("is_active", true)
-    .single();
-
-  if (!data?.credentials) {
+  if (!creds || Object.keys(creds).length === 0) {
     return { success: false, error: "Integration not configured" };
   }
 
   try {
-    const creds = data.credentials as Record<string, unknown>;
-
     if (provider === "hubspot" && creds["access_token"]) {
       const res = await fetch(
         "https://api.hubapi.com/crm/v3/objects/contacts?limit=1",
@@ -159,4 +138,36 @@ export async function testIntegration(provider: Provider) {
   } catch {
     return { success: false, error: "Connection test failed" };
   }
+}
+
+type SafeConnection = {
+  provider: IntegrationProviderId;
+  status: string;
+  healthStatus: string;
+  connectedAt: string | null;
+  externalAccountId: string | null;
+  externalAccountName: string | null;
+  scopes: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function getSafeConnections(): Promise<SafeConnection[]> {
+  const authorization =
+    await requireCurrentOrganizationPermission("integrations.read");
+  if (!authorization.data) return [];
+
+  const connections = await listConnections(authorization.data.organization.id);
+
+  return connections.map((c) => ({
+    provider: c.provider,
+    status: c.status,
+    healthStatus: c.healthStatus,
+    connectedAt: c.connectedAt,
+    externalAccountId: c.externalAccountId,
+    externalAccountName: c.externalAccountName,
+    scopes: c.scopes,
+    createdAt: c.createdAt,
+    updatedAt: c.updatedAt,
+  }));
 }
