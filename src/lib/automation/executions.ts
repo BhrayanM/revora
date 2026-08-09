@@ -2,6 +2,10 @@ import "server-only";
 
 import { createServiceClient } from "@/lib/supabase/server";
 
+// A development safety ceiling rather than a commercial entitlement. The
+// database function makes reservations atomically across all app instances.
+const ORGANIZATION_AI_QUALIFICATION_HOURLY_LIMIT = 20;
+
 export interface ExecutionRecord {
   id: string;
   organization_id: string;
@@ -105,6 +109,28 @@ export async function startLeadQualificationExecution(params: {
       execution: null,
       error: "Unable to start AI qualification. Please try again.",
     };
+  }
+
+  const { data: reserved, error: reservationError } = await supabase.rpc(
+    "reserve_organization_ai_qualification_slot",
+    {
+      p_organization_id: params.organizationId,
+      p_limit: ORGANIZATION_AI_QUALIFICATION_HOURLY_LIMIT,
+    },
+  );
+
+  if (reservationError || !reserved) {
+    const message = reservationError
+      ? "Unable to start AI qualification. Please try again."
+      : "Unable to start AI qualification because the organization safety limit has been reached. Try again after the current hour.";
+
+    console.error(
+      "[Executions] AI qualification reservation was not granted:",
+      reservationError?.code ?? "limit_reached",
+    );
+    await completeExecution(data.id, "failed", message);
+
+    return { execution: null, error: message };
   }
 
   return { execution: data as ExecutionRecord, error: null };
