@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { RevoraMark } from "@/components/brand/revora-mark";
 import { OrganizationSwitcher } from "@/components/dashboard/organization-switcher";
 import type { ActiveOrganizationOption } from "@/lib/organizations/types";
 import { createClient } from "@/lib/supabase/client";
@@ -125,24 +126,19 @@ export function Sidebar({
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sidebar-active shadow-sm shadow-sidebar-active/25">
-              <svg
-                className="h-3.5 w-3.5 text-primary-foreground"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                />
-              </svg>
+              <RevoraMark className="size-3.5 text-primary-foreground" />
             </div>
             <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
               Revora
             </span>
           </Link>
+        )}
+        {collapsed && (
+          <div className="flex w-full justify-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sidebar-active shadow-sm shadow-sidebar-active/25">
+              <RevoraMark className="size-3.5 text-primary-foreground" />
+            </div>
+          </div>
         )}
         <div
           className={cn(
