@@ -67,6 +67,7 @@ const navigation = [
     section: "Settings",
     items: [
       { label: "Settings", href: "/settings", icon: Settings },
+      { label: "Team", href: "/dashboard/settings/team", icon: Users },
       { label: "Profile", href: "/profile", icon: UserIcon },
     ],
   },

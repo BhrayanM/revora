@@ -202,6 +202,39 @@
         };
         Relationships: [];
       };
+      team_audit_events: {
+        Row: {
+          id: string;
+          organization_id: string;
+          actor_profile_id: string | null;
+          subject_profile_id: string | null;
+          event_type:
+            "member_role_changed" | "member_suspended" | "member_removed";
+          metadata: Record<string, unknown>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          actor_profile_id?: string | null;
+          subject_profile_id?: string | null;
+          event_type:
+            "member_role_changed" | "member_suspended" | "member_removed";
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          organization_id?: string;
+          actor_profile_id?: string | null;
+          subject_profile_id?: string | null;
+          event_type?:
+            "member_role_changed" | "member_suspended" | "member_removed";
+          metadata?: Record<string, unknown>;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       workspaces: {
         Row: {
           id: string;
@@ -705,6 +738,65 @@
           p_token_hash: string;
         };
         Returns: Record<string, unknown>;
+      };
+      list_organization_team_members: {
+        Args: {
+          p_organization_id: string;
+        };
+        Returns: {
+          membership_id: string;
+          profile_id: string;
+          full_name: string;
+          email: string;
+          avatar_url: string | null;
+          role: "owner" | "admin" | "manager" | "agent" | "viewer";
+          status: "active" | "suspended" | "removed";
+          joined_at: string;
+          suspended_at: string | null;
+          removed_at: string | null;
+        }[];
+      };
+      list_organization_pending_invitations: {
+        Args: {
+          p_organization_id: string;
+        };
+        Returns: {
+          invitation_id: string;
+          email_normalized: string;
+          role: "admin" | "manager" | "agent" | "viewer";
+          expires_at: string;
+          created_at: string;
+          last_sent_at: string;
+        }[];
+      };
+      list_organization_team_audit_events: {
+        Args: {
+          p_organization_id: string;
+          p_limit?: number;
+        };
+        Returns: {
+          event_id: string;
+          event_type:
+            "member_role_changed" | "member_suspended" | "member_removed";
+          metadata: Record<string, unknown>;
+          created_at: string;
+          actor_name: string | null;
+          subject_name: string | null;
+        }[];
+      };
+      update_organization_membership_role: {
+        Args: {
+          p_membership_id: string;
+          p_role: "admin" | "manager" | "agent" | "viewer";
+        };
+        Returns: string;
+      };
+      set_organization_membership_status: {
+        Args: {
+          p_membership_id: string;
+          p_status: "suspended" | "removed";
+        };
+        Returns: string;
       };
     };
     Enums: Record<string, never>;
