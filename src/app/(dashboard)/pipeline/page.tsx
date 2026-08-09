@@ -111,7 +111,7 @@ export default async function PipelinePage() {
         {(stages ?? []).map((stage) => {
           const stageLeads = leadsByStage.get(stage.id) ?? [];
           return (
-            <div key={stage.id} className="min-w-[280px] max-w-[320px] flex-1">
+            <div key={stage.id} className="min-w-[280px] flex-1">
               <div
                 className={`mb-3 flex items-center justify-between rounded-lg border-l-2 px-3 py-2 ${stageColors[stage.name] ?? "border-l-primary"} ${stageBgColors[stage.name] ?? "bg-primary/5"}`}
               >
