@@ -1,76 +1,84 @@
 "use client";
 
-import { CheckCircle, Plug, XCircle } from "lucide-react";
-import { useState, useTransition } from "react";
+import { CheckCircle, ExternalLink, Plug, XCircle } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
 
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  INTEGRATION_PROVIDERS,
+  PROVIDER_CATEGORIES,
+  getProviderById,
+} from "@/lib/integrations/providers";
+import type {
+  IntegrationConnection,
+  IntegrationProviderId,
+  IntegrationStatus,
+} from "@/lib/integrations/types";
 
 import {
   deleteIntegration,
+  getOrganizationIntegrations,
   saveIntegration,
   testIntegration,
 } from "./integrations-actions";
 
-type Provider = "hubspot" | "gohighlevel" | "slack" | "n8n";
-
-const PROVIDER_META: Record<
-  Provider,
-  {
-    label: string;
-    desc: string;
-    fields: Record<string, { label: string; type: string }>;
+function statusBadge(status: IntegrationStatus) {
+  switch (status) {
+    case "connected":
+      return (
+        <Badge variant="success" size="sm">
+          Connected
+        </Badge>
+      );
+    case "error":
+      return (
+        <Badge variant="error" size="sm">
+          Error
+        </Badge>
+      );
+    case "reauth_required":
+      return (
+        <Badge variant="warning" size="sm">
+          Reauth Required
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" size="sm">
+          Not Connected
+        </Badge>
+      );
   }
-> = {
-  hubspot: {
-    label: "HubSpot",
-    desc: "Sync contacts to HubSpot CRM",
-    fields: { access_token: { label: "Access Token", type: "password" } },
-  },
-  gohighlevel: {
-    label: "GoHighLevel",
-    desc: "Sync contacts to GoHighLevel CRM",
-    fields: {
-      api_key: { label: "API Key", type: "password" },
-      location_id: { label: "Location ID", type: "text" },
-    },
-  },
-  slack: {
-    label: "Slack",
-    desc: "Send HOT lead notifications to Slack",
-    fields: { webhook_url: { label: "Webhook URL", type: "password" } },
-  },
-  n8n: {
-    label: "n8n",
-    desc: "Workflow automation webhook endpoint",
-    fields: {
-      webhook_url: { label: "Webhook URL", type: "text" },
-      webhook_secret: { label: "Webhook Secret", type: "password" },
-    },
-  },
-};
+}
 
 function IntegrationCard({
-  provider,
-  configured,
+  providerId,
+  connection,
   onConfigure,
+  onRefresh,
 }: {
-  provider: Provider;
-  configured: boolean;
+  providerId: IntegrationProviderId;
+  connection: IntegrationConnection | null;
   onConfigure: () => void;
+  onRefresh: () => void;
 }) {
-  const meta = PROVIDER_META[provider];
+  const provider = getProviderById(providerId);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
   const [deleting, startDelete] = useTransition();
 
+  if (!provider) return null;
+
+  const configured = connection !== null && connection.status === "connected";
+
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
-    const result = await testIntegration(provider);
+    const result = await testIntegration(providerId);
     setTestResult(
       result.success
         ? "Connection successful"
@@ -81,7 +89,8 @@ function IntegrationCard({
 
   const handleDisconnect = () => {
     startDelete(async () => {
-      await deleteIntegration(provider);
+      await deleteIntegration(providerId);
+      onRefresh();
     });
   };
 
@@ -96,15 +105,19 @@ function IntegrationCard({
             <div>
               <div className="flex items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">
-                  {meta.label}
+                  {provider.displayName}
                 </p>
-                {configured && (
-                  <Badge variant="success" size="sm">
-                    Connected
-                  </Badge>
-                )}
+                {configured && statusBadge("connected")}
+                {connection && !configured && statusBadge(connection.status)}
               </div>
-              <p className="text-xs text-muted-foreground">{meta.desc}</p>
+              <p className="text-xs text-muted-foreground">
+                {provider.description}
+              </p>
+              {connection?.externalAccountName && (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Account: {connection.externalAccountName}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-1.5">
@@ -145,39 +158,84 @@ function IntegrationCard({
             <span className="text-xs text-muted-foreground">{testResult}</span>
           </div>
         )}
+        {provider.docsUrl && (
+          <a
+            href={provider.docsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ExternalLink className="size-3" /> Documentation
+          </a>
+        )}
       </CardContent>
     </Card>
   );
 }
 
 function ConnectForm({
-  provider,
+  providerId,
   onClose,
+  onSaved,
 }: {
-  provider: Provider;
+  providerId: IntegrationProviderId;
   onClose: () => void;
+  onSaved: () => void;
 }) {
-  const meta = PROVIDER_META[provider];
+  const provider = getProviderById(providerId);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  if (!provider) return null;
+
+  const fields: Record<string, { label: string; type: string }> = {};
+
+  if (provider.supportsApiKey || provider.authType === "api_key") {
+    fields["api_key"] = { label: "API Key", type: "password" };
+  }
+
+  if (provider.id === "hubspot") {
+    fields["access_token"] = { label: "Access Token", type: "password" };
+  }
+
+  if (provider.id === "gohighlevel") {
+    fields["location_id"] = { label: "Location ID", type: "text" };
+  }
+
+  if (provider.id === "slack" || provider.supportsWebhooks) {
+    fields["webhook_url"] = { label: "Webhook URL", type: "text" };
+  }
+
+  if (provider.id === "n8n") {
+    fields["webhook_secret"] = { label: "Webhook Secret", type: "password" };
+  }
+
+  if (provider.id === "twilio") {
+    fields["account_sid"] = { label: "Account SID", type: "text" };
+    fields["auth_token"] = { label: "Auth Token", type: "password" };
+    fields["phone_number"] = { label: "Phone Number", type: "text" };
+  }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     const formData = new FormData(e.currentTarget);
     const creds: Record<string, unknown> = {};
-    for (const key of Object.keys(meta.fields)) {
+    for (const key of Object.keys(fields)) {
       creds[key] = formData.get(key) as string;
     }
 
     startTransition(async () => {
-      const result = await saveIntegration(provider, creds);
+      const result = await saveIntegration(providerId, creds);
       if (result.error) {
         setError(result.error);
       } else {
         setSaved(true);
-        setTimeout(onClose, 1000);
+        setTimeout(() => {
+          onSaved();
+          onClose();
+        }, 1000);
       }
     });
   };
@@ -185,7 +243,9 @@ function ConnectForm({
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-base font-semibold">Connect {meta.label}</h3>
+        <h3 className="text-base font-semibold">
+          Connect {provider.displayName}
+        </h3>
       </CardHeader>
       <CardContent>
         {error && (
@@ -199,7 +259,7 @@ function ConnectForm({
           </Alert>
         )}
         <form onSubmit={handleSubmit} className="space-y-3">
-          {Object.entries(meta.fields).map(([key, field]) => (
+          {Object.entries(fields).map(([key, field]) => (
             <Input
               key={key}
               label={field.label}
@@ -224,28 +284,86 @@ function ConnectForm({
 }
 
 export function IntegrationsPanel() {
-  const providers: Provider[] = ["hubspot", "gohighlevel", "slack", "n8n"];
-  const [configuring, setConfiguring] = useState<Provider | null>(null);
+  const [connections, setConnections] = useState<IntegrationConnection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [configuring, setConfiguring] = useState<IntegrationProviderId | null>(
+    null,
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchConnections = async () => {
+    const result = await getOrganizationIntegrations();
+    return result.data ?? [];
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchConnections().then((data) => {
+      if (!cancelled) {
+        setConnections(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  const connectionMap = new Map(connections.map((c) => [c.provider, c]));
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-5">
+              <div className="h-14 animate-pulse rounded-lg bg-surface-secondary" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-3">
-      {providers.map((provider) => (
-        <div key={provider}>
-          <IntegrationCard
-            provider={provider}
-            configured={false}
-            onConfigure={() => setConfiguring(provider)}
-          />
-          {configuring === provider && (
-            <div className="mt-3 ml-0">
-              <ConnectForm
-                provider={provider}
-                onClose={() => setConfiguring(null)}
-              />
+    <div className="space-y-6">
+      {PROVIDER_CATEGORIES.map((category) => {
+        const providers = INTEGRATION_PROVIDERS.filter(
+          (p) => p.category === category.key,
+        );
+        if (providers.length === 0) return null;
+
+        return (
+          <div key={category.key}>
+            <h3 className="mb-3 text-sm font-semibold text-muted-foreground">
+              {category.label}
+            </h3>
+            <div className="space-y-3">
+              {providers.map((provider) => (
+                <div key={provider.id}>
+                  <IntegrationCard
+                    providerId={provider.id}
+                    connection={connectionMap.get(provider.id) ?? null}
+                    onConfigure={() => setConfiguring(provider.id)}
+                    onRefresh={() => {
+                      setRefreshKey((k) => k + 1);
+                    }}
+                  />
+                  {configuring === provider.id && (
+                    <div className="mt-3 ml-0">
+                      <ConnectForm
+                        providerId={provider.id}
+                        onClose={() => setConfiguring(null)}
+                        onSaved={() => setRefreshKey((k) => k + 1)}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
 import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById } from "@/lib/queries/leads";
 import { createServiceAdminClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 async function getLeadWithAuth(leadId: string) {
   const authorization =
@@ -75,11 +76,11 @@ export async function qualifyLead(
         score: validated.score,
         tags: buildQualificationTags(validated),
         metadata: buildQualificationMetadata(
-          lead.metadata,
+          lead.metadata as Record<string, unknown> | null | undefined,
           validated,
           result.model,
           result.usage?.totalTokens ?? null,
-        ),
+        ) as Json,
       })
       .eq("id", leadId)
       .eq("organization_id", orgId);

@@ -20,6 +20,7 @@ import {
   startLeadQualificationExecution,
 } from "@/lib/automation/executions";
 import { createServiceClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 export async function qualifyLeadForOrg(
   leadId: string,
@@ -75,11 +76,11 @@ export async function qualifyLeadForOrg(
         score: validated.score,
         tags: buildQualificationTags(validated),
         metadata: buildQualificationMetadata(
-          lead.metadata,
+          lead.metadata as Record<string, unknown> | null | undefined,
           validated,
           result.model,
           result.usage?.totalTokens ?? null,
-        ),
+        ) as Json,
       })
       .eq("id", leadId)
       .eq("organization_id", organizationId);

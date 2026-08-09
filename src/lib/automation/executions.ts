@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createServiceAdminClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 // A development safety ceiling rather than a commercial entitlement. The
 // database function makes reservations atomically across all app instances.
@@ -149,7 +150,7 @@ export async function completeExecution(
     .update({
       status,
       error_message: errorMessage ?? null,
-      response_metadata: responseMetadata ?? {},
+      response_metadata: (responseMetadata ?? {}) as Json,
       completed_at: new Date().toISOString(),
     })
     .eq("id", executionId);
