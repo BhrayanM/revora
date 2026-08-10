@@ -5,7 +5,7 @@ import {
   markConnectionError,
   markConnectionHealthy,
 } from "@/lib/integrations/connections";
-import { encryptCredential } from "@/lib/integrations/encryption";
+import { encryptCredentialsObject } from "@/lib/integrations/encryption";
 import {
   generateOAuthState,
   generatePKCEChallenge,
@@ -170,10 +170,10 @@ export async function handleHubSpotCallback(
       expires_in: number;
     };
 
-    const credentials: Record<string, unknown> = {
-      access_token: encryptCredential(data.access_token),
-      refresh_token: encryptCredential(data.refresh_token),
-    };
+    const credentials = encryptCredentialsObject({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
 
     const tokenExpiresAt = new Date(
       Date.now() + data.expires_in * 1000,
@@ -258,15 +258,15 @@ export async function refreshHubSpotToken(
       expires_in: number;
     };
 
-    const newCreds: Record<string, unknown> = {
-      access_token: encryptCredential(data.access_token),
+    const rawCreds: Record<string, string> = {
+      access_token: data.access_token,
     };
-
-    if (data.refresh_token) {
-      newCreds["refresh_token"] = encryptCredential(data.refresh_token);
-    } else if (creds["refresh_token"]) {
-      newCreds["refresh_token"] = creds["refresh_token"];
+    const storedRefresh = (data.refresh_token || creds["refresh_token"]) as
+      string | undefined;
+    if (storedRefresh) {
+      rawCreds.refresh_token = storedRefresh;
     }
+    const newCreds = encryptCredentialsObject(rawCreds);
 
     const tokenExpiresAt = new Date(
       Date.now() + data.expires_in * 1000,
