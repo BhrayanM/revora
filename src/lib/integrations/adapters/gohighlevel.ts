@@ -5,7 +5,7 @@ import {
   markConnectionError,
   markConnectionHealthy,
 } from "@/lib/integrations/connections";
-import { encryptCredential } from "@/lib/integrations/encryption";
+import { encryptCredentialsObject } from "@/lib/integrations/encryption";
 import {
   generateOAuthState,
   generatePKCEChallenge,
@@ -166,15 +166,17 @@ export async function handleGHLCallback(
       companyId?: string;
     };
 
-    const credentials: Record<string, unknown> = {
-      access_token: encryptCredential(data.access_token),
-      refresh_token: encryptCredential(data.refresh_token),
-      location_id: encryptCredential(data.locationId),
+    const rawCreds: Record<string, string> = {
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      location_id: data.locationId,
     };
 
     if (data.companyId) {
-      credentials["company_id"] = encryptCredential(data.companyId);
+      rawCreds.company_id = data.companyId;
     }
+
+    const credentials = encryptCredentialsObject(rawCreds);
 
     const tokenExpiresAt = new Date(
       Date.now() + data.expires_in * 1000,
@@ -274,16 +276,11 @@ export async function refreshGHLToken(
       expires_in: number;
     };
 
-    const newCreds: Record<string, unknown> = {
-      access_token: encryptCredential(data.access_token),
-      location_id: creds["location_id"],
-    };
-
-    if (data.refresh_token) {
-      newCreds["refresh_token"] = encryptCredential(data.refresh_token);
-    } else {
-      newCreds["refresh_token"] = creds["refresh_token"];
-    }
+    const newCreds = encryptCredentialsObject({
+      access_token: data.access_token,
+      location_id: creds["location_id"] as string,
+      refresh_token: (data.refresh_token || creds["refresh_token"]) as string,
+    });
 
     const tokenExpiresAt = new Date(
       Date.now() + data.expires_in * 1000,

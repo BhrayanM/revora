@@ -114,11 +114,16 @@ export async function recordAuditEvent(
   metadata?: Record<string, unknown>,
 ): Promise<void> {
   const supabase = await createServiceAdminClient();
-  await supabase.from("integration_audit_events").insert({
+  const { error } = await supabase.from("integration_audit_events").insert({
     organization_id: organizationId,
     provider,
     event_type: eventType,
     actor_profile_id: actorProfileId ?? null,
     metadata: (metadata ?? {}) as Json,
   });
+  if (error) {
+    console.warn(
+      `[audit] failed to record event ${eventType} for ${provider}: ${error.message}`,
+    );
+  }
 }

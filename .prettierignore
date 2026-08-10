@@ -10,3 +10,4 @@ public
 docker-compose.yml
 Dockerfile
 package-lock.json
+src/lib/supabase/types.ts

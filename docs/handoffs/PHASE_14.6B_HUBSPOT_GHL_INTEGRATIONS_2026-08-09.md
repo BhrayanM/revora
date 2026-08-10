@@ -1,157 +1,131 @@
 # Phase 14.6B — HubSpot + GoHighLevel Integrations
 
-**Date:** 2026-08-09
+**Date:** 2026-08-09 (initial) / 2026-08-10 (hardening + E2E)
 **Repository:** `C:\Users\bhray\ai-growth-platform`
-**Status:** **IMPLEMENTATION COMPLETE / REAL E2E BLOCKED BY PROVIDER CONFIGURATION**
+**Status:** **HUBSPOT E2E COMPLETE — GHL PENDING**
 
 ## Scope
 
-Implemented adaptive OAuth 2.0 adapters for HubSpot and GoHighLevel using the Phase 14.6A integration foundation. Existing CRM contact sync logic preserved and integrated. Real E2E verification requires provider OAuth app credentials.
+Adaptive OAuth 2.0 adapters for HubSpot and GoHighLevel. HubSpot verified end-to-end: real OAuth → encrypted credential storage → test connection → contact create → contact update → deduplication → mapping persistence → audit trail → idempotency. GoHighLevel real E2E pending.
 
-## HubSpot
+---
 
-### OAuth Architecture
-- **Authorization URL:** `https://app.hubspot.com/oauth/authorize`
-- **Token URL:** `https://api.hubapi.com/oauth/v1/token`
-- **API Base:** `https://api.hubapi.com`
-- **Scopes:** `crm.objects.contacts.read`, `crm.objects.contacts.write`
-- **PKCE:** S256 challenge/verifier via Phase 14.6A OAuth foundation
-- **State:** SHA-256 hashed, organization-bound, single-use, 10-minute expiry
-- **Env vars required:** `HUBSPOT_CLIENT_ID`, `HUBSPOT_CLIENT_SECRET`, `HUBSPOT_REDIRECT_URI`
+## HubSpot OAuth E2E — Verified 2026-08-10
 
 ### OAuth Flow
-1. User clicks Connect → `startHubSpotOAuth()` generates authorization URL
-2. Redirect to HubSpot authorization page
-3. On approval, HubSpot redirects to `/api/integrations/hubspot/callback`
-4. Server validates state, exchanges code for tokens
-5. Credentials encrypted and persisted with portal ID/name, scopes, expiry
-6. Audit event `integration.connected` recorded
-
-### Token Refresh
-- `refreshHubSpotToken()` — uses refresh_token grant, handles rotated refresh tokens
-- Failed refresh → `reauth_required` status + audit
+- Real HubSpot developer app credentials
+- Authorization URL: `https://app.hubspot.com/oauth/authorize`
+- Token URL: `https://api.hubapi.com/oauth/v1/token`
+- PKCE S256, SHA-256 hashed state, org-bound, single-use, 10-min expiry
+- Callback: `http://localhost:3000/api/integrations/hubspot/callback`
 
 ### Test Connection
-- `testHubSpotConnection()` — GET `/crm/v3/objects/contacts?limit=1`
-- Non-mutating, updates health status
+- `GET /crm/v3/objects/contacts?limit=1` — **PASS (200 OK)**
 
 ### Contact Sync
-- `syncLeadToHubSpot()` server action in `leads/sync-actions.ts`
-- Search by email → update existing OR create new
-- Maps: firstname, lastname, email, phone, company
-- AI fields: `ai_score__c` (custom property), `lead_temperature__c` (custom property)
-- Activity timeline: `integration.hubspot.contact_synced`
+- **Create (POST):** `POST /crm/v3/objects/contacts` — **PASS**
+- **Update (PATCH):** `PATCH /crm/v3/objects/contacts/{id}` — **PASS**
+- **Dedup (email search):** **PASS** — search-before-create prevents duplicates
+- **Dedup (stored mapping):** **PASS** — mapping-based path with email search fallback
+- **Verified contact ID:** `532993021666`
+- **Verified lead ID:** `31e5ff18-f891-47e5-a085-d160119df5ff`
+- **Email:** `browser-hubspot-e2e@revora-test.dev`
 
-### Custom Properties
-HubSpot custom properties `ai_score__c` and `lead_temperature__c` assumed to exist. If not present, they will be created by the API on first write. No automatic provisioning code added.
+---
 
-### Disconnect
-- `disconnectHubSpot()` — clears all credentials and metadata
-- Audit: `integration.disconnected`
+## Bugs Found and Fixed
 
-## GoHighLevel
+### 1. Encryption Format Mismatch (2026-08-10)
 
-### OAuth Architecture
-- **Authorization URL:** `https://marketplace.gohighlevel.com/oauth/chooselocation`
-- **Token URL:** `https://services.leadconnectorhq.com/oauth/token`
-- **API Base:** `https://services.leadconnectorhq.com`
-- **API Version:** `2021-07-28` (via header)
-- **Scopes:** `contacts.readonly`, `contacts.write`, `locations.readonly`
-- **PKCE:** S256 via Phase 14.6A foundation
-- **Env vars required:** `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_REDIRECT_URI`
+**Root cause:** `handleHubSpotCallback` stored credentials with `encryptCredential()` individually, producing keys `access_token`/`refresh_token` with `v1:...` ciphertext values. `getDecryptedCredentials()` only decrypts keys starting with `encrypted_` prefix (from `encryptCredentialsObject()`). Result: encrypted string sent as Bearer token → HubSpot 401 → "stored credentials are no longer valid."
 
-### OAuth Flow
-1. User clicks Connect → `startGHLOAuth()` generates authorization URL
-2. Redirect to GHL location selection page
-3. On approval, GHL redirects to `/api/integrations/gohighlevel/callback`
-4. Server validates state, exchanges code for tokens
-5. Location ID extracted from token response, location name fetched from API
-6. Credentials encrypted and persisted with location metadata
+**Fix:** Changed all 4 credential storage paths to use `encryptCredentialsObject()`, producing `encrypted_access_token`/`encrypted_refresh_token` keys compatible with `getDecryptedCredentials()`.
 
-### Location Model
-- `locationId` extracted from OAuth token response
-- Location name fetched via `GET /locations/{locationId}`
-- One location per Revora integration connection (documented limitation)
+**Affected:** `hubspot.ts` (callback + refresh), `gohighlevel.ts` (callback + refresh)
 
-### Token Refresh
-- `refreshGHLToken()` — uses refresh_token grant
-- Failed refresh → `reauth_required` + audit
+### 2. Idempotency Permanent Block (2026-08-10)
 
-### Test Connection
-- `testGHLConnection()` — GET `/contacts/?limit=1`
-- Non-mutating
+**Root cause:** Static `event_id` (`lead_{id}_hubspot_sync`) combined with UNIQUE index `idx_executions_idempotency` meant only one execution row could exist per lead. Once a sync completed (success or failed), the row persisted forever, permanently blocking all future syncs.
 
-### Contact Sync
-- `syncLeadToGoHighLevel()` server action
-- Lookup by email → update OR create
-- Maps: firstName, lastName, email, phone, companyName, locationId
-- AI fields in customFields: `ai_score`, `lead_temperature`
-- Tags: `revora`, `[temperature.toLowerCase()]`
-- Activity timeline: `integration.gohighlevel.contact_synced`
+**Fix:** 
+- Per-attempt unique `event_id`: `lead_{id}_hubspot_sync_{Date.now()}`
+- Partial UNIQUE index on `(organization_id, lead_id, provider, action) WHERE status = 'processing'` — blocks concurrent active syncs but releases on success/fail
+- Stale processing recovery: 5-minute timeout marks abandoned rows as failed
 
-### Disconnect
-- `disconnectGHL()` — clears all credentials
-- Audit: `integration.disconnected`
+**Migration:** `00032_active_sync_concurrency_guard.sql`
 
-## Shared Architecture
+### 3. Audit Event Silently Discarded (2026-08-10)
 
-### Files Created
-| File | Purpose |
+**Root cause:** `integration_audit_events` CHECK constraint didn't include `contact_synced`. `recordAuditEvent()` didn't check insert errors → silent failure.
+
+**Fix:** Added `contact_synced` to CHECK constraint (`00031`). Added `console.warn` error logging to `recordAuditEvent()`.
+
+---
+
+## Production Hardening
+
+### Error handling (Priority 1)
+- `parseHubSpotErrorBody()` — safe HubSpot error JSON extraction
+- `hubSpotSafeErrorMessage()` — maps `INVALID_EMAIL`, `PROPERTY_DOESNT_EXIST`, rate limits to user-safe messages
+- Provider message appended (truncated at 200 chars) without exposing raw payload
+
+### Token refresh (Priority 2)
+- `ensureHubSpotToken()` — checks `token_expires_at` with 5-min buffer
+- Calls `refreshHubSpotToken()` (canonical encrypted format) if near expiry
+- Failed refresh → marks connection error
+
+### External contact mapping (Priority 3)
+- **Migration 00030:** `provider_resource_mappings` table
+  - UNIQUE on `(organization_id, provider, resource_type, local_id)`
+  - RLS: org members can read; mutations via `service_role`
+- Sync prefers stored mapping, falls back to email search if mapping absent/404
+
+### Idempotent sync (Priority 4 — fixed in v2)
+- Per-attempt unique `event_id` with timestamp suffix
+- Partial UNIQUE index for active-concurrency guard
+- Stale processing recovery (5-min timeout)
+- Historical row preservation (no DELETE)
+
+### Audit/health (Priority 5)
+- `contact_synced` audit event with lead_id/contact_id/created metadata
+- `markConnectionHealthy()` on success
+- `markConnectionError()` on failure
+- Sync execution tracked in `automation_executions`
+
+### Source mapping (Priority 6)
+- Documented limitation: no standard HubSpot source property; custom not auto-created
+
+---
+
+## Migrations Created
+
+| # | Name | Purpose |
+|---|---|---|
+| 00030 | `provider_resource_mappings` | Generic provider-to-local resource mapping |
+| 00031 | `add_contact_synced_audit_event` | Extended audit event CHECK constraint |
+| 00032 | `active_sync_concurrency_guard` | Partial UNIQUE index for concurrency |
+
+---
+
+## Files
+
+| File | Status |
 |---|---|
-| `src/lib/integrations/adapters/hubspot.ts` | HubSpot OAuth adapter + API helpers |
-| `src/lib/integrations/adapters/gohighlevel.ts` | GoHighLevel OAuth adapter + API helpers |
-| `src/app/api/integrations/hubspot/callback/route.ts` | HubSpot OAuth callback |
-| `src/app/api/integrations/gohighlevel/callback/route.ts` | GoHighLevel OAuth callback |
-| `src/app/(dashboard)/leads/sync-actions.ts` | Lead-to-CRM sync server actions |
+| `src/lib/integrations/adapters/hubspot.ts` | Modified (canonical encryption) |
+| `src/lib/integrations/adapters/gohighlevel.ts` | Modified (canonical encryption) |
+| `src/lib/integrations/oauth.ts` | Modified (error logging in recordAuditEvent) |
+| `src/app/(dashboard)/leads/sync-actions.ts` | Major rewrite (all hardening + idempotency) |
+| `src/app/(dashboard)/leads/[id]/hubspot-sync-button.tsx` | New (sync UI button) |
+| `src/app/(dashboard)/leads/[id]/page.tsx` | Modified (added sync button) |
+| `src/lib/supabase/types.ts` | Regenerated |
+| `supabase/migrations/00030–00032` | New (deployed, local = remote) |
+| `src/app/api/integrations/hubspot/callback/route.ts` | Unchanged |
+| `src/app/api/integrations/gohighlevel/callback/route.ts` | Unchanged |
 
-### Files Modified
-| File | Change |
-|---|---|
-| `src/app/(dashboard)/settings/integrations-actions.ts` | Added OAuth flow actions + provider-specific test/disconnect |
-| `src/app/(dashboard)/settings/integrations-panel.tsx` | OAuth-aware Connect flow, provider-specific test/disconnect |
-| `.env.example` | Added HUBSPOT_*, GHL_*, INTEGRATION_ENCRYPTION_KEY variables |
+---
 
-### Existing Code Classification
-| File | Verdict |
-|---|---|
-| `src/lib/crm/types.ts` | PRESERVED — CRMContact, CRMLeadContext, CRMSyncResult types still valid |
-| `src/lib/crm/hubspot.ts` | PRESERVED — contact sync logic reused within new adapter |
-| `src/lib/crm/gohighlevel.ts` | PRESERVED — contact sync logic reused within new adapter |
-| `src/lib/crm/index.ts` | PRESERVED — factory function unchanged; new adapter services are separate |
+## Validation
 
-### Idempotency
-Lead sync uses email-based search-create-update pattern. Duplicate contacts prevented by provider semantics (email uniqueness). External resource IDs not persisted to a mapping table yet — contact search happens on each sync.
-
-### Rate Limiting / Retry
-- 15-second AbortController timeout on all HTTP calls
-- `normalizeHubSpotError()` / `normalizeGHLError()` classify HTTP status codes
-- `extractRetryAfter()` parses `Retry-After` header
-- Error normalization feeds into shared integration error categories
-
-### Security Review
-- OAuth state: SHA-256 hashed, organization-bound, single-use, 10-min expiry ✅
-- CSRF protection: PKCE S256 ✅
-- Token storage: AES-256-GCM encrypted ✅
-- Server-only: `import "server-only"` enforced ✅
-- Env vars: never NEXT_PUBLIC_ ✅
-- Callback validation: state, org, provider, expiry, replay ✅
-- No credential logging ✅
-
-### RBAC
-- `integrations.manage` required for connect, test, disconnect
-- Server actions enforce permissions before any provider call
-- Organization binding checked in OAuth flow
-
-### Known Limitations
-1. **No real provider E2E executed** — requires HubSpot developer app + GHL Marketplace app credentials
-2. **Custom property provisioning** — `ai_score__c` and `lead_temperature__c` assumed to exist; no auto-create
-3. **No resource mapping table** — external contact IDs not persisted; search on each sync
-4. **No webhook receivers** — inbound CRM events not implemented
-5. **No bulk sync** — single lead sync per server action
-6. **One GHL location per connection** — documented limitation
-7. **Localhost OAuth** — both providers accept http://localhost redirects in development
-
-### Validation
 | Command | Result |
 |---|---|
 | `npm run lint` | Passed |
@@ -159,15 +133,36 @@ Lead sync uses email-based search-create-update pattern. Duplicate contacts prev
 | `npm run build` | 34 routes, passed |
 | `npm audit` | 0 vulnerabilities |
 | `git diff --check` | Clean |
-| Migrations | 00001–00029, no new migration needed |
+| Migrations | 00001–00032, local = remote |
+| HubSpot OAuth E2E | PASS |
+| HubSpot Test Connection | PASS |
+| HubSpot Contact Create | PASS |
+| HubSpot Contact Update | PASS |
+| HubSpot Dedup (email search) | PASS |
+| HubSpot Dedup (stored mapping) | PASS |
+| INVALID_EMAIL safe error surfacing | PASS |
+| Token refresh before sync | PASS |
+| Contact-synced audit events | PASS |
+| Idempotency: concurrent block | PASS |
+| Idempotency: re-sync after success | PASS |
+| Idempotency: retry after failure | PASS |
+| Idempotency: stale recovery | PASS |
+| AI qualification regression | PASS |
+| Historical record preservation | PASS |
 
-### To Complete Phase 14.6B
-1. Create HubSpot developer app, obtain OAuth credentials
-2. Create GoHighLevel Marketplace app, obtain OAuth credentials
-3. Configure env vars: `HUBSPOT_CLIENT_ID`, `HUBSPOT_CLIENT_SECRET`, `HUBSPOT_REDIRECT_URI`, `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_REDIRECT_URI`
-4. Execute real browser OAuth flow for both providers
-5. Create/sync synthetic leads and verify in provider dashboards
-6. Test disconnect and reconnect
+---
 
-### Next Phase
+## Remaining Limitations
+
+1. **GoHighLevel real E2E** — not yet completed
+2. **Custom property provisioning** — `ai_score__c`/`lead_temperature__c` assumed to exist
+3. **No webhook receivers** — inbound CRM events not implemented
+4. **No bulk sync** — single lead sync per action
+5. **One GHL location per connection**
+6. **Source not mapped** — no standard HubSpot source property
+7. **GHL error handling** — not yet hardened
+8. **`markConnectionHealthy` doesn't clear `last_error_at`** — minor; integration health reflects last action
+
+## Next Phase
+
 **Phase 14.6C — n8n + Zapier + Make**
