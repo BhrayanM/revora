@@ -18,10 +18,28 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!code || !state) {
+  if (code && !state) {
     return NextResponse.redirect(
       new URL(
-        "/settings?tab=integrations&error=Missing+authorization+parameters",
+        "/settings?tab=integrations&ghl_install=authorization_required",
+        request.url,
+      ),
+    );
+  }
+
+  if (!code) {
+    return NextResponse.redirect(
+      new URL(
+        "/settings?tab=integrations&error=Missing+authorization+code",
+        request.url,
+      ),
+    );
+  }
+
+  if (!state) {
+    return NextResponse.redirect(
+      new URL(
+        "/settings?tab=integrations&error=Missing+OAuth+state",
         request.url,
       ),
     );
@@ -49,6 +67,6 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.redirect(
-    new URL("/settings?tab=integrations&connected=gohighlevel", request.url),
+    new URL("/settings?tab=integrations&connected=crm", request.url),
   );
 }

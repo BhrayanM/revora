@@ -6,9 +6,10 @@ import { revalidatePath } from "next/cache";
 
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import {
-  getGHLAccessToken,
-  getGHLLocationId,
+  ensureGHLToken,
   GHL_API_BASE,
+  ghlSafeErrorMessage,
+  normalizeGHLError,
 } from "@/lib/integrations/adapters/gohighlevel";
 import {
   getHubSpotAccessToken,
@@ -21,6 +22,11 @@ import {
   markConnectionError,
   markConnectionHealthy,
 } from "@/lib/integrations/connections";
+import {
+  buildGHLCreateContactPayload,
+  buildGHLUpdateContactPayload,
+  type GHLContactPayloadSource,
+} from "@/lib/integrations/gohighlevel-contact-payloads";
 import { recordAuditEvent } from "@/lib/integrations/oauth";
 import { getSafeIntegrationError } from "@/lib/integrations/types";
 import type { IntegrationErrorCategory } from "@/lib/integrations/types";
@@ -116,8 +122,9 @@ async function ensureHubSpotToken(orgId: string): Promise<{
 // Provider resource mapping
 // ---------------------------------------------------------------------------
 
-async function getHubSpotContactMapping(
+async function getProviderContactMapping(
   orgId: string,
+  provider: string,
   leadId: string,
 ): Promise<string | null> {
   const supabase = await createServiceAdminClient();
@@ -125,15 +132,16 @@ async function getHubSpotContactMapping(
     .from("provider_resource_mappings")
     .select("external_id")
     .eq("organization_id", orgId)
-    .eq("provider", "hubspot")
+    .eq("provider", provider)
     .eq("resource_type", "contact")
     .eq("local_id", leadId)
     .maybeSingle();
   return data?.external_id ?? null;
 }
 
-async function saveHubSpotContactMapping(
+async function saveProviderContactMapping(
   orgId: string,
+  provider: string,
   leadId: string,
   externalId: string,
 ): Promise<void> {
@@ -141,7 +149,7 @@ async function saveHubSpotContactMapping(
   await supabase.from("provider_resource_mappings").upsert(
     {
       organization_id: orgId,
-      provider: "hubspot",
+      provider,
       resource_type: "contact",
       local_id: leadId,
       external_id: externalId,
@@ -157,6 +165,8 @@ async function saveHubSpotContactMapping(
 async function checkSyncIdempotency(
   orgId: string,
   leadId: string,
+  provider: string,
+  action: string,
 ): Promise<{ allowed: boolean; executionId: string | null }> {
   const supabase = await createServiceAdminClient();
 
@@ -169,13 +179,13 @@ async function checkSyncIdempotency(
       completed_at: new Date().toISOString(),
     })
     .eq("organization_id", orgId)
-    .eq("provider", "hubspot")
-    .eq("action", "sync_contact")
+    .eq("provider", provider)
+    .eq("action", action)
     .eq("status", "processing")
     .eq("lead_id", leadId)
     .lt("started_at", staleThreshold);
 
-  const eventId = `lead_${leadId}_hubspot_sync_${Date.now()}`;
+  const eventId = `lead_${leadId}_${provider}_sync_${Date.now()}`;
 
   const { data, error } = await supabase
     .from("automation_executions")
@@ -183,8 +193,8 @@ async function checkSyncIdempotency(
       organization_id: orgId,
       event_id: eventId,
       event_type: "integration.sync",
-      provider: "hubspot",
-      action: "sync_contact",
+      provider,
+      action,
       lead_id: leadId,
       status: "processing",
       attempts: 1,
@@ -242,7 +252,12 @@ export async function syncLeadToHubSpot(leadId: string) {
     return { error: "Lead has no email address for HubSpot sync" };
   }
 
-  const sync = await checkSyncIdempotency(orgId, leadId);
+  const sync = await checkSyncIdempotency(
+    orgId,
+    leadId,
+    "hubspot",
+    "sync_contact",
+  );
   if (!sync.allowed) {
     return { error: "A sync is already in progress for this lead." };
   }
@@ -278,7 +293,11 @@ export async function syncLeadToHubSpot(leadId: string) {
     let hubspotContactId: string | null = null;
     let created = false;
 
-    const storedMapping = await getHubSpotContactMapping(orgId, leadId);
+    const storedMapping = await getProviderContactMapping(
+      orgId,
+      "hubspot",
+      leadId,
+    );
 
     if (storedMapping) {
       const getRes = await fetch(
@@ -441,7 +460,12 @@ export async function syncLeadToHubSpot(leadId: string) {
 
     clearTimeout(timeout);
 
-    await saveHubSpotContactMapping(orgId, leadId, hubspotContactId);
+    await saveProviderContactMapping(
+      orgId,
+      "hubspot",
+      leadId,
+      hubspotContactId,
+    );
 
     const supabase = await createServiceAdminClient();
     await supabase.from("conversations").insert({
@@ -480,7 +504,7 @@ export async function syncLeadToHubSpot(leadId: string) {
 }
 
 // ---------------------------------------------------------------------------
-// GoHighLevel contact sync (unchanged except for safe error handling parity)
+// GoHighLevel contact sync (hardened — idempotency, audit, health, mappings, errors)
 // ---------------------------------------------------------------------------
 
 export async function syncLeadToGoHighLevel(leadId: string) {
@@ -491,12 +515,7 @@ export async function syncLeadToGoHighLevel(leadId: string) {
 
   const org = authorization.data.organization;
   const orgId = org.id;
-
-  const accessToken = await getGHLAccessToken(orgId);
-  if (!accessToken) return { error: "GoHighLevel is not connected." };
-
-  const locationId = await getGHLLocationId(orgId);
-  if (!locationId) return { error: "GoHighLevel location not configured." };
+  const profileId = authorization.data.membership.profile_id;
 
   const { data: lead, error: leadError } = await getLeadById(leadId);
   if (leadError || !lead || lead.organization_id !== orgId) {
@@ -505,6 +524,27 @@ export async function syncLeadToGoHighLevel(leadId: string) {
 
   if (!lead.email) {
     return { error: "Lead has no email address for GoHighLevel sync" };
+  }
+
+  const sync = await checkSyncIdempotency(
+    orgId,
+    leadId,
+    "gohighlevel",
+    "sync_contact",
+  );
+  if (!sync.allowed) {
+    return { error: "A sync is already in progress for this lead." };
+  }
+  const executionId = sync.executionId!;
+
+  const {
+    accessToken,
+    locationId,
+    error: tokenError,
+  } = await ensureGHLToken(orgId);
+  if (!accessToken || !locationId) {
+    await markSyncComplete(executionId, false, tokenError ?? undefined);
+    return { error: tokenError ?? "GoHighLevel is not connected." };
   }
 
   try {
@@ -517,87 +557,219 @@ export async function syncLeadToGoHighLevel(leadId: string) {
       ? (qualification["temperature"] as string)
       : undefined;
     const score = lead.score || 0;
-
-    const lookupRes = await fetch(
-      `${GHL_API_BASE}/contacts/lookup?email=${encodeURIComponent(lead.email)}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Version: "2021-07-28",
-        },
-        signal: controller.signal,
-      },
-    );
-
-    const lookupData = (await lookupRes.json()) as {
-      contacts?: Array<{ id: string }>;
-    };
-    const existingId = lookupData.contacts?.[0]?.id ?? null;
-
-    const body: Record<string, unknown> = {
+    const contactPayloadSource: GHLContactPayloadSource = {
       email: lead.email,
       firstName: lead.first_name,
       lastName: lead.last_name,
-      locationId,
+      phone: lead.phone,
+      companyName: lead.company,
+      score,
+      temperature,
     };
-    if (lead.phone) body["phone"] = lead.phone;
-    if (lead.company) body["companyName"] = lead.company;
-    if (score > 0 || temperature) {
-      body["customFields"] = {};
-      if (score > 0)
-        (body["customFields"] as Record<string, unknown>)["ai_score"] =
-          String(score);
-      if (temperature)
-        (body["customFields"] as Record<string, unknown>)["lead_temperature"] =
-          temperature;
-    }
-    if (temperature) {
-      body["tags"] = ["revora", temperature.toLowerCase()];
-    }
 
-    let contactId: string;
-    let created: boolean;
+    let ghlContactId: string | null = null;
+    let created = false;
 
-    if (existingId) {
-      const updateRes = await fetch(`${GHL_API_BASE}/contacts/${existingId}`, {
-        method: "PUT",
+    const storedMapping = await getProviderContactMapping(
+      orgId,
+      "gohighlevel",
+      leadId,
+    );
+
+    if (storedMapping) {
+      const getRes = await fetch(`${GHL_API_BASE}/contacts/${storedMapping}`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
           Version: "2021-07-28",
         },
-        body: JSON.stringify(body),
         signal: controller.signal,
       });
-      if (!updateRes.ok) {
+
+      if (getRes.ok) {
+        const updateBody = buildGHLUpdateContactPayload(contactPayloadSource);
+
+        const updateRes = await fetch(
+          `${GHL_API_BASE}/contacts/${storedMapping}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+              Version: "2021-07-28",
+            },
+            body: JSON.stringify(updateBody),
+            signal: controller.signal,
+          },
+        );
+
+        if (updateRes.ok) {
+          ghlContactId = storedMapping;
+          created = false;
+        } else {
+          const errorText = await updateRes.text();
+          let errorBody: unknown = errorText;
+          try {
+            errorBody = JSON.parse(errorText);
+          } catch {
+            /* not JSON */
+          }
+          const message = ghlSafeErrorMessage(updateRes.status, errorBody);
+          clearTimeout(timeout);
+          await markSyncComplete(executionId, false, message);
+          await markConnectionError(
+            orgId,
+            "gohighlevel",
+            normalizeGHLError(updateRes.status),
+          );
+          return { error: message };
+        }
+      } else if (getRes.status !== 404) {
+        const errorText = await getRes.text();
+        let errorBody: unknown = errorText;
+        try {
+          errorBody = JSON.parse(errorText);
+        } catch {
+          /* not JSON */
+        }
+        const message = ghlSafeErrorMessage(getRes.status, errorBody);
         clearTimeout(timeout);
-        return { error: "GoHighLevel update failed" };
+        await markSyncComplete(executionId, false, message);
+        await markConnectionError(
+          orgId,
+          "gohighlevel",
+          normalizeGHLError(getRes.status),
+        );
+        return { error: message };
       }
-      contactId = existingId;
-      created = false;
-    } else {
-      const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-          Version: "2021-07-28",
+    }
+
+    if (!ghlContactId) {
+      const lookupRes = await fetch(
+        `${GHL_API_BASE}/contacts/lookup?email=${encodeURIComponent(lead.email)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Version: "2021-07-28",
+          },
+          signal: controller.signal,
         },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-      if (!createRes.ok) {
-        clearTimeout(timeout);
-        return { error: "GoHighLevel create failed" };
+      );
+
+      const lookupText = await lookupRes.text();
+      let lookupBody: unknown = lookupText;
+      try {
+        lookupBody = JSON.parse(lookupText);
+      } catch {
+        /* not JSON */
       }
-      const createData = (await createRes.json()) as {
-        contact: { id: string };
+
+      if (!lookupRes.ok) {
+        const message = ghlSafeErrorMessage(lookupRes.status, lookupBody);
+        clearTimeout(timeout);
+        await markSyncComplete(executionId, false, message);
+        await markConnectionError(
+          orgId,
+          "gohighlevel",
+          normalizeGHLError(lookupRes.status),
+        );
+        return { error: message };
+      }
+
+      const lookupData = lookupBody as {
+        contacts?: Array<{ id: string }>;
       };
-      contactId = createData.contact.id;
-      created = true;
+      const existingId = lookupData.contacts?.[0]?.id ?? null;
+
+      if (existingId) {
+        const updateBody = buildGHLUpdateContactPayload(contactPayloadSource);
+
+        const updateRes = await fetch(
+          `${GHL_API_BASE}/contacts/${existingId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+              Version: "2021-07-28",
+            },
+            body: JSON.stringify(updateBody),
+            signal: controller.signal,
+          },
+        );
+
+        if (!updateRes.ok) {
+          const errorText = await updateRes.text();
+          let errorBody: unknown = errorText;
+          try {
+            errorBody = JSON.parse(errorText);
+          } catch {
+            /* not JSON */
+          }
+          const message = ghlSafeErrorMessage(updateRes.status, errorBody);
+          clearTimeout(timeout);
+          await markSyncComplete(executionId, false, message);
+          await markConnectionError(
+            orgId,
+            "gohighlevel",
+            normalizeGHLError(updateRes.status),
+          );
+          return { error: message };
+        }
+
+        ghlContactId = existingId;
+        created = false;
+      } else {
+        const createBody = buildGHLCreateContactPayload(
+          contactPayloadSource,
+          locationId,
+        );
+
+        const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+            Version: "2021-07-28",
+          },
+          body: JSON.stringify(createBody),
+          signal: controller.signal,
+        });
+
+        if (!createRes.ok) {
+          const errorText = await createRes.text();
+          let errorBody: unknown = errorText;
+          try {
+            errorBody = JSON.parse(errorText);
+          } catch {
+            /* not JSON */
+          }
+          const message = ghlSafeErrorMessage(createRes.status, errorBody);
+          clearTimeout(timeout);
+          await markSyncComplete(executionId, false, message);
+          await markConnectionError(
+            orgId,
+            "gohighlevel",
+            normalizeGHLError(createRes.status),
+          );
+          return { error: message };
+        }
+
+        const createData = (await createRes.json()) as {
+          contact: { id: string };
+        };
+        ghlContactId = createData.contact.id;
+        created = true;
+      }
     }
 
     clearTimeout(timeout);
+
+    await saveProviderContactMapping(
+      orgId,
+      "gohighlevel",
+      leadId,
+      ghlContactId,
+    );
 
     const supabase = await createServiceAdminClient();
     await supabase.from("conversations").insert({
@@ -607,15 +779,30 @@ export async function syncLeadToGoHighLevel(leadId: string) {
       direction: "outbound",
       subject: "integration.gohighlevel.contact_synced",
       content: created
-        ? `Contact created in GoHighLevel (${contactId})`
-        : `Contact updated in GoHighLevel (${contactId})`,
-      metadata: { provider: "gohighlevel", contact_id: contactId, created },
+        ? `Contact created in GoHighLevel (${ghlContactId})`
+        : `Contact updated in GoHighLevel (${ghlContactId})`,
+      metadata: {
+        provider: "gohighlevel",
+        contact_id: ghlContactId,
+        created,
+      },
     });
+
+    await recordAuditEvent(orgId, "gohighlevel", "contact_synced", profileId, {
+      lead_id: leadId,
+      contact_id: ghlContactId,
+      created,
+    });
+
+    await markConnectionHealthy(orgId, "gohighlevel");
+    await markSyncComplete(executionId, true);
 
     revalidatePath(`/leads/${leadId}`);
 
-    return { error: null, contactId, created };
+    return { error: null, contactId: ghlContactId, created };
   } catch {
-    return { error: "GoHighLevel sync failed. Please try again." };
+    const message = "GoHighLevel sync failed. Please try again.";
+    await markSyncComplete(executionId, false, message);
+    return { error: message };
   }
 }

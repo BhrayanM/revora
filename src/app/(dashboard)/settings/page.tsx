@@ -2,8 +2,30 @@ import { getCurrentOrganization } from "@/lib/auth";
 
 import { SettingsContent } from "./settings-content";
 
-export default async function SettingsPage() {
-  const org = await getCurrentOrganization();
+type SettingsSearchParams = Promise<{
+  tab?: string | string[];
+  ghl_install?: string | string[];
+}>;
 
-  return <SettingsContent org={org} />;
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: SettingsSearchParams;
+}) {
+  const params = await searchParams;
+  const org = await getCurrentOrganization();
+  const initialSection =
+    typeof params.tab === "string" ? params.tab : undefined;
+  const marketplaceInstallRequiresAuthorization =
+    params.ghl_install === "authorization_required";
+
+  return (
+    <SettingsContent
+      org={org}
+      initialSection={initialSection}
+      marketplaceInstallRequiresAuthorization={
+        marketplaceInstallRequiresAuthorization
+      }
+    />
+  );
 }
