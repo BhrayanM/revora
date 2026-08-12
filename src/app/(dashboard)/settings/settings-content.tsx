@@ -26,10 +26,28 @@ const sections = [
   { id: "api-keys", label: "API Keys", icon: Key },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "security", label: "Security", icon: Shield },
-];
+] as const;
 
-export function SettingsContent({ org }: { org: Organization | null }) {
-  const [activeSection, setActiveSection] = useState("general");
+type SettingsSection = (typeof sections)[number]["id"];
+
+function isSettingsSection(
+  value: string | undefined,
+): value is SettingsSection {
+  return sections.some((section) => section.id === value);
+}
+
+export function SettingsContent({
+  org,
+  initialSection,
+  marketplaceInstallRequiresAuthorization = false,
+}: {
+  org: Organization | null;
+  initialSection?: string;
+  marketplaceInstallRequiresAuthorization?: boolean;
+}) {
+  const [activeSection, setActiveSection] = useState<SettingsSection>(
+    isSettingsSection(initialSection) ? initialSection : "general",
+  );
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
@@ -158,6 +176,16 @@ export function SettingsContent({ org }: { org: Organization | null }) {
                 </p>
               </CardHeader>
               <CardContent>
+                {marketplaceInstallRequiresAuthorization && (
+                  <Alert
+                    variant="info"
+                    title="Marketplace installation complete"
+                    className="mb-4"
+                  >
+                    To securely link this CRM location to your Revora
+                    organization, click Connect on GoHighLevel below.
+                  </Alert>
+                )}
                 <IntegrationsPanel />
               </CardContent>
             </>

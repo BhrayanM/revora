@@ -11,6 +11,7 @@ import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById } from "@/lib/queries/leads";
 
 import { AIQualificationPanel } from "./ai-qualification-panel";
+import { GoHighLevelSyncButton } from "./gohighlevel-sync-button";
 import { HubSpotSyncButton } from "./hubspot-sync-button";
 
 const statusConfig: Record<string, BadgeVariant> = {
@@ -200,6 +201,7 @@ export default async function LeadDetailPage({
             existingQualification={existingQualification}
           />
           <HubSpotSyncButton leadId={id} />
+          <GoHighLevelSyncButton leadId={id} />
         </div>
       </div>
     </Container>
