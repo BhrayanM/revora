@@ -1,9 +1,12 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import {
   decryptCredentialsObject,
   encryptCredentialsObject,
 } from "@/lib/integrations/encryption";
+import type { TallyFieldMapping } from "@/lib/integrations/tally-contract";
 import type {
   AutomationWebhookProviderId,
   IntegrationConnection,
@@ -13,6 +16,81 @@ import type {
 } from "@/lib/integrations/types";
 import { createServiceAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
+
+const TALLY_ID_PATTERN = /^[A-Za-z0-9_-]{1,255}$/;
+const TALLY_ROUTING_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+const TALLY_ROUTING_HASH_PATTERN = /^[a-f0-9]{64}$/;
+const TALLY_MAPPING_KEYS = [
+  "name",
+  "email",
+  "phone",
+  "company",
+  "message",
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseStoredTallyConfig(
+  value: unknown,
+): ActiveTallyConnection["config"] {
+  if (!isRecord(value)) throw new Error("Invalid Tally connection config.");
+  const formId = value["form_id"];
+  const formName = value["form_name"];
+  const webhookId = value["webhook_id"];
+  const routingTokenHash = value["routing_token_hash"];
+  const rawMapping = value["field_mapping"];
+  if (
+    typeof formId !== "string" ||
+    !TALLY_ID_PATTERN.test(formId) ||
+    typeof formName !== "string" ||
+    formName.trim().length === 0 ||
+    formName.length > 300 ||
+    typeof webhookId !== "string" ||
+    !TALLY_ID_PATTERN.test(webhookId) ||
+    typeof routingTokenHash !== "string" ||
+    !TALLY_ROUTING_HASH_PATTERN.test(routingTokenHash) ||
+    !isRecord(rawMapping)
+  ) {
+    throw new Error("Invalid Tally connection config.");
+  }
+
+  const mapping: TallyFieldMapping = {};
+  const usedFieldIds = new Set<string>();
+  for (const key of TALLY_MAPPING_KEYS) {
+    const fieldId = rawMapping[key];
+    if (fieldId === undefined || fieldId === null || fieldId === "") continue;
+    if (
+      typeof fieldId !== "string" ||
+      !TALLY_ID_PATTERN.test(fieldId) ||
+      usedFieldIds.has(fieldId)
+    ) {
+      throw new Error("Invalid Tally connection config.");
+    }
+    mapping[key] = fieldId;
+    usedFieldIds.add(fieldId);
+  }
+  if (
+    Object.keys(rawMapping).some(
+      (key) =>
+        !TALLY_MAPPING_KEYS.includes(
+          key as (typeof TALLY_MAPPING_KEYS)[number],
+        ),
+    ) ||
+    (!mapping.email && !mapping.phone)
+  ) {
+    throw new Error("Invalid Tally connection config.");
+  }
+
+  return {
+    formId,
+    formName: formName.trim(),
+    webhookId,
+    routingTokenHash,
+    fieldMapping: mapping,
+  };
+}
 
 export async function getConnection(
   organizationId: string,
@@ -137,6 +215,72 @@ export interface ActiveAutomationWebhookConnection {
   id: string;
   provider: AutomationWebhookProviderId;
   credentials: Record<string, unknown>;
+}
+
+export interface ActiveTallyConnection {
+  id: string;
+  organizationId: string;
+  credentials: {
+    apiKey: string;
+    signingSecret: string;
+  };
+  config: {
+    formId: string;
+    formName: string;
+    webhookId: string;
+    fieldMapping: TallyFieldMapping;
+    routingTokenHash: string;
+  };
+}
+
+export async function getActiveTallyConnectionByRoutingToken(
+  routingToken: string,
+): Promise<ActiveTallyConnection | null> {
+  if (!TALLY_ROUTING_TOKEN_PATTERN.test(routingToken)) return null;
+  const routingTokenHash = createHash("sha256")
+    .update(routingToken, "utf8")
+    .digest("hex");
+  const supabase = await createServiceAdminClient();
+  const { data, error } = await supabase
+    .from("integrations")
+    .select("id, organization_id, credentials, config")
+    .eq("provider", "tally")
+    .eq("is_active", true)
+    .in("status", ["connected", "degraded"])
+    .eq("config->>routing_token_hash", routingTokenHash)
+    .limit(2);
+
+  if (error || !data || data.length !== 1) return null;
+  const row = data[0];
+  if (!row) return null;
+
+  try {
+    const config = parseStoredTallyConfig(row.config);
+    if (config.routingTokenHash !== routingTokenHash) return null;
+    if (!isRecord(row.credentials)) return null;
+    const decrypted = decryptCredentialsObject(row.credentials);
+    const apiKey = decrypted["api_key"];
+    const signingSecret = decrypted["signing_secret"];
+    if (
+      typeof apiKey !== "string" ||
+      apiKey.length === 0 ||
+      apiKey.length > 4096 ||
+      typeof signingSecret !== "string" ||
+      signingSecret.length < 16 ||
+      signingSecret.length > 4096
+    ) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      organizationId: row.organization_id,
+      credentials: { apiKey, signingSecret },
+      config,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function listActiveAutomationWebhookConnections(

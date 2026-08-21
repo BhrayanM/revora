@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
   createTallyWebhook,
@@ -583,6 +585,231 @@ assert.deepEqual(
     async () => new Response("not-json", { status: 200 }),
   ),
   { ok: false, errorCode: "INVALID_RESPONSE" },
+);
+
+const immutableMigrationHashes = new Map([
+  [
+    "00001_initial_schema.sql",
+    "6c5563ecc0fdaa6009e259aa042e94367ec101a3d1bb18b881a2345802c282ac",
+  ],
+  [
+    "00002_rls_policies.sql",
+    "224ea472b5893ed6f068530cfbbf3dab5154afac2f7f95c30365baf6e0f8a7cf",
+  ],
+  [
+    "00003_rls_hardening.sql",
+    "bd1ada818c2878bec61603c76fe3b666e6fdc8af89c1441abe65371fa4c5a5e3",
+  ],
+  [
+    "00004_onboarding_function.sql",
+    "6563552a245596bf8b8d1899a3c4619a614cb96bb3e78321742c150b3f0300b0",
+  ],
+  [
+    "00005_query_indexes.sql",
+    "f1e8015b63f735b3fbfbfe46e5b21122ef7238d211d56774be86ed29553cb56a",
+  ],
+  [
+    "00006_source_api_keys.sql",
+    "ae9b325391324fd2e2bfcffc071d1ca40209323443dffd83a74c0a5c8ab8500f",
+  ],
+  [
+    "00007_lead_source_external_id.sql",
+    "1e5f89e7bf44d5233b77ce09c30bc660906596056afdeecdd4d032094886b71b",
+  ],
+  [
+    "00008_automation_executions.sql",
+    "77acd1549f415ca40310f1b7d6b61d058ff6f9127feb13de1e03dd96d57b7f22",
+  ],
+  [
+    "00009_executions_policy_fix.sql",
+    "a478fd6feff5e20daabecedc6857438d5de9310a900b4f157ff183a36c3bf793",
+  ],
+  [
+    "00010_grants_revoke.sql",
+    "1ae274b745675782607a0b5fdee5c2eb6b34450c9dccbcca418e5cc0b24656dc",
+  ],
+  [
+    "00011_service_role_onboard_grant.sql",
+    "2bc6ebd3e5031a8cfe73073c930fd29daecd0920ca86b37f3a3b2563a508f805",
+  ],
+  [
+    "00012_is_org_member_anon_lockdown.sql",
+    "3da8ad4ceae0627d007b2b6e76628b2f0772f8db1ef1af8a6904f615728bad48",
+  ],
+  [
+    "00013_mfa_recovery_codes.sql",
+    "eb52f3a0a06a944b0e236fa27a26158dd2cfcf708fc09d134ecbcbce9300333a",
+  ],
+  [
+    "00014_remove_custom_recovery_codes.sql",
+    "efea74606ad4ffa7ec66f59cc30a5373cf19931ffff2c323e5beb7771a4333b7",
+  ],
+  [
+    "00015_drop_recovery_codes_table.sql",
+    "69015a60ab19d9b2eec36847ef70dfb46155fb28b6b9e88ba15c0dcae9d00948",
+  ],
+  [
+    "00016_force_drop_recovery_table.sql",
+    "0fe5e4bf252f31956473b204efb1d4633a6ae9462c5ef559e602e1da8bb0b8aa",
+  ],
+  [
+    "00017_versioned_legal_consent.sql",
+    "6169964334430a53d0ca7790c55e878fbf4754eec0ce00ee14a51fb81a7fcb9a",
+  ],
+  [
+    "00018_team_rbac_foundation.sql",
+    "900394f831d6dd914baaa2b3adcae69e886d1f0c1748f982c943f2943cb4e7eb",
+  ],
+  [
+    "00019_owner_protection_cascade_fix.sql",
+    "5ddb21d3526460ed5701a7cf62e2b93cc431c34ef44f49b8523a526a25b59972",
+  ],
+  [
+    "00020_secure_organization_invitations.sql",
+    "2bb7e0ef434e7627edc11ff951e6747cb123dcbe8d5c32ddcc3fcdcff33a8c70",
+  ],
+  [
+    "00021_invitation_role_guard_null_fix.sql",
+    "dd2cf567847c40fa4e258d6457cee7049c11abb61d931fbed7182ff02aaea747",
+  ],
+  [
+    "00022_team_management_operations.sql",
+    "4bd44f505cbb028d856cc0a86c8bd4b333b68bb02fb43d1082691d443705c7f8",
+  ],
+  [
+    "00023_team_management_legal_consent_guard.sql",
+    "6abe006562c827fea24f98712d850b5cc8e789da37217078c684f99938f59acc",
+  ],
+  [
+    "00024_secure_organization_ownership_transfers.sql",
+    "d71186e794b30e839d62ff7b419fb5574fb037c98295d85011f4ed417fabd0f2",
+  ],
+  [
+    "00025_ownership_transfer_constraint_resolution.sql",
+    "eee1d2e3c2f82c5d1a2ab0042433b6a9c74818f86e94a4bc413c7b38edfaefa1",
+  ],
+  [
+    "00026_core_crm_live_flow.sql",
+    "97d1bfd81055088947674b4133c92b613bb7466d98643fcc860a398b7f6c54a2",
+  ],
+  [
+    "00027_protect_ai_qualification_fields.sql",
+    "35b3cbbb926872d98f89465d127f4c699d1a624412dba7450cdf137deb1097b3",
+  ],
+  [
+    "00028_organization_ai_qualification_guardrail.sql",
+    "04e8da846af982cff2f7e9e9b798d86f57ed8ab85ba4e7b80ef30c5553b85e58",
+  ],
+  [
+    "00029_integration_foundation.sql",
+    "04163bdf32b7049bb90c10b548b18ed8fff9225cc42795af3930d97d5383ecf0",
+  ],
+  [
+    "00030_provider_resource_mappings.sql",
+    "336ad3a09ded20f59fb0b9ab41959cce85858141068e69c2894955c20deadb95",
+  ],
+  [
+    "00031_add_contact_synced_audit_event.sql",
+    "3d342542155cb4d1da9fd3088c733da9fa88255984b1f414bc3064e0de29129c",
+  ],
+  [
+    "00032_active_sync_concurrency_guard.sql",
+    "4c26b35af21bbf2d95e33095c9542e3c97c6d9e57dce29e2a27fea17175388b6",
+  ],
+  [
+    "00033_phase_14_6c_automation_webhooks.sql",
+    "ddb92d60f4da4d9d701d4533ebdfa3205debd83da63addeca8332904b5ddfeaa",
+  ],
+]);
+const migrationsDirectory = resolve("supabase/migrations");
+const immutableMigrationNames = readdirSync(migrationsDirectory)
+  .filter((name) => /^000(?:0[1-9]|[12][0-9]|3[0-3])_/.test(name))
+  .sort();
+assert.deepEqual(
+  immutableMigrationNames,
+  [...immutableMigrationHashes.keys()],
+  "Migrations 00001-00033 must keep their exact names.",
+);
+for (const [name, expectedHash] of immutableMigrationHashes) {
+  const actualHash = createHash("sha256")
+    .update(readFileSync(resolve(migrationsDirectory, name)))
+    .digest("hex");
+  assert.equal(actualHash, expectedHash, `${name} must remain immutable.`);
+}
+
+const tallyMigrationName = "00034_phase_14_6e_tally_inbound.sql";
+assert.deepEqual(
+  readdirSync(migrationsDirectory)
+    .filter((name) => /^0003[4-9]_/.test(name))
+    .sort(),
+  [tallyMigrationName],
+  "Phase 14.6E must add only migration 00034 after 00033.",
+);
+const tallyMigration = readFileSync(
+  resolve(migrationsDirectory, tallyMigrationName),
+  "utf8",
+);
+for (const requiredFragment of [
+  "integration_webhook_events_org_provider_event_key",
+  "unique (organization_id, provider, external_event_id)",
+  "lead_id uuid references public.leads(id) on delete set null",
+  "attempt_count integer not null default 1 check (attempt_count > 0)",
+  "last_attempt_at timestamptz not null default now()",
+  "idx_webhook_events_org_status_attempt",
+  "idx_webhook_events_org_lead",
+  "alter table public.integration_webhook_events enable row level security",
+  "'connected'",
+  "'disconnected'",
+  "'reconnected'",
+  "'credentials_rotated'",
+  "'connection_failed'",
+  "'token_refreshed'",
+  "'token_refresh_failed'",
+  "'webhook_verified'",
+  "'webhook_delivered'",
+  "'webhook_delivery_failed'",
+  "'contact_synced'",
+  "'webhook_received'",
+  "'webhook_duplicate'",
+  "'webhook_rejected'",
+  "'lead_captured'",
+]) {
+  assert.ok(
+    tallyMigration.includes(requiredFragment),
+    `Migration 00034 is missing: ${requiredFragment}`,
+  );
+}
+assert.equal(
+  /on public\.integration_webhook_events[\s\S]{0,160}for\s+(insert|update|delete|all)/i.test(
+    tallyMigration,
+  ),
+  false,
+  "Webhook event mutations must remain service-role only.",
+);
+
+const webhookRepository = readFileSync(
+  resolve("src/lib/integrations/webhooks.ts"),
+  "utf8",
+);
+assert.ok(webhookRepository.includes("claimWebhookEvent"));
+assert.ok(
+  webhookRepository.includes('.eq("organization_id", params.organizationId)'),
+  "Webhook replay lookup must be scoped to organization.",
+);
+assert.ok(webhookRepository.includes('insertError.code !== "23505"'));
+
+const connectionRepository = readFileSync(
+  resolve("src/lib/integrations/connections.ts"),
+  "utf8",
+);
+assert.ok(
+  connectionRepository.includes("getActiveTallyConnectionByRoutingToken"),
+);
+assert.ok(connectionRepository.includes('createHash("sha256")'));
+assert.ok(connectionRepository.includes('eq("provider", "tally")'));
+assert.ok(connectionRepository.includes('eq("is_active", true)'));
+assert.ok(
+  connectionRepository.includes('.in("status", ["connected", "degraded"])'),
 );
 
 console.log("Phase 14.6E Tally contract verification passed.");
