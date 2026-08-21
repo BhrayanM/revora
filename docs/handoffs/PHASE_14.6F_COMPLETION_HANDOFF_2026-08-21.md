@@ -27,7 +27,9 @@ migration application, or production mutation was performed.
 - `007d325 fix(integrations): keep tally route next compliant`
 - `fe455ae feat(integrations): add bounded calendar and gmail operations`
 - `2758924 feat(integrations): wire google workspace settings`
-- Phase closure documentation: this commit
+- `c52aab8 docs: complete phase 14.6f google workspace integration`
+- `d26ff6e test(integrations): make migration guards checkout portable`
+- Final gate confirmation: this documentation update
 
 ## Delivered Scope
 
@@ -71,7 +73,7 @@ contract, or payload handling changed.
 
 ## Fresh Validation Evidence
 
-Executed successfully on 2026-08-21:
+Executed successfully from local `master` on 2026-08-21:
 
 - `npm.cmd run test:google-workspace`
 - `npm.cmd run test:tally`
