@@ -11,10 +11,10 @@ site with a protected organization dashboard.
 | Framework | Next.js 16.3 App Router, React 19, TypeScript strict mode |
 | Styling | Tailwind CSS v4, semantic design tokens, custom CVA components |
 | Auth | Supabase Auth with SSR cookies, email/password, PKCE OAuth, TOTP MFA |
-| Data | Supabase PostgreSQL, generated types, RLS, SQL migrations 00001-00017 |
+| Data | Supabase PostgreSQL, generated types, RLS, SQL migrations 00001-00033 |
 | Tenancy | Organizations, memberships, workspaces, organization-scoped data |
 | Security | Turnstile, MFA AAL2 enforcement, safe redirects, RLS, legal-consent gates |
-| AI / CRM | OpenAI qualification architecture, lead intake, n8n events, CRM adapters |
+| Integrations | HubSpot, GoHighLevel, n8n, Zapier, Make, Slack OAuth/HOT alerts, Twilio read-only validation |
 
 The application does not use Prisma, NextAuth, or Framer Motion. Docker files
 remain available for optional local/container workflows; Docker is not required
@@ -38,9 +38,10 @@ for the normal Next.js plus Supabase development path.
 
 | Status | Integrations |
 | --- | --- |
-| Implemented architecture | OpenAI qualification, authenticated lead intake, n8n event delivery, automation execution/retry, HubSpot and GoHighLevel adapters, Slack notifications |
-| Requires live configuration and verification | OpenAI, n8n, HubSpot, GoHighLevel, Slack, transactional email, production OAuth settings |
-| Deferred | Apple OAuth, Team Management/invitations/RBAC, enterprise SSO/SCIM, customer portal |
+| Completed and provider-validated | HubSpot, GoHighLevel, n8n, Zapier, Make |
+| Implemented and locally validated | Slack OAuth + HOT alerts; Twilio account/source-number validation (read-only) |
+| Next | Tally inbound capture (14.6E), Google Calendar + Gmail (14.6F), full E2E audit (14.6G) |
+| Deferred | Twilio messaging/calls, Apple OAuth, enterprise SSO/SCIM, customer portal |
 
 Do not treat an adapter or UI panel as proof that an external provider is live.
 
@@ -68,8 +69,9 @@ Do not treat an adapter or UI panel as proof that an external provider is live.
   `/legal/consent`.
 - Dashboard: `/dashboard`, `/analytics`, `/leads`, `/pipeline`, `/automation`,
   `/settings`, `/profile`, and `/notifications`.
-- API: `/api/leads` and the authenticated automation retry worker at
-  `/api/internal/integrations/retries`.
+- API: `/api/leads`, the authenticated automation retry worker at
+  `/api/internal/integrations/retries`, and server-side OAuth callbacks for
+  HubSpot, GoHighLevel, and Slack.
 
 ## Getting Started
 
@@ -91,21 +93,23 @@ work.
 | `npm run lint` | Run ESLint |
 | `npm run typecheck` | Run TypeScript without emitting files |
 | `npm run format` | Format repository files with Prettier |
+| `npm run test:integrations` | Verify automation webhook contracts |
+| `npm run test:communications` | Verify Slack and Twilio contracts |
 
 ## Current Roadmap Position
 
-Phase 14.4C and its visual corrective subphases are complete. The next phase
-is **Phase 14.4D - Team Management + Invitations + RBAC**. Phase 14.5 Core CRM
-Live Test follows only after 14.4D is complete.
+Phases 14.4D, 14.5, and 14.6A-14.6D are complete in local history. The next
+boundary is **Phase 14.6E - Tally inbound lead capture, signature verification,
+and replay-safe deduplication**.
 
 See [PROJECT_STATUS.md](./PROJECT_STATUS.md), [ROADMAP.md](./ROADMAP.md), and
-[the current pre-14.4D handoff](./docs/handoffs/CURRENT_PROJECT_STATE_PRE_14.4D_2026-08-08.md).
+[the Phase 14.6D handoff](./docs/handoffs/PHASE_14.6D_COMPLETION_HANDOFF_2026-08-20.md).
 
 ## Security and Change Rules
 
 - Do not weaken Supabase RLS, tenant isolation, PKCE, Turnstile, MFA/AAL2,
   legal-consent enforcement, or service-role boundaries.
-- Do not modify migrations 00001 through 00017.
+- Do not modify migrations 00001 through 00033.
 - Never commit secrets, tokens, service-role credentials, webhook secrets, or
   provider credentials.
 - Do not push local commits without explicit authorization.

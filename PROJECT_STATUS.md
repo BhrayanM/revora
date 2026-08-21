@@ -1,115 +1,76 @@
-# AI Growth Project Status
+# Revora Project Status
 
-**Last updated:** 2026-08-08
-**Branch:** `master`
-**Latest implementation checkpoint:** `838f2f3 fix(legal): align document effective metadata`
-**Current status:** Pre-Phase 14.4D checkpoint - documentation synchronized
+**Last updated:** 2026-08-20
+
+**Working branch:** `feature/phase-14-6d-communications`
+
+**Latest implementation checkpoint:** `01d3cba feat(integrations): add read-only twilio infrastructure`
+
+**Current status:** Phase 14.6D implementation complete; live Slack/Twilio gates await credentials.
 
 ## Current Architecture
 
-- **Application:** Next.js 16.3 App Router, React 19, TypeScript strict mode,
-  and Tailwind CSS v4 with custom CVA-based UI primitives.
-- **Backend:** Supabase Auth, Supabase PostgreSQL, server-rendered Supabase
-  clients, generated database types, and Row Level Security.
-- **Tenant model:** `auth.users` maps to `profiles`; memberships connect users
-  to organizations; workspaces, CRM data, automations, and integrations are
-  organization-scoped.
-- **Authorization:** RLS is the tenant boundary. Server actions and routes
-  derive organization context from the authenticated user; browser UI does not
-  grant access.
-- **Migrations:** local 00001-00017 and linked remote project
-  `fnkzqrnsfnqxbodxdjgq` 00001-00017 are synchronized. All existing migration
-  files are immutable.
+- Next.js 16.3 App Router, React 19, strict TypeScript, and Tailwind CSS v4.
+- Supabase Auth and PostgreSQL with generated types and organization-scoped RLS.
+- Server actions and route handlers re-authorize organization permissions;
+  provider credentials stay encrypted and server-only.
+- Immutable migrations `00001` through `00033`; local and linked histories are
+  synchronized. Phase 14.6D required no migration.
 
-## Complete
+## Completed Roadmap
 
-### Authentication and Security
+- Phase 14.4D: team RBAC, invitations, management, multi-organization switching,
+  and ownership transfer.
+- Phase 14.5: Core CRM live validation and closure.
+- Phase 14.6A: integration foundation.
+- Phase 14.6B: HubSpot and GoHighLevel.
+- Phase 14.6C: n8n, Zapier, and Make automation webhooks.
+- Phase 14.6D: Slack OAuth/HOT alerts and Twilio read-only infrastructure.
 
-- Supabase SSR authentication with safe protected-route redirects.
-- Email/password login and signup, email OTP verification UI, password
-  recovery/reset, secure email change, session controls, and Account Security
-  Center.
-- Google and Microsoft PKCE OAuth are implemented and previously manually
-  tested. Apple OAuth remains intentionally disabled pending Apple Developer
-  Program configuration.
-- Cloudflare Turnstile protects login, signup, and password-recovery forms;
-  production behavior is fail-closed when configuration is unavailable.
-- Supabase TOTP MFA with dashboard AAL2 enforcement and AAL2-required MFA
-  unenrollment.
-- Atomic organization onboarding via the service-role-only `onboard_user` RPC,
-  with callback and dashboard recovery paths for missing memberships.
+## Provider Status
 
-### Multi-Tenancy and Product Modules
+| Provider | Status | Notes |
+| --- | --- | --- |
+| HubSpot | Complete and validated | Organization-scoped connection and CRM sync |
+| GoHighLevel | Complete and validated | OAuth/location-scoped CRM sync |
+| n8n | Complete and validated | Signed organization-scoped automation delivery |
+| Zapier | Complete and validated | Secure outbound webhook delivery |
+| Make | Complete and validated | Secure outbound webhook delivery and retry gate |
+| Slack | Implemented; live gate blocked by credentials | OAuth `incoming-webhook`, test/disconnect, exact-HOT alert |
+| Twilio | Implemented; live gate blocked by credentials | Account and optional number ownership validation; GET only |
 
-- Organizations, memberships, workspaces, pipelines, leads, analytics,
-  automations, integrations, profile, notifications placeholder, and settings
-  are implemented in the dashboard.
-- Organization-scoped RLS, query filtering, and mutation checks provide tenant
-  isolation. New-user dashboard isolation has been visually confirmed.
-- OpenAI lead qualification, authenticated lead intake, n8n event emission,
-  automation execution/retry support, HubSpot/GoHighLevel adapters, and Slack
-  notification architecture are implemented or integration-ready. Their live
-  external configuration is not universally confirmed.
+Slack server variables are absent from the current local environment, and the
+linked database has no Slack or Twilio connection row. No live gate is claimed.
+Twilio SMS, WhatsApp, voice, number purchase, and public callbacks remain out of
+scope.
 
-### Legal Consent
+## Phase 14.6D Security Properties
 
-- Migration 00017 provides immutable versioned legal documents and append-only
-  user consent history with RLS.
-- Public Terms and Privacy pages render current database-backed documents;
-  effective dates are formatted from `effective_at` in UTC.
-- Required Terms/Privacy acceptance is enforced for email and OAuth signup,
-  re-consent, callback provisioning, dashboard access, and protected data
-  access. Marketing consent remains optional.
+- Slack OAuth state is single-use, expiring, provider-bound, and
+  organization-bound.
+- Slack accepts only the exact `https://hooks.slack.com/services/...` origin,
+  blocks redirects, and bounds time and response size.
+- Only an exact `HOT` qualification sends a Slack alert; WARM and COLD skip it.
+- Slack failure never rolls back a persisted AI qualification.
+- Twilio makes only read-only `GET` requests with HTTP Basic authentication.
+- Credentials and webhook URLs are excluded from client-safe connection DTOs,
+  logs, and audit metadata.
+- Every save, test, disconnect, and provider read is scoped to the authenticated
+  organization.
 
-### Presentation
+## Remaining Integration Plan
 
-- Phase 14.4C Auth Visual Polish is complete.
-- System-default Light/Dark theming, OS preference tracking, local preference
-  persistence, Settings Appearance selector, and TopNav control are complete.
-- The premium graphite dark mode and the final corrective visual pass are
-  complete. System, Light, and Dark modes were manually checked.
+1. **14.6E — Tally:** inbound lead capture, signature verification, and
+   replay-safe deduplication.
+2. **14.6F — Google Calendar + Gmail:** OAuth lifecycle and constrained provider
+   operations.
+3. **14.6G — Complete E2E audit:** cross-provider, tenant-isolation, error,
+   retry, and production-readiness gates.
 
-## Manual Follow-up
+## Operational Boundaries
 
-- Re-run full authenticated email OTP verification after custom SMTP and a
-  verified sending domain are configured.
-- Run production-domain checks for OAuth redirects, email-change confirmation,
-  Turnstile, MFA, legal re-consent, and all external integrations.
-- Apple OAuth remains deferred; it requires Apple Developer Program setup.
-- Confirm live credentials and end-to-end behavior for OpenAI, n8n, HubSpot,
-  GoHighLevel, Slack, and any email provider before declaring them live.
-
-## Production Blockers
-
-- Custom SMTP / transactional email and verified sending domain.
-- Production redirect URLs for Supabase Auth and OAuth providers.
-- Production secret rotation and environment separation.
-- Distributed rate limiting / Redis implementation where required.
-- Inbound webhook body-signing and replay protection where planned; outbound
-  n8n events use organization-scoped Header Auth and secure destination
-  validation.
-- Production security-event logging, WAF/HSTS decisions, and final security
-  review.
-- Counsel review and publication of any future legal-document versions through
-  new immutable rows, never updates to existing rows.
-
-## Future Phase
-
-**Next:** Phase 14.4D - Team Management + Invitations + RBAC.
-
-It must add member lifecycle, roles, invitations, server/RLS enforcement, and
-auditability through new migration(s) only. The current role constraint does
-not yet include `viewer`; no Team Management implementation exists today.
-
-**After:** Phase 14.5 - Core CRM Live Test.
-
-## Validation Record
-
-- Recent checkpoints passed lint, TypeScript, production build, and Git
-  whitespace checks.
-- Manually confirmed in the current project history: Turnstile positive and
-  negative behavior, password recovery, TOTP MFA/AAL2 challenge, Google and
-  Microsoft OAuth flows, System/Light/Dark presentation, legal checkbox UX,
-  and new-user tenant isolation.
-- Unresolved manual work is listed above; no future functionality is implied
-  by these completed checks.
+- No push or production deployment has been performed.
+- No Twilio paid or mutating action is authorized.
+- Do not modify migrations `00001` through `00033`; add only a new consecutive
+  migration when a later approved phase requires schema changes.
+- External live status must be reported separately from local implementation.

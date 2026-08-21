@@ -1,98 +1,46 @@
-# AI Growth Roadmap
+# Revora Roadmap
 
-**Current checkpoint:** Pre-Phase 14.4D documentation sync (2026-08-08)
+**Current checkpoint:** Phase 14.6D communication integrations (2026-08-20)
 
-This roadmap reflects the repository's Supabase-based implementation. Earlier
-Prisma and NextAuth planning is historical only and is not the current
-architecture.
+## Completed
 
-## Completed Foundation and Product Delivery
+- Phases 0-14.4C: application foundation, dashboard, Supabase data/auth/RLS,
+  security, legal consent, and visual system.
+- Phase 14.4D: organization RBAC, invitations, team management, switching, and
+  ownership transfer.
+- Phase 14.4E: Revora branding and UX corrective passes.
+- Phase 14.5: Core CRM live test and final closure.
+- Phase 14.6A: integration foundation and encrypted organization-scoped
+  provider connections.
+- Phase 14.6B: HubSpot and GoHighLevel.
+- Phase 14.6C: n8n, Zapier, and Make.
+- Phase 14.6D: Slack OAuth plus exact-HOT alerts; Twilio infrastructure limited
+  to read-only account and source-number validation.
 
-- **Phases 0-3.5 - Foundation, design system, landing, and dashboard UI**
-  - Next.js App Router, TypeScript, Tailwind CSS, reusable UI primitives,
-    responsive public landing, and dashboard shell.
-- **Phases 4.1-4.6 - Supabase foundation and CRM data layer**
-  - Supabase Auth/SSR, PostgreSQL schema, organizations, memberships,
-    workspaces, pipelines, leads, server data access, and RLS tenant isolation.
-- **Phases 5-6.1 - AI, ingestion, CRM, automation, and hardening**
-  - OpenAI qualification architecture, authenticated lead intake, n8n event
-    emission, HubSpot/GoHighLevel provider adapters, Slack notifications,
-    automation execution/retry support, and security hardening.
-- **Phases 7-13 - SaaS UI, validation, deployment preparation, and runbooks**
-  - Production UI, validation artifacts, provisioning guidance, and deployment
-    documentation. External-service configuration remains a separate follow-up.
+## Next — Phase 14.6E: Tally
 
-## Completed Phase 14.4 Work
+Implement inbound Tally lead capture with signature verification,
+organization routing, replay-safe deduplication, bounded payload handling, and
+tenant-isolation tests. Preserve all Slack and Twilio contracts from 14.6D.
 
-### Phase 14.4B - Security, Authentication, and Legal Consent - Complete
+## Then
 
-- Email/password authentication, email OTP verification UI, secure password
-  recovery, secure email change, session management, and Account Security
-  Center.
-- Google and Microsoft OAuth with PKCE; Apple is intentionally visible as a
-  deferred provider.
-- Cloudflare Turnstile on login, signup, and password recovery with
-  production fail-closed behavior.
-- Native Supabase TOTP MFA with AAL2 enforcement for protected dashboard
-  access and sensitive MFA unenrollment.
-- Service-role-only onboarding RPC, safe redirects, Supabase SSR cookies, and
-  organization-scoped RLS hardening.
-- Versioned Terms, Privacy, and optional marketing consent. Migration 00017
-  is deployed; the current legal renderer reads the authoritative effective
-  date from the versioned legal-document record.
+- **14.6F — Google Calendar + Gmail:** secure OAuth, least-privilege scopes,
+  organization-scoped tokens, test/disconnect flows, and constrained actions.
+- **14.6G — Complete integration E2E audit:** provider regression, tenant
+  isolation, retry/idempotency, credential exposure, build/audit, and live-vs-
+  blocked evidence.
 
-### Phase 14.4C - Auth Visual Polish - Complete
+## Deferred
 
-- Shared responsive auth shell, form/status patterns, OAuth presentation, and
-  accessible focus, loading, and validation states.
+- Twilio SMS, WhatsApp, voice calls, phone-number purchase, and callbacks.
+- Apple OAuth pending Apple Developer Program configuration.
+- Enterprise SAML/SCIM, IP allowlists, and customer portal work.
 
-### Phase 14.4C.1 - Global Theme System - Complete
+## Guardrails
 
-- System-default Light/Dark preference with local persistence, OS preference
-  tracking, semantic theme tokens, Settings appearance controls, and TopNav
-  quick control.
-
-### Phase 14.4C.1A - Final Visual and UX Corrective Pass - Complete
-
-- Corrected theme-init placement, legal-consent disabled state, landing
-  timeline layering, CTA/branding consistency, responsive auth presentation,
-  Turnstile presentation, and dark-mode secondary-text contrast.
-
-## Next - Phase 14.4D: Team Management + Invitations + RBAC
-
-Implement organization members, invitations, roles, permissions, membership
-lifecycle controls, seat-limit-ready structure, and a basic audit trail. This
-phase requires a new forward migration and explicit product/security decisions
-before implementation. It must preserve current signup, onboarding, consent,
-MFA, RLS, and tenant-isolation behavior.
-
-## After 14.4D - Phase 14.5: Core CRM Live Test
-
-Run the planned live CRM validation after Team Management is complete and its
-authorization model is verified. Do not start Phase 14.5 before Phase 14.4D.
-
-## Later Planned Phases
-
-- **Phase 14.6 - OpenAI Live Qualification**
-- **Phase 14.7 - Production Infrastructure** (Vercel, SMTP, Redis)
-- **Phase 14.8 - n8n + Webhook Security Hardening**
-- **Phase 14.9 - HubSpot Live**
-- **Phase 14.10 - Slack Live**
-
-## Deferred / Enterprise
-
-- SAML SSO, SCIM, IP allowlists, enterprise compliance, and dedicated
-  environments.
-- Customer portal work remains a separate future application concern.
-- Do not reintroduce custom MFA recovery codes without a valid Supabase AAL2
-  recovery design.
-
-## Roadmap Guardrails
-
-- Migrations 00001 through 00017 are immutable. New database work must use a
-  new migration number.
-- Keep Supabase RLS and organization isolation authoritative; UI state is not
-  authorization.
-- Do not expose service-role credentials or weaken PKCE, MFA/AAL2, Turnstile,
-  legal-consent, or onboarding safeguards.
-- Do not push local checkpoints without explicit authorization.
+- Migrations `00001` through `00033` are immutable.
+- RLS and organization authorization remain the tenant boundary.
+- Secrets remain server-only and encrypted at rest.
+- Do not push, deploy, purchase, or perform paid provider actions without
+  explicit authorization.
