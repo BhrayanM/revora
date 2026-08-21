@@ -49,7 +49,7 @@ Supabase Dashboard → Authentication → Settings:
 ### 2.4 Apply Migrations
 
 Apply every immutable migration in `supabase/migrations` in numeric order,
-currently `00001` through `00034`. Never edit a migration already applied to a
+currently `00001` through `00035`. Never edit a migration already applied to a
 linked environment.
 
 Verify using CLI:
@@ -382,7 +382,7 @@ not reuse or expose the Supabase social-login client secret.
    `GOOGLE_WORKSPACE_CLIENT_SECRET`, and `GOOGLE_WORKSPACE_REDIRECT_URI`.
 7. Apply migration `00035_phase_14_6f_google_workspace_audit.sql` to the
    explicitly authorized Supabase project without editing migrations
-   `00001`-`00034`.
+   `00001`-`00035`.
 
 Connect from either Google Calendar or Gmail. One consent connects both cards
 to the same verified Google identity. Calendar **Test** lists at most one event
@@ -394,6 +394,27 @@ The server adapter permits only a bounded event on `primary` and one plain-text
 message to one recipient. It does not expose inbox reading, tracking, bulk mail,
 HTML, attachments, recurring events, conferencing, alternate calendar IDs, or
 automatic retries of ambiguous mutations.
+
+---
+
+## 8D. Complete Integration Audit Gate
+
+Run the deterministic gate from a clean checkout before any provider live test
+or release candidate:
+
+```powershell
+npm.cmd run test:integration-e2e
+npm.cmd run lint
+npm.cmd run typecheck
+npm.cmd run build
+npm.cmd audit
+git diff --check
+```
+
+`typecheck` generates Next route/layout types itself and does not depend on a
+previous build. A local PASS does not replace provider credentials, linked
+migration readback, Org A/Org B isolation, or explicitly authorized mutation
+tests. Record those separately using `docs/LIVE_E2E_TEST.md`.
 
 ---
 
@@ -520,7 +541,7 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 
 ### Infrastructure
 - [ ] Supabase project created
-- [ ] All migrations `00001` through `00034` applied and synchronized
+- [ ] All migrations `00001` through `00035` applied and synchronized
 - [ ] Auth configured (Site URL + Redirect URLs)
 - [ ] Vercel deployed
 - [ ] Required core and provider env vars configured

@@ -1,6 +1,6 @@
 # Revora Roadmap
 
-**Current checkpoint:** Phase 14.6F Google Workspace complete and locally
+**Current checkpoint:** Phase 14.6G complete integration E2E audit locally
 validated; live credential and linked-migration gates remain (2026-08-21)
 
 ## Completed
@@ -22,12 +22,14 @@ validated; live credential and linked-migration gates remain (2026-08-21)
 - Phase 14.6F: one Google Workspace OAuth bundle, exact least-privilege scopes,
   coordinated token lifecycle, read-only Tests, and bounded Calendar/Gmail
   mutations.
+- Phase 14.6G: cross-provider deterministic E2E gate, OAuth/PKCE replay and
+  persistence hardening, bounded CRM transports, and honest live-status audit.
 
-## Next — Phase 14.6G: Complete Integration E2E Audit
+## Next — Phase 14.7: Product UX Completion
 
-Audit every provider regression, tenant boundary, retry/idempotency contract,
-credential exposure path, build/audit result, and live-vs-blocked gate before
-product completion work begins.
+Complete the visual and interaction pass: provider logos, responsive polish,
+accessibility/interaction states, validated language and timezone selectors,
+and explicit delivery decisions for every remaining `Soon` module.
 
 ## Product Completion
 

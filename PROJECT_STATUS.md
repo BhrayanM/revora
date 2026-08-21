@@ -2,14 +2,14 @@
 
 **Last updated:** 2026-08-21
 
-**Working branch:** `master` after the authorized local Phase 14.6F merge
+**Working branch:** local Phase 14.6G closure; no push or deployment
 
-**Latest implementation checkpoint:** `2758924 feat(integrations): wire google workspace settings`
+**Latest implementation checkpoint:** Phase 14.6G complete integration E2E audit
 
-**Current status:** Phase 14.6F is implemented and locally validated. Google
-Workspace live OAuth/mutation gates are `BLOCKED_CREDENTIALS`; migration
-`00035` is local and has not been applied or verified against a linked Supabase
-project.
+**Current status:** Phases 14.6A-14.6G are implemented and locally validated.
+The complete deterministic integration gate passes. Current external gates are
+blocked by incomplete credentials, public HTTPS/Supabase context, or explicit
+mutation authorization; no new live mutation was performed in 14.6G.
 
 ## Current Architecture
 
@@ -17,9 +17,9 @@ project.
 - Supabase Auth and PostgreSQL with generated types and organization-scoped RLS.
 - Server actions and route handlers re-authorize organization permissions;
   provider credentials stay encrypted and server-only.
-- Immutable migrations `00001` through `00034`; Phase 14.6F adds only `00035`.
-  The current worktree is not linked to Supabase, so linked history through
-  `00034` remains pending rather than assumed.
+- Immutable migrations `00001` through `00035`; 14.6G adds no migration. The
+  current worktree is not linked to Supabase and its local database is stopped,
+  so applied history remains an explicit external gate.
 
 ## Completed Roadmap
 
@@ -34,16 +34,18 @@ project.
   tenant-scoped replay protection, and local phase gate.
 - Phase 14.6F: shared Google Workspace OAuth, coordinated refresh/revocation,
   read-only Tests, and bounded Calendar/Gmail operations.
+- Phase 14.6G: aggregate provider gate, OAuth/PKCE and CRM transport hardening,
+  migration immutability, environment/live matrix, and full local regression.
 
 ## Provider Status
 
 | Provider | Status | Notes |
 | --- | --- | --- |
-| HubSpot | Complete and validated | Organization-scoped connection and CRM sync |
-| GoHighLevel | Complete and validated | OAuth/location-scoped CRM sync |
-| n8n | Complete and validated | Signed organization-scoped automation delivery |
-| Zapier | Complete and validated | Secure outbound webhook delivery |
-| Make | Complete and validated | Secure outbound webhook delivery and retry gate |
+| HubSpot | Local PASS; prior live PASS 14.6B | Atomic encrypted PKCE and bounded organization-scoped CRM sync |
+| GoHighLevel | Local PASS; prior live PASS 14.6B | OAuth/location-scoped bounded CRM sync |
+| n8n | Local PASS; prior live PASS 14.6C | Signed organization-scoped automation delivery |
+| Zapier | Local PASS; prior live PASS 14.6C | Secure outbound webhook delivery |
+| Make | Local PASS; prior live PASS 14.6C | Secure outbound webhook delivery and retry gate |
 | Slack | Implemented; live gate blocked by credentials | OAuth `incoming-webhook`, test/disconnect, exact-HOT alert |
 | Twilio | Implemented; live gate blocked by credentials | Account and optional number ownership validation; GET only |
 | Tally | Implemented; live gate blocked by credentials | Automatic form/mapping setup, signed webhook, replay-safe lead capture |
@@ -97,10 +99,17 @@ purchase, and public callbacks remain out of scope.
   clears both local credential rows.
 - Message/event contents and recipient addresses never enter audit metadata.
 
-## Remaining Integration Plan
+## Phase 14.6G Audit Properties
 
-1. **14.6G — Complete E2E audit:** cross-provider, tenant-isolation, error,
-   retry, and production-readiness gates.
+- OAuth state persistence fails closed; single-use consumption is atomic and
+  PKCE is encrypted at rest.
+- Active CRM transports use fixed origins, reject redirects, time out at 15
+  seconds, bound responses to 64 KiB, and do not expose provider bodies.
+- Generic server actions cannot bypass specialized connect/disconnect flows.
+- `npm run test:integration-e2e` covers all ten provider IDs plus shared
+  authorization, retry/idempotency, migration, and client-boundary contracts.
+- No integration implementation phase remains. External live gates remain
+  distinct from deterministic local completion.
 
 ## Remaining Global Product Plan
 
@@ -116,6 +125,6 @@ purchase, and public callbacks remain out of scope.
 
 - No push or production deployment has been performed.
 - No Twilio paid or mutating action is authorized.
-- Do not modify migrations `00001` through `00034`; add only a new consecutive
+- Do not modify migrations `00001` through `00035`; add only a new consecutive
   migration when a later approved phase requires schema changes.
 - External live status must be reported separately from local implementation.
