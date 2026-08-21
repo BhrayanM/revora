@@ -365,6 +365,38 @@ payload conflicts return 409, and invalid signatures return 401.
 
 ---
 
+## 8C. Google Workspace Setup (Calendar + Gmail)
+
+Use a dedicated Google Cloud OAuth web client for the Revora integration. Do
+not reuse or expose the Supabase social-login client secret.
+
+1. Create or select an authorized non-production Google Cloud project.
+2. Enable the Google Calendar API and Gmail API.
+3. Configure the OAuth consent screen and add the intended test users.
+4. Request only `openid`, `email`,
+   `https://www.googleapis.com/auth/calendar.events.owned`, and
+   `https://www.googleapis.com/auth/gmail.send`.
+5. Create a Web application OAuth client and register exactly
+   `https://<revora-host>/api/integrations/google-workspace/callback`.
+6. Configure server-only `GOOGLE_WORKSPACE_CLIENT_ID`,
+   `GOOGLE_WORKSPACE_CLIENT_SECRET`, and `GOOGLE_WORKSPACE_REDIRECT_URI`.
+7. Apply migration `00035_phase_14_6f_google_workspace_audit.sql` to the
+   explicitly authorized Supabase project without editing migrations
+   `00001`-`00034`.
+
+Connect from either Google Calendar or Gmail. One consent connects both cards
+to the same verified Google identity. Calendar **Test** lists at most one event
+from `primary`; Gmail **Test** validates OIDC identity and the exact send scope
+without sending a message. Disconnect from either card revokes and clears both
+capabilities because they share one Google grant.
+
+The server adapter permits only a bounded event on `primary` and one plain-text
+message to one recipient. It does not expose inbox reading, tracking, bulk mail,
+HTML, attachments, recurring events, conferencing, alternate calendar IDs, or
+automatic retries of ambiguous mutations.
+
+---
+
 ## 9. Production API Key
 
 ### 9.1 Create

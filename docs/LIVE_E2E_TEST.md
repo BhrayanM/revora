@@ -2,7 +2,7 @@
 
 **Updated:** 2026-08-21
 
-**Current phase:** 14.6E — Tally
+**Current phase:** 14.6F — Google Calendar + Gmail
 
 ## Current Evidence
 
@@ -16,6 +16,8 @@
 | Slack | OAuth + test/disconnect + HOT alert complete | `BLOCKED_CREDENTIALS` |
 | Twilio | Read-only account/number validation complete | `BLOCKED_CREDENTIALS` |
 | Tally | Automatic form mapping + signed inbound capture complete | `BLOCKED_CREDENTIALS` |
+| Google Calendar | Shared OAuth + read-only Test + bounded event creation complete | `BLOCKED_CREDENTIALS` |
+| Gmail | Shared OAuth + non-mutating Test + bounded plain-text send complete | `BLOCKED_CREDENTIALS` |
 
 The current local environment has no configured `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, or `SLACK_REDIRECT_URI`. The linked database has no
@@ -23,6 +25,13 @@ Slack or Twilio integration row. Therefore this report does not claim a live
 Slack or Twilio gate. The current context also has no usable Tally API key or
 encrypted Tally test connection, and no externally reachable HTTPS app origin;
 therefore `TALLY_LIVE_GATE=BLOCKED_CREDENTIALS`.
+
+The current context has no complete `GOOGLE_WORKSPACE_CLIENT_ID`,
+`GOOGLE_WORKSPACE_CLIENT_SECRET`, and `GOOGLE_WORKSPACE_REDIRECT_URI` set, no
+authorized live Google identity, and no authorized linked application of
+migration `00035`. Therefore
+`GOOGLE_WORKSPACE_LIVE_GATE=BLOCKED_CREDENTIALS` and no message or event was
+created.
 
 ## Local Phase 14.6E Gate
 
@@ -35,6 +44,7 @@ Run from the project root:
 
 ```powershell
 npm.cmd run test:tally
+npm.cmd run test:google-workspace
 npm.cmd run test:communications
 npm.cmd run test:integrations
 npm.cmd run lint
@@ -52,8 +62,9 @@ Expected:
 - The Phase 14.6C automation regression passes.
 - Lint, strict types, and the production build pass.
 - Audit reports zero vulnerabilities.
-- Migrations `00001`-`00033` remain byte-for-byte unchanged and only `00034`
-  is added; linked application remains an explicit external gate.
+- Migrations `00001`-`00034` remain byte-for-byte unchanged and only `00035`
+  is added for Phase 14.6F; linked application remains an explicit external
+  gate.
 
 ## Slack Live Gate
 
@@ -131,9 +142,47 @@ Procedure:
 Never save raw Tally payloads, file/preview/PDF URLs, API keys, signing secrets,
 raw routing tokens, or provider webhook URLs in evidence artifacts.
 
+## Google Workspace Live Gate
+
+Prerequisites:
+
+1. Use an authorized non-production Google Cloud and Supabase project.
+2. Enable Calendar and Gmail APIs, configure the consent screen/test users, and
+   register the exact HTTPS callback path.
+3. Configure the three server-only `GOOGLE_WORKSPACE_*` variables without
+   placing their values in chat, screenshots, commands, logs, or reports.
+4. Apply only pending migration `00035` after reading back linked history.
+5. Choose a test Google account, one safe recipient controlled by the tester,
+   and a future test interval. Explicitly authorize the two mutating checks.
+
+Procedure:
+
+1. Connect from Google Calendar in Org A and verify both Google cards become
+   connected to the same safe email; Org B must remain disconnected.
+2. Confirm the consent request contains exactly `openid`, `email`,
+   `calendar.events.owned`, and `gmail.send`.
+3. Click Calendar **Test** and verify only one bounded `events.list` request on
+   `primary`; no event is created.
+4. Click Gmail **Test** and verify OIDC identity/scope validation only; no email
+   is sent and no Gmail read scope is requested.
+5. With explicit mutation authorization, create one bounded future appointment
+   on `primary`; verify one event and safe audit metadata without title,
+   description, location, or attendee address.
+6. With explicit mutation authorization, send one plain-text message to the
+   controlled recipient; verify one message and safe audit metadata without
+   recipient, subject, or body.
+7. Force one provider error and verify there is no automatic mutation retry.
+8. Verify Org B cannot read, test, disconnect, refresh, or use Org A's grant.
+9. Disconnect from either card. Both cards must disconnect and clear local
+   credentials even if remote revocation reports a safe warning.
+
+Do not claim a live PASS without recorded scope, tenant, provider-result, and
+cleanup evidence. Never include tokens, codes, client secrets, message content,
+event content, or recipient addresses in evidence.
+
 ## Tenant-Isolation Gate
 
-For Slack, Twilio, and Tally, use Org A and Org B:
+For Slack, Twilio, Tally, and Google Workspace, use Org A and Org B:
 
 1. Connect the provider only in Org A.
 2. Verify Org B cannot read safe account metadata for Org A.
@@ -143,5 +192,6 @@ For Slack, Twilio, and Tally, use Org A and Org B:
 
 ## Next E2E Boundary
 
-Phase 14.6F adds Google Calendar and Gmail OAuth plus constrained provider
-operations. It must preserve the 14.6B-14.6E provider contracts above.
+Phase 14.6G audits every integration end to end. It must preserve the
+14.6B-14.6F provider contracts above and distinguish live PASS from external
+credential or migration blockers.
