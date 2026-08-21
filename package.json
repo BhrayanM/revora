@@ -12,7 +12,7 @@
     "format:check": "prettier --check .",
     "test:communications": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-communication-integrations.mjs",
     "test:integrations": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-automation-webhooks.mjs",
-    "test:tally": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-tally-integration.mjs",
+    "test:tally": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-tally-integration.mjs",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
   },
