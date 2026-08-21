@@ -20,6 +20,7 @@ import {
   completeExecution,
   startLeadQualificationExecution,
 } from "@/lib/automation/executions";
+import { notifySlackForHOTLead } from "@/lib/notifications/hot-lead-alerts";
 import { getLeadConversations } from "@/lib/queries/conversations";
 import { getLeadById } from "@/lib/queries/leads";
 import { createServiceAdminClient } from "@/lib/supabase/server";
@@ -94,6 +95,12 @@ export async function qualifyLead(
       total_tokens: result.usage?.totalTokens ?? null,
       duration_ms: result.durationMs,
     });
+
+    await notifySlackForHOTLead({
+      organizationId: orgId,
+      lead,
+      qualification: validated,
+    }).catch(() => "failed");
 
     return { ...validated, leadId };
   } catch (error) {

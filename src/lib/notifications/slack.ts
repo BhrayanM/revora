@@ -15,6 +15,13 @@ interface SlackAlertPayload {
 }
 
 const ALLOWED_SLACK_ORIGIN = "https://hooks.slack.com";
+const REQUEST_TIMEOUT_MS = 15_000;
+const MAX_RESPONSE_BYTES = 64 * 1024;
+
+type FetchLike = (
+  input: string | URL | Request,
+  init?: RequestInit,
+) => Promise<Response>;
 
 function isSlackWebhookUrl(url: string): boolean {
   try {
@@ -22,10 +29,36 @@ function isSlackWebhookUrl(url: string): boolean {
     return (
       parsed.origin === ALLOWED_SLACK_ORIGIN &&
       parsed.pathname.startsWith("/services/") &&
-      parsed.protocol === "https:"
+      parsed.protocol === "https:" &&
+      !parsed.port &&
+      !parsed.username &&
+      !parsed.password &&
+      !parsed.search &&
+      !parsed.hash
     );
   } catch {
     return false;
+  }
+}
+
+async function readBoundedResponse(response: Response): Promise<void> {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+    throw new Error("RESPONSE_TOO_LARGE");
+  }
+
+  if (!response.body) return;
+
+  const reader = response.body.getReader();
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) return;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      throw new Error("RESPONSE_TOO_LARGE");
+    }
   }
 }
 
@@ -41,6 +74,7 @@ function escapeSlackMrkdwn(text: string): string {
 export async function sendHOTLeadAlert(
   webhookUrl: string,
   lead: SlackAlertPayload,
+  fetchImpl: FetchLike = fetch,
 ): Promise<{ success: boolean; error?: string }> {
   if (!isSlackWebhookUrl(webhookUrl)) {
     return { success: false, error: "Invalid Slack webhook URL" };
@@ -108,22 +142,40 @@ export async function sendHOTLeadAlert(
     },
   ];
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
-    const res = await fetch(webhookUrl, {
+    const res = await fetchImpl(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ blocks }),
+      redirect: "error",
+      signal: controller.signal,
     });
+
+    await readBoundedResponse(res);
 
     if (!res.ok) {
       return { success: false, error: `Slack returned ${res.status}` };
     }
 
     return { success: true };
-  } catch (err) {
+  } catch (error) {
+    if (
+      controller.signal.aborted ||
+      (error instanceof DOMException && error.name === "AbortError")
+    ) {
+      return { success: false, error: "Slack request timed out" };
+    }
+    if (error instanceof Error && error.message === "RESPONSE_TOO_LARGE") {
+      return { success: false, error: "Slack response was too large" };
+    }
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Slack request failed",
+      error: "Slack request failed",
     };
+  } finally {
+    clearTimeout(timeout);
   }
 }

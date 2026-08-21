@@ -121,3 +121,7 @@ export function normalizeSlackError(
   }
   return "INVALID_RESPONSE";
 }
+
+export function shouldSendSlackHotAlert(temperature: string): boolean {
+  return temperature === "HOT";
+}
