@@ -1,103 +1,70 @@
-# n8n Workflow — AI Lead Automation
+# Revora n8n Automation Events
 
-## Import Instructions
+Revora sends organization-scoped `lead.created` and `lead.updated` events to
+an active n8n production webhook. Integration tests use the separate
+`integration.test` control message.
 
-1. Open your n8n instance (self-hosted or cloud)
-2. Go to **Workflows → Import from File**
-3. Select `docs/n8n/lead-automation-workflow.json`
-4. After import, configure the required credentials (see below)
+## Import and configure
 
-## Required Environment Variables
+1. Import `lead-automation-workflow.json` in n8n.
+2. Open **Revora Webhook** and create a **Header Auth** credential:
+   - Header name: `X-Revora-Webhook-Secret`
+   - Header value: a random secret with at least 16 characters
+3. Select that credential on the Webhook node.
+4. Save and publish the workflow.
+5. Copy the production URL, which ends in `/webhook/revora-events`.
+6. In Revora, open **Settings → Integrations → n8n** and enter the production
+   URL and the same header secret.
 
-Configure these in n8n before activating:
+Do not use n8n's temporary test URL for a persistent Revora connection. It is
+only registered while n8n is listening for a test event.
 
-| Variable | Purpose |
-|----------|---------|
-| `N8N_WEBHOOK_SECRET` | HMAC-SHA256 secret to verify incoming lead.created events |
-| `N8N_INTERNAL_SECRET` | HMAC-SHA256 secret to authenticate to internal qualification API |
-| `APP_URL` | Base URL of the AI Growth Platform (e.g. `https://app.example.com`) |
-| `HUBSPOT_ACCESS_TOKEN` | HubSpot private app access token (stored per organization in integrations table) |
-| `SLACK_WEBHOOK_URL` | Slack incoming webhook URL for HOT lead alerts (stored per organization) |
-
-## Credential References
-
-The workflow uses n8n credential placeholders (`{{ $env.VARIABLE }}`). Replace these with your actual values after import:
-
-- **HTTP Request nodes:** Update the `APP_URL` and authentication headers
-- **HubSpot node:** Configure via n8n's HubSpot credential node or use HTTP Request node with `HUBSPOT_ACCESS_TOKEN`
-- **Slack node:** Configure via n8n's Slack credential node or use the HTTP Request node with `SLACK_WEBHOOK_URL`
-
-## Webhook Configuration
-
-When activated, the workflow exposes a webhook at:
-
-```
-POST <n8n-instance>/webhook/lead-automation
-```
-
-Configure `N8N_WEBHOOK_URL` in the AI Growth Platform's `.env` to point to this URL.
-
-## Testing
-
-1. Start the AI Growth Platform dev server
-2. Configure test API key in `source_api_keys` table
-3. Send a test lead via the API:
-
-```bash
-curl -X POST http://localhost:3000/api/leads \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: ag_live_YOUR_KEY" \
-  -d '{"name":"Test Lead","email":"test@example.com","source_id":"test-123"}'
-```
-
-4. Check n8n execution history for the workflow run
-5. Verify HubSpot contact was created/updated
-6. If score ≥ 80, verify Slack notification was sent
-
-## Expected Webhook Payload (lead.created v1)
+## Event contract
 
 ```json
 {
-  "event": "lead.created",
-  "version": 1,
-  "event_id": "...",
-  "timestamp": "2026-08-07T00:00:00Z",
-  "organization_id": "...",
-  "source": "api",
-  "lead": {
-    "id": "...",
-    "first_name": "Jane",
-    "last_name": "Smith",
-    "email": "jane@example.com",
-    "phone": "+1...",
-    "company": "Example Co",
-    "source": "api",
-    "source_external_id": "test-123",
-    "message": "...",
-    "status": "new",
-    "score": 50
+  "version": "1",
+  "id": "event-uuid",
+  "type": "lead.created",
+  "occurred_at": "2026-08-14T18:00:00.000Z",
+  "organization_id": "organization-uuid",
+  "data": {
+    "lead": {
+      "id": "lead-uuid",
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane@example.com",
+      "phone": null,
+      "company": "Example Co",
+      "source": "website",
+      "status": "new",
+      "score": 0,
+      "pipeline_stage_id": "stage-uuid"
+    }
   }
 }
 ```
 
-## Workflow Steps
+`lead.updated` uses the same immutable lead snapshot and may include a sorted
+`changed_fields` array. Revora does not currently advertise other business
+events.
 
-1. **Webhook** — Receives `lead.created` event
-2. **Verify HMAC** — Computes HMAC-SHA256 of raw body, compares with `X-Signature` header
-3. **Validate Event** — Checks `event === "lead.created"` and `version === 1`
-4. **Call Internal Qualification API** — `POST /api/internal/leads/{id}/qualify` with `X-Internal-Signature`
-5. **Switch by Temperature** — Routes to HOT (≥80), WARM (50-79), or COLD (<50)
-6. **HubSpot Sync** — Upserts contact for all temperatures
-7. **Slack Alert** — Sends notification only for HOT leads
-8. **Execute** — Logs success or error per branch
+## Security and reliability
 
-## Failure Handling
+- n8n performs Header Auth before running the workflow.
+- The webhook URL and secret are encrypted in Revora's organization-scoped
+  integration record.
+- Revora requires HTTPS unless an explicit development-only override is set.
+- Revora validates DNS and blocks non-public destinations before every request.
+- Redirects are not followed.
+- Every event is persisted before delivery and retried with the original
+  snapshot.
+- The workflow only validates and acknowledges Revora events. It does not
+  contain HubSpot, GoHighLevel, Slack, or other provider credentials.
 
-| Failure | Behavior |
-|---------|----------|
-| Invalid HMAC | Reject with 401 |
-| Invalid event | Reject with 400 |
-| Qualification API unreachable | Log error, continue to CRM sync |
-| HubSpot unreachable | Log error, lead remains in Supabase |
-| Slack unreachable | Log error, CRM sync unaffected |
-| Duplicate event | Idempotent — overwrites qualification, upserts CRM |
+## Verification
+
+After connecting, Revora's **Test** action should create one n8n execution with
+`event_type` equal to `integration.test`. Creating a lead should create one
+`lead.created` execution, and moving it to another pipeline stage should create
+one `lead.updated` execution.

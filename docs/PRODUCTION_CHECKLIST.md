@@ -26,15 +26,15 @@
 - [ ] `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (secret, server-only)
 - [ ] `OPENAI_API_KEY` — OpenAI API key (secret, server-only)
 - [ ] `OPENAI_MODEL` — Model (default: gpt-4o-mini)
-- [ ] `N8N_WEBHOOK_URL` — n8n webhook endpoint URL
-- [ ] `N8N_WEBHOOK_SECRET` — Shared secret for HMAC signing
-- [ ] `N8N_INTERNAL_SECRET` — Shared secret for internal API auth
+- [ ] `AUTOMATION_RETRY_SECRET` — Random server-only worker secret, minimum 32 characters
+- [ ] `INTEGRATION_ENCRYPTION_KEY` — Dedicated 32-byte credential-encryption key encoded as 64 hex characters
+- [ ] `ALLOW_INSECURE_INTEGRATION_WEBHOOKS=false` — Never enable HTTP delivery in production
 - [ ] `HUBSPOT_ACCESS_TOKEN` — HubSpot private app token (stored per org in integrations table)
 - [ ] `SLACK_WEBHOOK_URL` — Slack incoming webhook URL (stored per org in integrations table)
 
 ## Supabase
 
-- [ ] All 8 migrations applied in order (00001–00008)
+- [ ] All repository migrations are applied in order and local/linked history is synchronized
 - [ ] RLS enabled on all business tables
 - [ ] `is_org_member()` function exists with `search_path = ''`
 - [ ] `onboard_user()` function exists
@@ -61,12 +61,11 @@
 ## n8n Configuration
 
 - [ ] Import workflow from `docs/n8n/lead-automation-workflow.json`
-- [ ] Configure environment variables in n8n
-- [ ] HMAC secret matches `N8N_WEBHOOK_SECRET`
-- [ ] Internal secret matches `N8N_INTERNAL_SECRET`
-- [ ] HubSpot access token configured
-- [ ] Slack webhook URL configured
-- [ ] Test workflow with a sample lead
+- [ ] Configure Header Auth named `X-Revora-Webhook-Secret`
+- [ ] Use an organization-specific secret of at least 16 characters
+- [ ] Activate the workflow and save its production URL in Revora Settings
+- [ ] Confirm the workflow contains no HubSpot, GoHighLevel, or Slack credentials
+- [ ] Test `integration.test`, `lead.created`, and `lead.updated`
 
 ## CRM Integration
 

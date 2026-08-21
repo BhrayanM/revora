@@ -1,126 +1,101 @@
-# n8n Workflow Architecture — AI Growth Platform
+# n8n Workflow Architecture — Revora Phase 14.6C
 
-## Phase 5.4
+Revora owns lead persistence, AI qualification, CRM synchronization, delivery
+state, and retries. n8n is an organization-scoped outbound event destination;
+it does not receive Revora provider credentials or call a privileged Revora
+qualification endpoint.
 
-### Event Contract: `lead.created` (version 1)
+## Event Contract
+
+Revora sends version `"1"` envelopes with a UUID event ID:
 
 ```json
 {
-  "event": "lead.created",
-  "version": 1,
-  "event_id": "<hmac-derived-id>",
-  "timestamp": "2026-08-07T...",
-  "organization_id": "<org-uuid>",
-  "source": "website|tally|n8n|api",
-  "lead": {
-    "id": "<lead-uuid>",
-    "first_name": "...",
-    "last_name": "...",
-    "email": "...",
-    "phone": "...",
-    "company": "...",
-    "source": "...",
-    "source_external_id": "...",
-    "message": "...",
-    "status": "new",
-    "score": 50
+  "version": "1",
+  "id": "event-uuid",
+  "type": "lead.created",
+  "occurred_at": "2026-08-14T18:00:00.000Z",
+  "organization_id": "organization-uuid",
+  "data": {
+    "lead": {
+      "id": "lead-uuid",
+      "first_name": "Jane",
+      "last_name": "Smith",
+      "email": "jane@example.com",
+      "phone": null,
+      "company": "Example Co",
+      "source": "website",
+      "status": "new",
+      "score": 0,
+      "pipeline_stage_id": "stage-uuid"
+    }
   }
 }
 ```
 
-### n8n Workflow: Lead Ingestion → AI Qualification → Actions
+Supported messages are `integration.test`, `lead.created`, and `lead.updated`.
+`lead.updated` may contain a sorted `changed_fields` array. Retries always use
+the originally persisted envelope rather than rebuilding it from current lead
+state.
 
-```
-Webhook (receive lead.created)
-  │
-  ├─ 1. Verify HMAC (X-Signature header)
-  │     Fail → 401 response, stop
-  │
-  ├─ 2. Validate event
-  │     Check: event === "lead.created", version === 1
-  │     Fail → 400 response, stop
-  │
-  ├─ 3. Call Internal Qualification API
-  │     POST /api/internal/leads/{lead.id}/qualify
-  │     Headers: X-Internal-Signature (HMAC-SHA256 of URL with N8N_INTERNAL_SECRET)
-  │     Body: { "organization_id": "{{ lead.organization_id }}" }
-  │     Timeout: 30s
-  │     Fail → Log, continue to persistence
-  │
-  ├─ 4. Persist qualification to Supabase
-  │     (Done by the internal API — no additional step needed)
-  │
-  └─ 5. Branch by temperature
+## Delivery Flow
 
-        HOT (score ≥ 80)
-        │
-        ├─ Slack notification (Phase 5.5)
-        └─ CRM sync (Phase 5.5)
+```text
+Revora lead mutation
+  -> persist one automation_executions row per event/provider/organization
+  -> resolve that organization's active encrypted n8n connection
+  -> validate the production URL and resolve public DNS addresses
+  -> pin the validated address and POST without following redirects
+  -> persist the outcome and safe response metadata
+  -> retry transient failures with the same event snapshot
 
-        WARM (score 50-79)
-        │
-        └─ CRM sync (Phase 5.5)
-
-        COLD (score < 50)
-        │
-        └─ Nurture path (Phase 5.5)
+n8n Revora Webhook
+  -> require Header Auth before workflow code runs
+  -> validate envelope version, ID, type, organization, and data
+  -> return a small acknowledgement
 ```
 
-### HMAC Verification (n8n side)
+## Authentication
 
-```
-Input: raw body (JSON string), X-Signature header
+The n8n Webhook node uses n8n's built-in Header Auth credential:
 
-1. Compute HMAC-SHA256(raw_body, N8N_WEBHOOK_SECRET)
-2. Compare with X-Signature header
-3. If match: accept event
-4. If no match: reject with 401
-```
+- Header name: `X-Revora-Webhook-Secret`
+- Header value: a random organization-specific secret of at least 16 characters
 
-### Internal Qualification API
+The same credential is used for Test Connection and business events. Revora
+encrypts the webhook URL and secret at rest and never returns decrypted values
+to the client. This design does not claim raw-body HMAC validation: the workflow
+does not depend on reconstructed JSON matching unavailable original raw bytes.
 
-```
-POST /api/internal/leads/:id/qualify
-Host: https://<app-url>
-Headers:
-  X-Internal-Signature: HMAC-SHA256(request_url, N8N_INTERNAL_SECRET)
-Body:
-  { "organization_id": "uuid" }
+## Provider Boundaries
 
-Success 200:
-  { "success": true, "lead_id": "...", "score": 85, "temperature": "HOT", "summary": "..." }
+- AI qualification remains an authenticated Revora action.
+- HubSpot and GoHighLevel synchronization remains inside their Revora adapters.
+- Slack, email, and SMS providers remain independent integrations.
+- The n8n workflow contains no Revora CRM access token, service-role key, or
+  other provider credential.
 
-Error 401: Invalid signature
-Error 404: Lead not found
-Error 500: Qualification failed
+## Failure and Retry Model
 
-Idempotent: Safe to call multiple times. Overwrites previous qualification.
-```
+- Network errors, timeouts, HTTP 408/425/429, and 5xx responses are retryable.
+- `Retry-After` is honored and capped at one hour.
+- Redirects and permanent 4xx responses are not retried.
+- Delivery is attempted at most five times with bounded backoff.
+- A worker authenticated by `AUTOMATION_RETRY_SECRET` processes due retries.
+- Delivery is at-least-once. Consumers should deduplicate using
+  `X-Revora-Event-Id` or the envelope `id`.
 
-### Failure Isolation
+## URL Security
 
-| Failure | Behavior |
-|---------|----------|
-| n8n unavailable | Lead persists — event lost (future: retry queue) |
-| Webhook timeout (5s) | Lead persists — event delivery failed |
-| Invalid HMAC | n8n rejects event — lead persists |
-| OpenAI timeout | Internal API returns 500 — n8n can retry |
-| OpenAI 429 | Internal API returns 500 — n8n can retry |
-| Duplicate event | Idempotent — overwrites qualification |
-| Supabase failure | Internal API returns 500 |
+Production delivery requires HTTPS. Revora blocks localhost, private,
+loopback, link-local, multicast, reserved, documentation, cloud-metadata, and
+IPv4-translation address ranges. Every hostname is resolved before delivery;
+all returned addresses must be public, and the request is pinned to a validated
+address to limit DNS rebinding.
 
-### n8n Webhook URL Configuration
+## Import
 
-```
-N8N_WEBHOOK_URL=<n8n-instance>/webhook/lead-created
-N8N_WEBHOOK_SECRET=<shared-secret-for-hmac>
-N8N_INTERNAL_SECRET=<shared-secret-for-internal-api>
-```
-
-### Future Integration Points
-
-- **Slack:** HOT leads → Slack channel notification
-- **CRM:** WARM/HOT leads → HubSpot/GoHighLevel create/update contact
-- **Email:** Automation trigger from CRM
-- **SMS:** Twilio integration from CRM
-- **Nurture:** COLD leads → automated email sequence
+Import `docs/n8n/lead-automation-workflow.json`, configure the Header Auth
+credential, activate the workflow, and copy its production URL into
+**Revora Settings → Integrations → n8n**. See `docs/n8n/README.md` for the exact
+operator sequence.

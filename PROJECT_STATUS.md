@@ -86,7 +86,8 @@
 - Production secret rotation and environment separation.
 - Distributed rate limiting / Redis implementation where required.
 - Inbound webhook body-signing and replay protection where planned; outbound
-  n8n events already sign the serialized body when a secret is configured.
+  n8n events use organization-scoped Header Auth and secure destination
+  validation.
 - Production security-event logging, WAF/HSTS decisions, and final security
   review.
 - Counsel review and publication of any future legal-document versions through

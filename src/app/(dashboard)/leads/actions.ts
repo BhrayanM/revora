@@ -6,6 +6,8 @@ import {
   getCurrentWorkspace,
   requireCurrentOrganizationPermission,
 } from "@/lib/auth";
+import { dispatchOutboundEvent } from "@/lib/automation/webhook-dispatcher";
+import { buildLeadOutboundEvent } from "@/lib/integrations/outbound-events";
 import { createLead, deleteLead, getLeadById } from "@/lib/queries/leads";
 import { getDefaultPipelineStage } from "@/lib/queries/pipelines";
 
@@ -66,6 +68,15 @@ export async function addLead(formData: FormData) {
   });
 
   if (error) return { error };
+  if (data) {
+    await dispatchOutboundEvent(
+      buildLeadOutboundEvent({
+        type: "lead.created",
+        organizationId: org.id,
+        lead: data,
+      }),
+    );
+  }
   revalidatePath("/leads");
   revalidatePath("/dashboard");
   revalidatePath("/analytics");

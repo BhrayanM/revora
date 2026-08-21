@@ -94,10 +94,14 @@ Expected:
 ### n8n Configuration
 
 - [ ] Import `docs/n8n/lead-automation-workflow.json`
-- [ ] Configure `N8N_WEBHOOK_URL`, `N8N_WEBHOOK_SECRET`, `N8N_INTERNAL_SECRET`
-- [ ] Set env vars in app's `.env`
-- [ ] Activate workflow
-- [ ] Create lead → verify n8n receives webhook
+- [ ] Configure Header Auth on the Revora Webhook node with header
+      `X-Revora-Webhook-Secret` and an organization-specific secret
+- [ ] Activate the workflow and copy its production webhook URL
+- [ ] Settings → Integrations → n8n → enter the URL and same secret
+- [ ] Connect, then Test → verify an `integration.test` execution
+- [ ] Create lead → verify n8n receives `lead.created`
+- [ ] Move the lead to another pipeline stage → verify `lead.updated`
+- [ ] Verify execution/audit rows use the originating organization and event ID
 
 ### HubSpot
 

@@ -1,284 +1,60 @@
 {
-  "name": "AI Growth Platform — Lead Automation",
+  "name": "Revora — Automation Events",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "lead-automation",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "id": "webhook-1",
-      "name": "Webhook: lead.created",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [250, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "// Verify HMAC-SHA256 signature\nconst secret = $env.N8N_WEBHOOK_SECRET;\nif (!secret) throw new Error('N8N_WEBHOOK_SECRET not configured');\n\nconst crypto = require('crypto');\nconst rawBody = JSON.stringify($input.first().json);\nconst signature = $input.first().json.headers?.['x-signature'] ?? '';\n\nconst expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\n\nif (signature !== expected) {\n  throw new Error('Invalid HMAC signature');\n}\n\n$input.first().json.event === 'lead.created'\n  && $input.first().json.version === 1\n  || (function validateEvent() {\n    if ($input.first().json.event !== 'lead.created') throw new Error('Unknown event: ' + $input.first().json.event);\n    if ($input.first().json.version !== 1) throw new Error('Unsupported version: ' + $input.first().json.version);\n    return false;\n  })();\n\nreturn $input.first().json;"
-      },
-      "id": "verify-1",
-      "name": "Verify HMAC + Validate Event",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [450, 300]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $env.APP_URL }}/api/internal/leads/{{ $('verify-1').first().json.lead.id }}/qualify",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "X-Internal-Signature",
-              "value": "={{ $env.N8N_INTERNAL_SECRET ? require('crypto').createHmac('sha256', $env.N8N_INTERNAL_SECRET).update($env.APP_URL + '/api/internal/leads/' + $('verify-1').first().json.lead.id + '/qualify').digest('hex') : '' }}"
+        "path": "revora-events",
+        "authentication": "headerAuth",
+        "responseMode": "lastNode",
+        "responseData": "firstEntryJson",
+        "options": {
+          "responseCode": {
+            "values": {
+              "responseCode": 200
             }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "organization_id",
-              "value": "={{ $('verify-1').first().json.organization_id }}"
-            }
-          ]
-        },
-        "options": { "timeout": 30000 }
-      },
-      "id": "qualify-1",
-      "name": "AI Qualify Lead",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [650, 300]
-    },
-    {
-      "parameters": {
-        "rules": {
-          "values": [
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict"
-                },
-                "conditions": [
-                  {
-                    "id": "f627i4x",
-                    "leftValue": "={{ $json.temperature }}",
-                    "rightValue": "HOT",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ],
-                "combinator": "and"
-              }
-            },
-            {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict"
-                },
-                "conditions": [
-                  {
-                    "id": "dm9ucu",
-                    "leftValue": "={{ $json.temperature }}",
-                    "rightValue": "WARM",
-                    "operator": { "type": "string", "operation": "equals" }
-                  }
-                ],
-                "combinator": "and"
-              }
-            }
-          ]
+          }
         }
       },
-      "id": "switch-1",
-      "name": "Switch by Temperature",
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3,
-      "position": [850, 300]
+      "id": "revora-webhook",
+      "name": "Revora Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/search",
-        "authentication": "none",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.HUBSPOT_ACCESS_TOKEN }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "filterGroups",
-              "value": "=[{\"filters\":[{\"propertyName\":\"email\",\"operator\":\"EQ\",\"value\":\"{{ $('verify-1').first().json.lead.email }}\"}]}]"
-            },
-            { "name": "properties", "value": "=[\"email\"]" },
-            { "name": "limit", "value": "=1" }
-          ]
-        },
-        "options": {}
+        "jsCode": "const incoming = $input.first().json;\nconst event = incoming.body ?? incoming;\nconst allowedTypes = new Set(['integration.test', 'lead.created', 'lead.updated']);\n\nif (event.version !== '1') {\n  throw new Error('Unsupported Revora event version');\n}\nif (typeof event.id !== 'string' || event.id.length < 16) {\n  throw new Error('Invalid Revora event id');\n}\nif (!allowedTypes.has(event.type)) {\n  throw new Error('Unsupported Revora event type');\n}\nif (typeof event.organization_id !== 'string' || !event.organization_id) {\n  throw new Error('Invalid Revora organization');\n}\nif (!event.data || typeof event.data !== 'object') {\n  throw new Error('Invalid Revora event data');\n}\n\nreturn [{ json: { accepted: true, event_id: event.id, event_type: event.type, organization_id: event.organization_id } }];"
       },
-      "id": "hs-search-1",
-      "name": "HubSpot: Search Contact",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [1050, 300]
-    },
-    {
-      "parameters": {
-        "jsCode": "const found = $input.first().json.results?.[0];\nif (found) {\n  return { action: 'update', contactId: found.id };\n}\nreturn { action: 'create' };"
-      },
-      "id": "hs-decide-1",
-      "name": "HubSpot: Create or Update",
+      "id": "validate-event",
+      "name": "Validate Revora Event",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1250, 300]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "=https://api.hubapi.com/crm/v3/objects/contacts",
-        "authentication": "none",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.HUBSPOT_ACCESS_TOKEN }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "properties",
-              "value": "={\"email\":\"{{ $('verify-1').first().json.lead.email }}\",\"firstname\":\"{{ $('verify-1').first().json.lead.first_name }}\",\"lastname\":\"{{ $('verify-1').first().json.lead.last_name }}\",\"phone\":\"{{ $('verify-1').first().json.lead.phone }}\",\"company\":\"{{ $('verify-1').first().json.lead.company }}\",\"ai_score__c\":\"{{ $('qualify-1').first().json.score }}\",\"lead_temperature__c\":\"{{ $('qualify-1').first().json.temperature }}\"}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "hs-create-1",
-      "name": "HubSpot: Create Contact",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [1450, 200]
-    },
-    {
-      "parameters": {
-        "method": "PATCH",
-        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{ $('hs-decide-1').first().json.contactId }}",
-        "authentication": "none",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "=Bearer {{ $env.HUBSPOT_ACCESS_TOKEN }}"
-            }
-          ]
-        },
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "properties",
-              "value": "={\"phone\":\"{{ $('verify-1').first().json.lead.phone }}\",\"company\":\"{{ $('verify-1').first().json.lead.company }}\",\"ai_score__c\":\"{{ $('qualify-1').first().json.score }}\",\"lead_temperature__c\":\"{{ $('qualify-1').first().json.temperature }}\"}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "hs-update-1",
-      "name": "HubSpot: Update Contact",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [1450, 400]
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "={{ $env.SLACK_WEBHOOK_URL }}",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "blocks",
-              "value": "=[{\"type\":\"header\",\"text\":{\"type\":\"plain_text\",\"text\":\"🔥 HOT LEAD — {{ $('verify-1').first().json.lead.first_name }} {{ $('verify-1').first().json.lead.last_name }}\",\"emoji\":true}},{\"type\":\"divider\"},{\"type\":\"section\",\"fields\":[{\"type\":\"mrkdwn\",\"text\":\"*Score:* {{ $('qualify-1').first().json.score }}/100\"},{\"type\":\"mrkdwn\",\"text\":\"*Email:* {{ $('verify-1').first().json.lead.email }}\"},{\"type\":\"mrkdwn\",\"text\":\"*Company:* {{ $('verify-1').first().json.lead.company }}\"},{\"type\":\"mrkdwn\",\"text\":\"*Phone:* {{ $('verify-1').first().json.lead.phone }}\"}]},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Summary:* {{ $('qualify-1').first().json.summary }}\"}},{\"type\":\"section\",\"text\":{\"type\":\"mrkdwn\",\"text\":\"*Action:* {{ $('qualify-1').first().json.recommended_action }}\"}}]"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "slack-1",
-      "name": "Slack: HOT Lead Alert",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4,
-      "position": [1450, 600]
+      "position": [520, 300]
     }
   ],
   "connections": {
-    "Webhook: lead.created": {
+    "Revora Webhook": {
       "main": [
-        [{ "node": "Verify HMAC + Validate Event", "type": "main", "index": 0 }]
-      ]
-    },
-    "Verify HMAC + Validate Event": {
-      "main": [[{ "node": "AI Qualify Lead", "type": "main", "index": 0 }]]
-    },
-    "AI Qualify Lead": {
-      "main": [
-        [{ "node": "Switch by Temperature", "type": "main", "index": 0 }]
-      ]
-    },
-    "Switch by Temperature": {
-      "main": [
-        [{ "node": "HubSpot: Search Contact", "type": "main", "index": 0 }],
-        [{ "node": "HubSpot: Search Contact", "type": "main", "index": 0 }],
-        [{ "node": "HubSpot: Search Contact", "type": "main", "index": 0 }]
-      ]
-    },
-    "HubSpot: Search Contact": {
-      "main": [
-        [{ "node": "HubSpot: Create or Update", "type": "main", "index": 0 }]
-      ]
-    },
-    "HubSpot: Create or Update": {
-      "main": [
-        [{ "node": "HubSpot: Create Contact", "type": "main", "index": 0 }],
-        [{ "node": "HubSpot: Update Contact", "type": "main", "index": 0 }]
-      ]
-    },
-    "HubSpot: Create Contact": {
-      "main": [
-        [{ "node": "Slack: HOT Lead Alert", "type": "main", "index": 0 }]
-      ]
-    },
-    "HubSpot: Update Contact": {
-      "main": [
-        [{ "node": "Slack: HOT Lead Alert", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Validate Revora Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
-  "settings": {
-    "callerPolicy": "workflowsFromSameOwner"
-  },
-  "versionId": "1.0.0",
+  "pinData": {},
   "active": false,
-  "description": "AI Growth Platform — Lead Automation Workflow. Receives lead.created events, performs AI qualification, syncs to HubSpot, and alerts Slack for HOT leads."
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d36bc49d-6534-4d4f-a14e-6ff79294146c",
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Receives authenticated Revora integration.test, lead.created, and lead.updated events. Configure Header Auth with X-Revora-Webhook-Secret before activation."
+  },
+  "tags": []
 }

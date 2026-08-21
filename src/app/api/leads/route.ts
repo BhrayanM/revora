@@ -1,14 +1,13 @@
-import { createHash } from "crypto";
-
 import { type NextRequest, NextResponse } from "next/server";
 
+import { dispatchOutboundEvent } from "@/lib/automation/webhook-dispatcher";
+import { buildLeadOutboundEvent } from "@/lib/integrations/outbound-events";
 import { hashApiKey } from "@/lib/lead-ingestion/api-keys";
 import { normalizeLead } from "@/lib/lead-ingestion/normalize";
 import { checkRateLimit } from "@/lib/lead-ingestion/rate-limit";
 import { validateInboundPayload } from "@/lib/lead-ingestion/validate";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
-import { emitLeadEventReliable } from "@/lib/webhooks/reliable-emit";
 
 type LeadSource = Database["public"]["Tables"]["leads"]["Insert"]["source"];
 
@@ -181,7 +180,7 @@ export async function POST(request: NextRequest) {
   const { data: lead, error: insertError } = await supabase
     .from("leads")
     .insert(insertPayload)
-    .select("id, status, first_name, last_name, email, phone, company, score")
+    .select("*")
     .single();
 
   if (insertError || !lead) {
@@ -197,38 +196,13 @@ export async function POST(request: NextRequest) {
     .update({ last_used_at: new Date().toISOString() })
     .eq("key_hash", keyHash);
 
-  const eventId = createHash("sha256")
-    .update(`lead.created:${lead.id}:${Date.now()}`)
-    .digest("hex")
-    .slice(0, 16);
-
-  emitLeadEventReliable(
-    {
-      event: "lead.created",
-      version: 1,
-      event_id: eventId,
-      timestamp: new Date().toISOString(),
-      organization_id: orgId,
-      source: keySource,
-      lead: {
-        id: lead.id,
-        first_name: lead.first_name,
-        last_name: lead.last_name,
-        email: lead.email,
-        phone: lead.phone,
-        company: lead.company,
-        source: keySource,
-        source_external_id: normalized.source_external_id,
-        message: normalized.message,
-        status: lead.status,
-        score: lead.score,
-      },
-    },
-    orgId,
-    lead.id,
-  ).catch((err) => {
-    console.error("[Webhook] emitLeadEvent failed:", err);
-  });
+  await dispatchOutboundEvent(
+    buildLeadOutboundEvent({
+      type: "lead.created",
+      organizationId: orgId,
+      lead,
+    }),
+  );
 
   return NextResponse.json(
     {
