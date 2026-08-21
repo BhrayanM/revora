@@ -14,6 +14,7 @@
 | HubSpot account | Optional (1 of 2) | CRM sync |
 | GoHighLevel account | Optional (1 of 2) | CRM sync |
 | Slack workspace | Optional | HOT lead notifications |
+| Twilio account | Optional | Read-only account/source-number validation |
 
 **Minimum production setup:** Supabase + Vercel + OpenAI + n8n + one CRM.
 
@@ -47,20 +48,9 @@ Supabase Dashboard → Authentication → Settings:
 
 ### 2.4 Apply Migrations
 
-Connect Supabase CLI or use SQL Editor:
-
-```sql
--- Run each migration file in order:
--- 00001_initial_schema.sql
--- 00002_rls_policies.sql
--- 00003_rls_hardening.sql
--- 00004_onboarding_function.sql
--- 00005_query_indexes.sql
--- 00006_source_api_keys.sql
--- 00007_lead_source_external_id.sql
--- 00008_automation_executions.sql
--- 00009_executions_policy_fix.sql
-```
+Apply every immutable migration in `supabase/migrations` in numeric order,
+currently `00001` through `00033`. Never edit a migration already applied to a
+linked environment.
 
 Verify using CLI:
 ```bash
@@ -73,7 +63,8 @@ supabase db push
 SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
 ```
 
-Expected: 11 tables (profiles, organizations, memberships, workspaces, leads, pipelines, pipeline_stages, conversations, automations, integrations, source_api_keys, automation_executions)
+Confirm the expected CRM, organization, automation, integration, invitation,
+ownership-transfer, and legal-consent tables are present.
 
 ### 2.6 Verify RLS
 
@@ -139,6 +130,9 @@ In Vercel Dashboard → Settings → Environment Variables, add:
 | `INTEGRATION_ENCRYPTION_KEY` | 32 random bytes encoded as 64 hex characters | YES |
 | `ALLOW_INSECURE_INTEGRATION_WEBHOOKS` | `false` | No |
 | `RATE_LIMITER` | `memory` | No |
+| `SLACK_CLIENT_ID` | Slack app client ID | No |
+| `SLACK_CLIENT_SECRET` | Slack app client secret | YES |
+| `SLACK_REDIRECT_URI` | `https://your-app.vercel.app/api/integrations/slack/callback` | No |
 
 ### 3.3 Deploy
 
@@ -249,12 +243,15 @@ Revora sends integration.test, lead.created, or lead.updated
 
 ## 6. HubSpot Setup
 
-### 6.1 Create Private App
+### 6.1 Create OAuth App
 
-1. HubSpot → Settings → Integrations → Private Apps
-2. Create private app
-3. Scopes: `crm.objects.contacts.write`, `crm.objects.contacts.read`
-4. Copy access token
+1. HubSpot Developer Account → Apps → Create app.
+2. Add scopes `crm.objects.contacts.read` and
+   `crm.objects.contacts.write`.
+3. Register redirect URL
+   `https://your-app.vercel.app/api/integrations/hubspot/callback`.
+4. Configure `HUBSPOT_CLIENT_ID`, `HUBSPOT_CLIENT_SECRET`, and
+   `HUBSPOT_REDIRECT_URI` as server variables.
 
 ### 6.2 Create Custom Properties
 
@@ -265,9 +262,9 @@ HubSpot → Settings → Properties → Contacts → Create:
 ### 6.3 Connect
 
 1. Your app → Settings → Integrations → HubSpot → Connect
-2. Paste access token
-3. Click **Test Connection**
-4. Should show "Connection successful"
+2. Approve the OAuth consent screen.
+3. Click **Test**.
+4. Confirm "Connection successful".
 
 ### 6.4 Verify
 
@@ -277,38 +274,57 @@ Create a test lead via the API. Check HubSpot for the contact.
 
 ## 7. GoHighLevel Setup (Optional)
 
-### 7.1 Get Credentials
+### 7.1 Create Marketplace OAuth App
 
-1. GHL → Settings → API Key
-2. Copy API key and Location ID
+1. GoHighLevel Marketplace → Apps → create or reuse the Revora app.
+2. Configure `contacts.readonly`, `contacts.write`, and `locations.readonly`.
+3. Register redirect URL
+   `https://your-app.vercel.app/api/integrations/crm/callback`.
+4. Configure `GHL_CLIENT_ID`, `GHL_CLIENT_SECRET`, `GHL_REDIRECT_URI`, and the
+   test-only `GHL_APP_VERSION_ID` when using a draft version.
 
 ### 7.2 Connect
 
 1. Your app → Settings → Integrations → GoHighLevel → Connect
-2. Enter API key + Location ID
-3. Click **Test Connection**
-
-**⚠️ API Version Note:** The provider uses `rest.gohighlevel.com/v1`. Verify against current GHL API docs before production.
+2. Select and authorize the intended location.
+3. Click **Test**.
 
 ---
 
 ## 8. Slack Setup (Optional)
 
-### 8.1 Create Webhook
+### 8.1 Create OAuth App
 
-1. Slack → Apps → Incoming Webhooks
-2. Add to workspace → select channel
-3. Copy webhook URL
+1. Slack API → Your Apps → Create New App.
+2. OAuth & Permissions → add bot scope `incoming-webhook`.
+3. Add redirect URL
+   `https://your-app.vercel.app/api/integrations/slack/callback`.
+4. Configure server-only `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, and
+   `SLACK_REDIRECT_URI`.
 
 ### 8.2 Connect
 
 1. Your app → Settings → Integrations → Slack → Connect
-2. Paste webhook URL
-3. Click **Test Connection**
+2. Authorize the workspace and select the alert channel.
+3. Click **Test** and verify one integration-test message.
 
 ### 8.3 Verify
 
-Create a HOT lead (score ≥ 80). Check Slack channel for notification.
+Qualify one HOT lead (score ≥ 80) and verify exactly one alert. WARM and COLD
+must produce no Slack alert. Slack delivery failure must not roll back the
+persisted qualification.
+
+## 8A. Twilio Setup (Optional, Read-Only)
+
+1. Open Settings → Integrations → Twilio → Connect.
+2. Enter Account SID, Auth Token, and an optional source number in E.164.
+3. Revora validates the account with `GET Accounts/{SID}.json` and, when a
+   number is present, verifies ownership with a filtered `GET` to
+   `IncomingPhoneNumbers.json`.
+4. Click **Test** to repeat only this read-only validation.
+
+Phase 14.6D does not send SMS or WhatsApp messages, place calls, buy numbers,
+or register Twilio callbacks.
 
 ---
 
@@ -352,14 +368,14 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 1. Open production URL → `/signup` → create account
 2. Confirm email → redirected to dashboard
 3. Settings → Integrations → HubSpot → Connect → Test
-4. Settings → Integrations → Slack → Connect → Test
+4. Settings → Integrations → Slack → OAuth Connect → Test (when configured)
 5. Settings → API Keys → Create → copy raw key
 6. Run curl command from step 9.3
 7. Check dashboard `/leads` — lead should appear
 8. Click lead → "AI Qualify Lead" — should return score + summary
 9. Check n8n execution history — workflow should show success
 10. Check HubSpot — contact should exist
-11. If HOT (score ≥ 80), check Slack — notification should exist
+11. If HOT (score ≥ 80), check Slack for exactly one alert; WARM/COLD send none
 12. Check `/automation` — execution records should show all steps
 13. Run same curl again — should return 200 (idempotent)
 14. Check HubSpot — no duplicate contact
@@ -399,7 +415,9 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 | Lead created but no n8n execution | Integration inactive or production URL incorrect | Test the organization-scoped n8n connection and confirm the workflow is active |
 | AI qualification fails | OPENAI_API_KEY missing/invalid | Check Vercel env vars + OpenAI dashboard |
 | HubSpot sync fails | Token expired or wrong scopes | Re-create HubSpot private app with contacts scope |
-| Slack notification not received | Wrong webhook URL or channel | Re-create Slack webhook |
+| Slack OAuth cannot start | Missing Slack server variables or redirect mismatch | Configure `SLACK_*` and the exact callback URL |
+| Slack notification not received | App disconnected or wrong selected channel | Reconnect Slack and select the intended channel |
+| Twilio source number rejected | Number not owned by the account or not E.164 | Verify ownership and use `+<country><number>` |
 | Retry processor doesn't run | No scheduler or wrong worker authorization | POST to `/api/internal/integrations/retries` with the configured bearer secret |
 | Cross-org data visible | RLS not enabled | Run migration 00002 + verify with `SELECT tablename FROM pg_tables WHERE rowsecurity=true` |
 
@@ -421,6 +439,9 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 | ALLOW_INSECURE_INTEGRATION_WEBHOOKS | .env | ✓ | — | No |
 | RATE_LIMITER | .env | ✓ | — | No |
 | REDIS_URL | .env | ✓ | — | YES |
+| SLACK_CLIENT_ID | .env | ✓ | — | No |
+| SLACK_CLIENT_SECRET | .env | ✓ | — | YES |
+| SLACK_REDIRECT_URI | .env | ✓ | — | No |
 
 ---
 
@@ -428,10 +449,10 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 
 ### Infrastructure
 - [ ] Supabase project created
-- [ ] All 9 migrations applied
+- [ ] All migrations `00001` through `00033` applied and synchronized
 - [ ] Auth configured (Site URL + Redirect URLs)
 - [ ] Vercel deployed
-- [ ] All 12 env vars configured
+- [ ] Required core and provider env vars configured
 
 ### AI
 - [ ] OpenAI key configured
@@ -453,6 +474,9 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 ### Notifications
 - [ ] Slack connected (optional)
 - [ ] HOT lead notification verified
+- [ ] WARM/COLD produce no Slack notification
+- [ ] Twilio read-only account/number test verified (optional)
+- [ ] No Twilio messaging/call operation performed
 
 ### Security
 - [ ] API key created, raw key stored securely

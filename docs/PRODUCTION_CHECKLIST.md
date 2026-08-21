@@ -1,119 +1,97 @@
-# PRODUCTION CHECKLIST — AI Growth Platform
+# Revora Production Checklist
 
-**Last Verified:** 2026-08-07
-**Status:** DEMO READY — PRODUCTION CANDIDATE (requires external service configuration)
+**Last updated:** 2026-08-20
 
-## Pre-Deployment Verification (Local)
+**Status:** Local production candidate; external credential and deployment gates remain.
 
-- [x] `npm run build` — 17 routes, zero errors
-- [x] `npm run lint` — zero errors
-- [x] `npm run typecheck` — zero errors (strict mode)
-- [x] `node scripts/verify-crm.mjs` — 5/5 PASS
-- [x] Migrations valid (9 files, sequential)
-- [x] No `NEXT_PUBLIC_` secrets in source code
-- [x] No hardcoded credentials in source
-- [x] Zero mock data in active dashboard components
-- [x] n8n workflow JSON validates
-- [x] `.env` not tracked by git
+## Local Release Gate
 
-## Environment Variables
+- [x] `npm.cmd run test:communications`
+- [x] `npm.cmd run test:integrations`
+- [x] `npm.cmd run lint`
+- [x] `npm.cmd run typecheck`
+- [x] `npm.cmd run build`
+- [x] `npm.cmd audit` reports zero vulnerabilities
+- [x] `git diff --check`
+- [x] Local/linked Supabase migrations match through `00033`
+- [x] Modified/untracked secret scan reports no real credential values
+- [ ] Git working tree is clean after the authorized local phase commit
 
-- [ ] `NEXT_PUBLIC_APP_URL` — Application URL
-- [ ] `NEXT_PUBLIC_APP_NAME` — Application name
-- [ ] `NEXT_PUBLIC_APP_ENV` — Set to `production`
-- [ ] `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key (public)
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` — Supabase service role key (secret, server-only)
-- [ ] `OPENAI_API_KEY` — OpenAI API key (secret, server-only)
-- [ ] `OPENAI_MODEL` — Model (default: gpt-4o-mini)
-- [ ] `AUTOMATION_RETRY_SECRET` — Random server-only worker secret, minimum 32 characters
-- [ ] `INTEGRATION_ENCRYPTION_KEY` — Dedicated 32-byte credential-encryption key encoded as 64 hex characters
-- [ ] `ALLOW_INSECURE_INTEGRATION_WEBHOOKS=false` — Never enable HTTP delivery in production
-- [ ] `HUBSPOT_ACCESS_TOKEN` — HubSpot private app token (stored per org in integrations table)
-- [ ] `SLACK_WEBHOOK_URL` — Slack incoming webhook URL (stored per org in integrations table)
+## Core Environment
 
-## Supabase
+- [ ] `NEXT_PUBLIC_APP_URL`
+- [ ] `NEXT_PUBLIC_APP_NAME`
+- [ ] `NEXT_PUBLIC_APP_ENV=production`
+- [ ] `NEXT_PUBLIC_SUPABASE_URL`
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` (server-only)
+- [ ] `OPENAI_API_KEY` (server-only)
+- [ ] `OPENAI_MODEL`
+- [ ] `AUTOMATION_RETRY_SECRET` (server-only, at least 32 characters)
+- [ ] `INTEGRATION_ENCRYPTION_KEY` (server-only, 64 hex characters)
+- [ ] `ALLOW_INSECURE_INTEGRATION_WEBHOOKS=false`
+- [ ] Production distributed rate limiter configured
 
-- [ ] All repository migrations are applied in order and local/linked history is synchronized
-- [ ] RLS enabled on all business tables
-- [ ] `is_org_member()` function exists with `search_path = ''`
-- [ ] `onboard_user()` function exists
-- [ ] `handle_new_user()` trigger active
-- [ ] `update_updated_at()` trigger active on all mutable tables
-- [ ] Service role key stored securely, never in client code
+## Supabase and Tenant Isolation
 
-## Authentication
+- [ ] Migrations `00001`-`00033` applied in order; existing files unchanged
+- [ ] RLS enabled on every organization-owned business table
+- [ ] Service-role key never reaches browser bundles
+- [ ] Org A cannot read, test, disconnect, or use Org B integrations
+- [ ] Credentials and webhook URLs are absent from client-safe DTOs
 
-- [ ] Email confirmation enabled in Supabase Auth settings
-- [ ] Site URL configured in Supabase Auth settings
-- [ ] Redirect URLs configured for callback
-- [ ] Rate limiting configured in Supabase Auth settings
-- [ ] Proxy/middleware protecting dashboard routes
+## Completed Provider Gates
 
-## API Keys
+- [x] HubSpot implementation and prior provider validation
+- [x] GoHighLevel implementation and prior provider validation
+- [x] n8n implementation and prior provider validation
+- [x] Zapier implementation and prior provider validation
+- [x] Make implementation and prior provider validation
 
-- [ ] Generate API keys via settings dashboard or SQL
-- [ ] Keys follow `ag_live_<random>` format
-- [ ] Only SHA-256 hash stored in `source_api_keys`
-- [ ] Keys scoped to organization
-- [ ] Inactive keys rejected
+Re-run each live gate after production-domain or credential rotation.
 
-## n8n Configuration
+## Slack
 
-- [ ] Import workflow from `docs/n8n/lead-automation-workflow.json`
-- [ ] Configure Header Auth named `X-Revora-Webhook-Secret`
-- [ ] Use an organization-specific secret of at least 16 characters
-- [ ] Activate the workflow and save its production URL in Revora Settings
-- [ ] Confirm the workflow contains no HubSpot, GoHighLevel, or Slack credentials
-- [ ] Test `integration.test`, `lead.created`, and `lead.updated`
+- [ ] Slack app created or reused
+- [ ] Redirect URL is `https://<host>/api/integrations/slack/callback`
+- [ ] Only required `incoming-webhook` scope configured
+- [ ] `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, and `SLACK_REDIRECT_URI` set
+- [ ] OAuth Connect stores only encrypted token/webhook credentials
+- [ ] Test sends exactly one integration-test message
+- [ ] HOT sends exactly one alert; WARM and COLD send none
+- [ ] Failure leaves qualification successful and marks safe degraded health
+- [ ] Disconnect clears stored credentials
 
-## CRM Integration
+## Twilio — Infrastructure Only
 
-- [ ] HubSpot: Private app created with contacts scope
-- [ ] HubSpot: Custom properties created (`ai_score__c`, `lead_temperature__c`)
-- [ ] GoHighLevel: API key and location ID configured
-- [ ] Credentials stored per organization in `integrations` table
-- [ ] Credentials never exposed to browser
+- [ ] Account SID/Auth Token validated using HTTP Basic over HTTPS
+- [ ] Optional source number ownership validated in E.164
+- [ ] Validation traffic contains only account/number `GET` requests
+- [ ] Test repeats only read-only validation
+- [ ] Disconnect clears stored credentials
+- [ ] No SMS, WhatsApp, call, number-purchase, or callback action exists
 
-## Rate Limiting
+## Automation Reliability
 
-- [ ] Production: Redis/Upstash configured for distributed rate limiting
-- [ ] Development: In-memory rate limiter active (30 req/min)
-- [ ] API rate limiting active on `POST /api/leads`
+- [ ] n8n/Zapier/Make credentials are organization-scoped and encrypted
+- [ ] Redirects and private-network webhook targets fail closed
+- [ ] Delivery timeouts and response-size bounds are active
+- [ ] Retry worker authorization is configured
+- [ ] Idempotency prevents duplicate provider delivery
+- [ ] Failed provider delivery does not roll back lead persistence
 
-## Webhook Reliability
+## Deployment and Operations
 
-- [ ] n8n webhook URL configured
-- [ ] HMAC verification active
-- [ ] Execution logging enabled (`automation_executions` table)
-- [ ] Retry behavior: 5 attempts with exponential backoff
-- [ ] Lead creation never blocked by webhook failure
+- [ ] Production OAuth redirect URLs registered with each provider
+- [ ] Production SMTP/sending domain configured
+- [ ] Secret rotation and environment separation documented
+- [ ] Database backups configured
+- [ ] Monitoring and security-event logging configured without secrets
+- [ ] WAF/HSTS/rate-limiter decisions completed
+- [ ] Full Phase 14.6G E2E audit completed before final go-live claim
 
-## Monitoring
+## Remaining Roadmap
 
-- [ ] Error logging configured (console.error for now, Sentry recommended)
-- [ ] OpenAI token usage tracked in lead metadata
-- [ ] Execution failures logged with error messages
-- [ ] No secrets in logs
-
-## Deployment
-
-- [ ] Next.js build successful (`npm run build`)
-- [ ] TypeScript strict mode — zero errors
-- [ ] ESLint — zero errors
-- [ ] Prettier — consistent formatting
-- [ ] Docker image built and tested
-- [ ] Database backups configured in Supabase
-
-## Verification
-
-- [ ] `npm run build` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run typecheck` passes
-- [ ] All dashboard pages load without errors
-- [ ] Lead creation via API works with valid key
-- [ ] Idempotency works (duplicate source_external_id)
-- [ ] AI qualification triggers from dashboard
-- [ ] Internal qualification endpoint accessible
-- [ ] Rate limiting returns 429
-- [ ] Invalid API keys return 401
+- [ ] Phase 14.6E — Tally inbound capture, signatures, replay deduplication
+- [ ] Phase 14.6F — Google Calendar + Gmail
+- [ ] Phase 14.6G — Complete integration E2E audit
