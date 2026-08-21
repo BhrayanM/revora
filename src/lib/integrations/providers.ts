@@ -52,9 +52,9 @@ export const INTEGRATION_PROVIDERS: ProviderCatalogEntry[] = [
     supportsOAuth: true,
     supportsApiKey: false,
     supportsWebhooks: true,
-    supportsInbound: true,
+    supportsInbound: false,
     supportsOutbound: true,
-    requiredScopes: ["chat:write", "chat:write.public"],
+    requiredScopes: ["incoming-webhook"],
     docsUrl: "https://api.slack.com/docs",
   },
   {
