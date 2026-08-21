@@ -11,6 +11,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:communications": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-communication-integrations.mjs",
+    "test:google-workspace": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-google-workspace-integration.mjs",
     "test:integrations": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-automation-webhooks.mjs",
     "test:tally": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-tally-integration.mjs",
     "typecheck": "tsc --noEmit",
