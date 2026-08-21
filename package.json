@@ -10,6 +10,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "test:communications": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-communication-integrations.mjs",
     "test:integrations": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-automation-webhooks.mjs",
     "typecheck": "tsc --noEmit",
     "prepare": "husky"
