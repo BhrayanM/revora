@@ -17,6 +17,7 @@ import type { Json } from "@/lib/supabase/types";
 const GHL_AUTH_URL = "https://marketplace.gohighlevel.com/oauth/chooselocation";
 const GHL_TOKEN_URL = "https://services.leadconnectorhq.com/oauth/token";
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
+const MAX_RESPONSE_BYTES = 64 * 1024;
 const GHL_SCOPES = [
   "contacts.readonly",
   "contacts.write",
@@ -29,6 +30,44 @@ interface NormalizedGHLTokenResponse {
   expiresIn: number;
   locationId: string | null;
   companyId: string | null;
+}
+
+async function readBoundedJson(
+  response: Response,
+): Promise<{ valid: boolean; data: unknown }> {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+    return { valid: false, data: null };
+  }
+  if (!response.body) return { valid: response.ok, data: null };
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      return { valid: false, data: null };
+    }
+    chunks.push(value);
+  }
+
+  if (receivedBytes === 0) return { valid: response.ok, data: null };
+  try {
+    return {
+      valid: true,
+      data: JSON.parse(
+        Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString(
+          "utf8",
+        ),
+      ) as unknown,
+    };
+  } catch {
+    return { valid: false, data: null };
+  }
 }
 
 function normalizeGHLTokenResponse(
@@ -45,10 +84,15 @@ function normalizeGHLTokenResponse(
 
   if (
     typeof accessToken !== "string" ||
+    accessToken.length < 1 ||
+    accessToken.length > 4096 ||
     (refreshToken !== undefined && typeof refreshToken !== "string") ||
+    (typeof refreshToken === "string" &&
+      (refreshToken.length < 1 || refreshToken.length > 4096)) ||
     typeof expiresIn !== "number" ||
     !Number.isFinite(expiresIn) ||
     expiresIn <= 0 ||
+    expiresIn > 365 * 24 * 60 * 60 ||
     (locationId !== undefined && typeof locationId !== "string") ||
     (companyId !== undefined && typeof companyId !== "string")
   ) {
@@ -96,18 +140,16 @@ async function ghlApi(
         Version: "2021-07-28",
         ...options.headers,
       },
+      redirect: "error",
       signal: controller.signal,
     });
-
-    const body = await res.text();
-    let data: unknown = body;
-    try {
-      data = JSON.parse(body);
-    } catch {
-      /* not JSON */
-    }
-
-    return { ok: res.ok, status: res.status, data, headers: res.headers };
+    const parsed = await readBoundedJson(res);
+    return {
+      ok: res.ok && parsed.valid,
+      status: res.status,
+      data: parsed.data,
+      headers: res.headers,
+    };
   } finally {
     clearTimeout(timeout);
   }
@@ -190,23 +232,14 @@ export async function handleGHLCallback(
         Version: "v3",
       },
       body: formBody.toString(),
+      redirect: "error",
       signal: controller.signal,
     });
 
-    const responseText = await res.text();
-    let responseBody: unknown = responseText;
-    try {
-      responseBody = JSON.parse(responseText);
-    } catch {
-      /* HighLevel normally returns JSON; retain a safe generic error below. */
-    }
+    const parsed = await readBoundedJson(res);
+    const responseBody = parsed.data;
 
-    if (!res.ok) {
-      const providerError = getSafeGHLProviderError(responseBody, [
-        code,
-        clientId,
-        clientSecret,
-      ]);
+    if (!res.ok || !parsed.valid) {
       await recordAuditEvent(
         organizationId,
         "gohighlevel",
@@ -215,8 +248,6 @@ export async function handleGHLCallback(
         {
           step: "token_exchange",
           http_status: res.status,
-          provider_error: providerError.error,
-          provider_message: providerError.message,
         },
       );
       return { error: "GoHighLevel authorization failed. Please try again." };
@@ -352,18 +383,14 @@ export async function refreshGHLToken(
         refreshToken: creds["refresh_token"] as string,
         redirectUri,
       }).toString(),
+      redirect: "error",
       signal: controller.signal,
     });
 
-    const responseText = await res.text();
-    let responseBody: unknown = responseText;
-    try {
-      responseBody = JSON.parse(responseText);
-    } catch {
-      /* handled as an invalid response below */
-    }
+    const parsed = await readBoundedJson(res);
+    const responseBody = parsed.data;
 
-    if (!res.ok) {
+    if (!res.ok || !parsed.valid) {
       await markConnectionError(
         organizationId,
         "gohighlevel",
@@ -386,6 +413,9 @@ export async function refreshGHLToken(
       access_token: data.accessToken,
       location_id: creds["location_id"] as string,
       refresh_token: (data.refreshToken || creds["refresh_token"]) as string,
+      ...(typeof creds["company_id"] === "string"
+        ? { company_id: creds["company_id"] }
+        : {}),
     });
 
     const tokenExpiresAt = new Date(
@@ -396,7 +426,7 @@ export async function refreshGHLToken(
       .createServiceAdminClient;
     const client = await supabase();
 
-    await client
+    const { error: refreshPersistenceError } = await client
       .from("integrations")
       .update({
         credentials: newCreds as Json,
@@ -406,6 +436,20 @@ export async function refreshGHLToken(
       })
       .eq("organization_id", organizationId)
       .eq("provider", "gohighlevel");
+
+    if (refreshPersistenceError) {
+      await markConnectionError(
+        organizationId,
+        "gohighlevel",
+        "REFRESH_FAILED",
+      );
+      await recordAuditEvent(
+        organizationId,
+        "gohighlevel",
+        "token_refresh_failed",
+      );
+      return { error: "Refreshed GoHighLevel credentials could not be saved." };
+    }
 
     await recordAuditEvent(organizationId, "gohighlevel", "token_refreshed");
     return { error: null };
@@ -454,7 +498,7 @@ export async function disconnectGHL(
     .createServiceAdminClient;
   const client = await supabase();
 
-  await client
+  const { error: persistenceError } = await client
     .from("integrations")
     .update({
       status: "disconnected",
@@ -471,6 +515,10 @@ export async function disconnectGHL(
     })
     .eq("organization_id", organizationId)
     .eq("provider", "gohighlevel");
+
+  if (persistenceError) {
+    return { error: "GoHighLevel could not be disconnected locally." };
+  }
 
   await recordAuditEvent(
     organizationId,
@@ -510,12 +558,7 @@ export function parseGHLErrorBody(body: unknown): GHLErrorBody | null {
 }
 
 export function ghlSafeErrorMessage(status: number, body: unknown): string {
-  const parsed = parseGHLErrorBody(body);
-  const rawProviderMessage =
-    parsed?.message ?? parsed?.error_description ?? parsed?.error;
-  const providerMessage = Array.isArray(rawProviderMessage)
-    ? rawProviderMessage.join("; ")
-    : rawProviderMessage;
+  void body;
 
   if (status === 401) {
     return "GoHighLevel authentication failed. Please reconnect.";
@@ -530,7 +573,7 @@ export function ghlSafeErrorMessage(status: number, body: unknown): string {
     return "The requested GoHighLevel resource was not found.";
   }
   if (status === 422) {
-    return `GoHighLevel rejected the request.${providerMessage ? ` (${providerMessage.substring(0, 200)})` : ""}`;
+    return "GoHighLevel rejected the request. Check the contact fields.";
   }
   if (status === 429) {
     return "GoHighLevel rate limit reached. Please try again shortly.";
@@ -539,32 +582,7 @@ export function ghlSafeErrorMessage(status: number, body: unknown): string {
     return "GoHighLevel is temporarily unavailable. Please try again shortly.";
   }
 
-  if (providerMessage) {
-    return `GoHighLevel error: ${providerMessage.substring(0, 200)}`;
-  }
-
   return "GoHighLevel request failed. Please try again.";
-}
-
-function getSafeGHLProviderError(
-  body: unknown,
-  sensitiveValues: string[],
-): { error: string | null; message: string | null } {
-  const parsed = parseGHLErrorBody(body);
-
-  const sanitize = (value: string | string[] | undefined): string | null => {
-    if (!value) return null;
-    let safe = Array.isArray(value) ? value.join("; ") : value;
-    for (const sensitive of sensitiveValues) {
-      if (sensitive) safe = safe.replaceAll(sensitive, "[REDACTED]");
-    }
-    return safe.slice(0, 300);
-  };
-
-  return {
-    error: sanitize(parsed?.error),
-    message: sanitize(parsed?.message ?? parsed?.error_description),
-  };
 }
 
 export async function ensureGHLToken(orgId: string): Promise<{
