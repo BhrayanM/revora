@@ -19,10 +19,85 @@ import type { Json } from "@/lib/supabase/types";
 const HUBSPOT_AUTH_URL = "https://app.hubspot.com/oauth/authorize";
 const HUBSPOT_TOKEN_URL = "https://api.hubapi.com/oauth/v1/token";
 const HUBSPOT_API_BASE = "https://api.hubapi.com";
+const MAX_RESPONSE_BYTES = 64 * 1024;
 const HUBSPOT_SCOPES = [
   "crm.objects.contacts.read",
   "crm.objects.contacts.write",
 ];
+
+interface HubSpotTokenGrant {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+async function readBoundedJson(
+  response: Response,
+): Promise<{ valid: boolean; data: unknown }> {
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_RESPONSE_BYTES) {
+    return { valid: false, data: null };
+  }
+  if (!response.body) {
+    return { valid: response.ok, data: null };
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let receivedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    receivedBytes += value.byteLength;
+    if (receivedBytes > MAX_RESPONSE_BYTES) {
+      await reader.cancel();
+      return { valid: false, data: null };
+    }
+    chunks.push(value);
+  }
+
+  if (receivedBytes === 0) {
+    return { valid: response.ok, data: null };
+  }
+  try {
+    return {
+      valid: true,
+      data: JSON.parse(
+        Buffer.concat(chunks.map((chunk) => Buffer.from(chunk))).toString(
+          "utf8",
+        ),
+      ) as unknown,
+    };
+  } catch {
+    return { valid: false, data: null };
+  }
+}
+
+function normalizeHubSpotTokenGrant(
+  body: unknown,
+  currentRefreshToken?: string,
+): HubSpotTokenGrant | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const value = body as Record<string, unknown>;
+  const accessToken = value["access_token"];
+  const refreshToken = value["refresh_token"] ?? currentRefreshToken;
+  const expiresIn = value["expires_in"];
+  if (
+    typeof accessToken !== "string" ||
+    accessToken.length < 1 ||
+    accessToken.length > 4096 ||
+    typeof refreshToken !== "string" ||
+    refreshToken.length < 1 ||
+    refreshToken.length > 4096 ||
+    typeof expiresIn !== "number" ||
+    !Number.isFinite(expiresIn) ||
+    expiresIn <= 0 ||
+    expiresIn > 365 * 24 * 60 * 60
+  ) {
+    return null;
+  }
+  return { accessToken, refreshToken, expiresIn };
+}
 
 function getHubSpotConfig() {
   const clientId = process.env.HUBSPOT_CLIENT_ID;
@@ -54,18 +129,16 @@ async function hubspotApi(
         "Content-Type": "application/json",
         ...options.headers,
       },
+      redirect: "error",
       signal: controller.signal,
     });
-
-    const body = await res.text();
-    let data: unknown = body;
-    try {
-      data = JSON.parse(body);
-    } catch {
-      /* not JSON */
-    }
-
-    return { ok: res.ok, status: res.status, data, headers: res.headers };
+    const parsed = await readBoundedJson(res);
+    return {
+      ok: res.ok && parsed.valid,
+      status: res.status,
+      data: parsed.data,
+      headers: res.headers,
+    };
   } finally {
     clearTimeout(timeout);
   }
@@ -125,7 +198,7 @@ export async function handleHubSpotCallback(
     "hubspot",
     organizationId,
   );
-  if (!validated.valid) {
+  if (!validated.valid || !validated.verifier) {
     return { error: validated.error ?? "Invalid OAuth state" };
   }
 
@@ -139,9 +212,7 @@ export async function handleHubSpotCallback(
     code,
   });
 
-  if (validated.verifier) {
-    body.set("code_verifier", validated.verifier);
-  }
+  body.set("code_verifier", validated.verifier);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
@@ -151,10 +222,13 @@ export async function handleHubSpotCallback(
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
+      redirect: "error",
       signal: controller.signal,
     });
 
-    if (!res.ok) {
+    const parsed = await readBoundedJson(res);
+
+    if (!res.ok || !parsed.valid) {
       await recordAuditEvent(
         organizationId,
         "hubspot",
@@ -164,19 +238,25 @@ export async function handleHubSpotCallback(
       return { error: "HubSpot authorization failed. Please try again." };
     }
 
-    const data = (await res.json()) as {
-      access_token: string;
-      refresh_token: string;
-      expires_in: number;
-    };
+    const data = normalizeHubSpotTokenGrant(parsed.data);
+    if (!data) {
+      await recordAuditEvent(
+        organizationId,
+        "hubspot",
+        "connection_failed",
+        profileId,
+        { step: "token_response_validation" },
+      );
+      return { error: "HubSpot returned an invalid token response." };
+    }
 
     const credentials = encryptCredentialsObject({
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
+      access_token: data.accessToken,
+      refresh_token: data.refreshToken,
     });
 
     const tokenExpiresAt = new Date(
-      Date.now() + data.expires_in * 1000,
+      Date.now() + data.expiresIn * 1000,
     ).toISOString();
 
     const supabase = (await import("@/lib/supabase/server"))
@@ -184,7 +264,7 @@ export async function handleHubSpotCallback(
     const client = await supabase();
 
     const { data: portalData } = await hubspotApi(
-      data.access_token,
+      data.accessToken,
       "/account-info/v3/details",
     );
 
@@ -193,23 +273,35 @@ export async function handleHubSpotCallback(
     const portalId =
       (portalData as { portalId?: number })?.portalId?.toString() ?? null;
 
-    await client.from("integrations").upsert(
-      {
-        organization_id: organizationId,
-        provider: "hubspot",
-        credentials: credentials as Json,
-        is_active: true,
-        status: "connected",
-        health_status: "unknown",
-        connected_at: new Date().toISOString(),
-        connected_by: profileId ?? null,
-        external_account_id: portalId,
-        external_account_name: portalName,
-        scopes: HUBSPOT_SCOPES,
-        token_expires_at: tokenExpiresAt,
-      },
-      { onConflict: "organization_id, provider" },
-    );
+    const { error: persistenceError } = await client
+      .from("integrations")
+      .upsert(
+        {
+          organization_id: organizationId,
+          provider: "hubspot",
+          credentials: credentials as Json,
+          is_active: true,
+          status: "connected",
+          health_status: "unknown",
+          connected_at: new Date().toISOString(),
+          connected_by: profileId ?? null,
+          external_account_id: portalId,
+          external_account_name: portalName,
+          scopes: HUBSPOT_SCOPES,
+          token_expires_at: tokenExpiresAt,
+        },
+        { onConflict: "organization_id, provider" },
+      );
+    if (persistenceError) {
+      await recordAuditEvent(
+        organizationId,
+        "hubspot",
+        "connection_failed",
+        profileId,
+        { step: "integration_persistence" },
+      );
+      return { error: "HubSpot connection could not be saved." };
+    }
 
     await recordAuditEvent(organizationId, "hubspot", "connected", profileId);
     return { error: null };
@@ -243,40 +335,43 @@ export async function refreshHubSpotToken(
         client_secret: clientSecret,
         refresh_token: creds["refresh_token"] as string,
       }).toString(),
+      redirect: "error",
       signal: controller.signal,
     });
 
-    if (!res.ok) {
+    const parsed = await readBoundedJson(res);
+
+    if (!res.ok || !parsed.valid) {
       await markConnectionError(organizationId, "hubspot", "REFRESH_FAILED");
       await recordAuditEvent(organizationId, "hubspot", "token_refresh_failed");
       return { error: "Token refresh failed. Please reconnect." };
     }
 
-    const data = (await res.json()) as {
-      access_token: string;
-      refresh_token?: string;
-      expires_in: number;
-    };
+    const data = normalizeHubSpotTokenGrant(
+      parsed.data,
+      creds["refresh_token"] as string,
+    );
+    if (!data) {
+      await markConnectionError(organizationId, "hubspot", "REFRESH_FAILED");
+      await recordAuditEvent(organizationId, "hubspot", "token_refresh_failed");
+      return { error: "Token refresh returned an invalid response." };
+    }
 
     const rawCreds: Record<string, string> = {
-      access_token: data.access_token,
+      access_token: data.accessToken,
+      refresh_token: data.refreshToken,
     };
-    const storedRefresh = (data.refresh_token || creds["refresh_token"]) as
-      string | undefined;
-    if (storedRefresh) {
-      rawCreds.refresh_token = storedRefresh;
-    }
     const newCreds = encryptCredentialsObject(rawCreds);
 
     const tokenExpiresAt = new Date(
-      Date.now() + data.expires_in * 1000,
+      Date.now() + data.expiresIn * 1000,
     ).toISOString();
 
     const supabase = (await import("@/lib/supabase/server"))
       .createServiceAdminClient;
     const client = await supabase();
 
-    await client
+    const { error: refreshPersistenceError } = await client
       .from("integrations")
       .update({
         credentials: newCreds as Json,
@@ -286,6 +381,12 @@ export async function refreshHubSpotToken(
       })
       .eq("organization_id", organizationId)
       .eq("provider", "hubspot");
+
+    if (refreshPersistenceError) {
+      await markConnectionError(organizationId, "hubspot", "REFRESH_FAILED");
+      await recordAuditEvent(organizationId, "hubspot", "token_refresh_failed");
+      return { error: "Refreshed HubSpot credentials could not be saved." };
+    }
 
     await recordAuditEvent(organizationId, "hubspot", "token_refreshed");
     return { error: null };
@@ -330,7 +431,7 @@ export async function disconnectHubSpot(
     .createServiceAdminClient;
   const client = await supabase();
 
-  await client
+  const { error: persistenceError } = await client
     .from("integrations")
     .update({
       status: "disconnected",
@@ -347,6 +448,10 @@ export async function disconnectHubSpot(
     })
     .eq("organization_id", organizationId)
     .eq("provider", "hubspot");
+
+  if (persistenceError) {
+    return { error: "HubSpot could not be disconnected locally." };
+  }
 
   await recordAuditEvent(organizationId, "hubspot", "disconnected", profileId);
   return { error: null };

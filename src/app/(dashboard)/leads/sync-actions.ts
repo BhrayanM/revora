@@ -7,13 +7,13 @@ import { revalidatePath } from "next/cache";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import {
   ensureGHLToken,
-  GHL_API_BASE,
+  ghlApi,
   ghlSafeErrorMessage,
   normalizeGHLError,
 } from "@/lib/integrations/adapters/gohighlevel";
 import {
   getHubSpotAccessToken,
-  HUBSPOT_API_BASE,
+  hubspotApi,
   normalizeHubSpotError,
   refreshHubSpotToken,
 } from "@/lib/integrations/adapters/hubspot";
@@ -54,7 +54,6 @@ function hubSpotSafeErrorMessage(
   body: HubSpotErrorBody | null,
 ): string {
   const errorCode = body?.errors?.[0]?.code;
-  const providerMessage = body?.errors?.[0]?.message ?? body?.message;
 
   if (status === 400 && errorCode === "INVALID_EMAIL") {
     return `The email address is not accepted by HubSpot.`;
@@ -70,10 +69,6 @@ function hubSpotSafeErrorMessage(
 
   const category = normalizeHubSpotError(status) as IntegrationErrorCategory;
   const safe = getSafeIntegrationError(category).userMessage;
-
-  if (providerMessage) {
-    return `${safe} (${providerMessage.substring(0, 200)})`;
-  }
 
   return safe;
 }
@@ -270,9 +265,6 @@ export async function syncLeadToHubSpot(leadId: string) {
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-
     const qualification = (lead.metadata as Record<string, unknown>)
       ?.qualification as Record<string, unknown> | undefined;
     const temperature = qualification
@@ -300,28 +292,18 @@ export async function syncLeadToHubSpot(leadId: string) {
     );
 
     if (storedMapping) {
-      const getRes = await fetch(
-        `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/${storedMapping}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          signal: controller.signal,
-        },
+      const getRes = await hubspotApi(
+        accessToken,
+        `/crm/v3/objects/contacts/${encodeURIComponent(storedMapping)}`,
       );
 
       if (getRes.ok) {
-        const patchRes = await fetch(
-          `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/${storedMapping}`,
+        const patchRes = await hubspotApi(
+          accessToken,
+          `/crm/v3/objects/contacts/${encodeURIComponent(storedMapping)}`,
           {
             method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify({ properties }),
-            signal: controller.signal,
           },
         );
 
@@ -329,17 +311,8 @@ export async function syncLeadToHubSpot(leadId: string) {
           hubspotContactId = storedMapping;
           created = false;
         } else {
-          const errorBody = parseHubSpotErrorBody(
-            await patchRes.text().then((t) => {
-              try {
-                return JSON.parse(t);
-              } catch {
-                return null;
-              }
-            }),
-          );
+          const errorBody = parseHubSpotErrorBody(patchRes.data);
           const message = hubSpotSafeErrorMessage(patchRes.status, errorBody);
-          clearTimeout(timeout);
           await markSyncComplete(executionId, false, message);
           await markConnectionError(
             orgId,
@@ -348,18 +321,27 @@ export async function syncLeadToHubSpot(leadId: string) {
           );
           return { error: message };
         }
+      } else if (getRes.status !== 404) {
+        const message = hubSpotSafeErrorMessage(
+          getRes.status,
+          parseHubSpotErrorBody(getRes.data),
+        );
+        await markSyncComplete(executionId, false, message);
+        await markConnectionError(
+          orgId,
+          "hubspot",
+          normalizeHubSpotError(getRes.status),
+        );
+        return { error: message };
       }
     }
 
     if (!hubspotContactId) {
-      const searchRes = await fetch(
-        `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/search`,
+      const searchRes = await hubspotApi(
+        accessToken,
+        "/crm/v3/objects/contacts/search",
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             filterGroups: [
               {
@@ -371,41 +353,45 @@ export async function syncLeadToHubSpot(leadId: string) {
             properties: ["email"],
             limit: 1,
           }),
-          signal: controller.signal,
         },
       );
 
-      const searchData = (await searchRes.json()) as {
+      if (!searchRes.ok) {
+        const message = hubSpotSafeErrorMessage(
+          searchRes.status,
+          parseHubSpotErrorBody(searchRes.data),
+        );
+        await markSyncComplete(executionId, false, message);
+        await markConnectionError(
+          orgId,
+          "hubspot",
+          normalizeHubSpotError(searchRes.status),
+        );
+        return { error: message };
+      }
+
+      const searchData = searchRes.data as {
         results?: Array<{ id: string }>;
       };
-      const existingId = searchData.results?.[0]?.id ?? null;
+      const candidateId = searchData?.results?.[0]?.id;
+      const existingId =
+        typeof candidateId === "string" && candidateId.length <= 255
+          ? candidateId
+          : null;
 
       if (existingId) {
-        const updateRes = await fetch(
-          `${HUBSPOT_API_BASE}/crm/v3/objects/contacts/${existingId}`,
+        const updateRes = await hubspotApi(
+          accessToken,
+          `/crm/v3/objects/contacts/${encodeURIComponent(existingId)}`,
           {
             method: "PATCH",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify({ properties }),
-            signal: controller.signal,
           },
         );
 
         if (!updateRes.ok) {
-          const errorBody = parseHubSpotErrorBody(
-            await updateRes.text().then((t) => {
-              try {
-                return JSON.parse(t);
-              } catch {
-                return null;
-              }
-            }),
-          );
+          const errorBody = parseHubSpotErrorBody(updateRes.data);
           const message = hubSpotSafeErrorMessage(updateRes.status, errorBody);
-          clearTimeout(timeout);
           await markSyncComplete(executionId, false, message);
           await markConnectionError(
             orgId,
@@ -418,31 +404,18 @@ export async function syncLeadToHubSpot(leadId: string) {
         hubspotContactId = existingId;
         created = false;
       } else {
-        const createRes = await fetch(
-          `${HUBSPOT_API_BASE}/crm/v3/objects/contacts`,
+        const createRes = await hubspotApi(
+          accessToken,
+          "/crm/v3/objects/contacts",
           {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-            },
             body: JSON.stringify({ properties }),
-            signal: controller.signal,
           },
         );
 
         if (!createRes.ok) {
-          const errorBody = parseHubSpotErrorBody(
-            await createRes.text().then((t) => {
-              try {
-                return JSON.parse(t);
-              } catch {
-                return null;
-              }
-            }),
-          );
+          const errorBody = parseHubSpotErrorBody(createRes.data);
           const message = hubSpotSafeErrorMessage(createRes.status, errorBody);
-          clearTimeout(timeout);
           await markSyncComplete(executionId, false, message);
           await markConnectionError(
             orgId,
@@ -452,13 +425,16 @@ export async function syncLeadToHubSpot(leadId: string) {
           return { error: message };
         }
 
-        const createData = (await createRes.json()) as { id: string };
-        hubspotContactId = createData.id;
+        const createdId = (createRes.data as { id?: unknown } | null)?.id;
+        if (typeof createdId !== "string" || createdId.length > 255) {
+          const message = "HubSpot returned an invalid contact response.";
+          await markSyncComplete(executionId, false, message);
+          return { error: message };
+        }
+        hubspotContactId = createdId;
         created = true;
       }
     }
-
-    clearTimeout(timeout);
 
     await saveProviderContactMapping(
       orgId,
@@ -548,9 +524,6 @@ export async function syncLeadToGoHighLevel(leadId: string) {
   }
 
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-
     const qualification = (lead.metadata as Record<string, unknown>)
       ?.qualification as Record<string, unknown> | undefined;
     const temperature = qualification
@@ -577,28 +550,20 @@ export async function syncLeadToGoHighLevel(leadId: string) {
     );
 
     if (storedMapping) {
-      const getRes = await fetch(`${GHL_API_BASE}/contacts/${storedMapping}`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          Version: "2021-07-28",
-        },
-        signal: controller.signal,
-      });
+      const getRes = await ghlApi(
+        accessToken,
+        `/contacts/${encodeURIComponent(storedMapping)}`,
+      );
 
       if (getRes.ok) {
         const updateBody = buildGHLUpdateContactPayload(contactPayloadSource);
 
-        const updateRes = await fetch(
-          `${GHL_API_BASE}/contacts/${storedMapping}`,
+        const updateRes = await ghlApi(
+          accessToken,
+          `/contacts/${encodeURIComponent(storedMapping)}`,
           {
             method: "PUT",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-              Version: "2021-07-28",
-            },
             body: JSON.stringify(updateBody),
-            signal: controller.signal,
           },
         );
 
@@ -606,15 +571,7 @@ export async function syncLeadToGoHighLevel(leadId: string) {
           ghlContactId = storedMapping;
           created = false;
         } else {
-          const errorText = await updateRes.text();
-          let errorBody: unknown = errorText;
-          try {
-            errorBody = JSON.parse(errorText);
-          } catch {
-            /* not JSON */
-          }
-          const message = ghlSafeErrorMessage(updateRes.status, errorBody);
-          clearTimeout(timeout);
+          const message = ghlSafeErrorMessage(updateRes.status, updateRes.data);
           await markSyncComplete(executionId, false, message);
           await markConnectionError(
             orgId,
@@ -624,15 +581,7 @@ export async function syncLeadToGoHighLevel(leadId: string) {
           return { error: message };
         }
       } else if (getRes.status !== 404) {
-        const errorText = await getRes.text();
-        let errorBody: unknown = errorText;
-        try {
-          errorBody = JSON.parse(errorText);
-        } catch {
-          /* not JSON */
-        }
-        const message = ghlSafeErrorMessage(getRes.status, errorBody);
-        clearTimeout(timeout);
+        const message = ghlSafeErrorMessage(getRes.status, getRes.data);
         await markSyncComplete(executionId, false, message);
         await markConnectionError(
           orgId,
@@ -644,28 +593,13 @@ export async function syncLeadToGoHighLevel(leadId: string) {
     }
 
     if (!ghlContactId) {
-      const lookupRes = await fetch(
-        `${GHL_API_BASE}/contacts/lookup?email=${encodeURIComponent(lead.email)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Version: "2021-07-28",
-          },
-          signal: controller.signal,
-        },
+      const lookupRes = await ghlApi(
+        accessToken,
+        `/contacts/lookup?email=${encodeURIComponent(lead.email)}`,
       );
 
-      const lookupText = await lookupRes.text();
-      let lookupBody: unknown = lookupText;
-      try {
-        lookupBody = JSON.parse(lookupText);
-      } catch {
-        /* not JSON */
-      }
-
       if (!lookupRes.ok) {
-        const message = ghlSafeErrorMessage(lookupRes.status, lookupBody);
-        clearTimeout(timeout);
+        const message = ghlSafeErrorMessage(lookupRes.status, lookupRes.data);
         await markSyncComplete(executionId, false, message);
         await markConnectionError(
           orgId,
@@ -675,38 +609,29 @@ export async function syncLeadToGoHighLevel(leadId: string) {
         return { error: message };
       }
 
-      const lookupData = lookupBody as {
+      const lookupData = lookupRes.data as {
         contacts?: Array<{ id: string }>;
       };
-      const existingId = lookupData.contacts?.[0]?.id ?? null;
+      const candidateId = lookupData?.contacts?.[0]?.id;
+      const existingId =
+        typeof candidateId === "string" && candidateId.length <= 255
+          ? candidateId
+          : null;
 
       if (existingId) {
         const updateBody = buildGHLUpdateContactPayload(contactPayloadSource);
 
-        const updateRes = await fetch(
-          `${GHL_API_BASE}/contacts/${existingId}`,
+        const updateRes = await ghlApi(
+          accessToken,
+          `/contacts/${encodeURIComponent(existingId)}`,
           {
             method: "PUT",
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              "Content-Type": "application/json",
-              Version: "2021-07-28",
-            },
             body: JSON.stringify(updateBody),
-            signal: controller.signal,
           },
         );
 
         if (!updateRes.ok) {
-          const errorText = await updateRes.text();
-          let errorBody: unknown = errorText;
-          try {
-            errorBody = JSON.parse(errorText);
-          } catch {
-            /* not JSON */
-          }
-          const message = ghlSafeErrorMessage(updateRes.status, errorBody);
-          clearTimeout(timeout);
+          const message = ghlSafeErrorMessage(updateRes.status, updateRes.data);
           await markSyncComplete(executionId, false, message);
           await markConnectionError(
             orgId,
@@ -724,27 +649,13 @@ export async function syncLeadToGoHighLevel(leadId: string) {
           locationId,
         );
 
-        const createRes = await fetch(`${GHL_API_BASE}/contacts/`, {
+        const createRes = await ghlApi(accessToken, "/contacts/", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-            Version: "2021-07-28",
-          },
           body: JSON.stringify(createBody),
-          signal: controller.signal,
         });
 
         if (!createRes.ok) {
-          const errorText = await createRes.text();
-          let errorBody: unknown = errorText;
-          try {
-            errorBody = JSON.parse(errorText);
-          } catch {
-            /* not JSON */
-          }
-          const message = ghlSafeErrorMessage(createRes.status, errorBody);
-          clearTimeout(timeout);
+          const message = ghlSafeErrorMessage(createRes.status, createRes.data);
           await markSyncComplete(executionId, false, message);
           await markConnectionError(
             orgId,
@@ -754,15 +665,18 @@ export async function syncLeadToGoHighLevel(leadId: string) {
           return { error: message };
         }
 
-        const createData = (await createRes.json()) as {
-          contact: { id: string };
-        };
-        ghlContactId = createData.contact.id;
+        const createdId = (
+          createRes.data as { contact?: { id?: unknown } } | null
+        )?.contact?.id;
+        if (typeof createdId !== "string" || createdId.length > 255) {
+          const message = "GoHighLevel returned an invalid contact response.";
+          await markSyncComplete(executionId, false, message);
+          return { error: message };
+        }
+        ghlContactId = createdId;
         created = true;
       }
     }
-
-    clearTimeout(timeout);
 
     await saveProviderContactMapping(
       orgId,
