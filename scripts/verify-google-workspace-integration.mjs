@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
+  createGoogleCalendarAppointmentWithAccessToken,
   exchangeGoogleAuthorizationCode,
   fetchGoogleUserIdentity,
   refreshGoogleAccessToken,
   revokeGoogleGrant,
+  sendGoogleWorkspaceEmailWithAccessToken,
   verifyGoogleCalendarReadOnly,
 } from "../src/lib/integrations/adapters/google-workspace.ts";
 import {
@@ -517,6 +522,65 @@ assert.deepEqual(
 );
 assert.throws(() => parseGoogleCalendarEventResponse({ id: "" }));
 
+let calendarCreateRequest;
+assert.deepEqual(
+  await createGoogleCalendarAppointmentWithAccessToken(
+    "access-token",
+    appointment,
+    async (url, init) => {
+      calendarCreateRequest = { url: String(url), init };
+      return googleJsonResponse({ id: "event-123" });
+    },
+  ),
+  {
+    ok: true,
+    eventId: "event-123",
+    durationMinutes: 45,
+    hasAttendee: true,
+  },
+);
+assert.equal(
+  calendarCreateRequest.url,
+  "https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all",
+);
+assert.equal(calendarCreateRequest.init.method, "POST");
+assert.equal(calendarCreateRequest.init.redirect, "error");
+assert.equal(
+  calendarCreateRequest.init.headers.Authorization,
+  "Bearer access-token",
+);
+assert.equal(
+  calendarCreateRequest.init.headers["Content-Type"],
+  "application/json",
+);
+assert.deepEqual(JSON.parse(calendarCreateRequest.init.body), {
+  summary: "Product demo",
+  description: "Discuss Revora",
+  location: "Video call",
+  start: {
+    dateTime: "2026-08-22T10:00:00-05:00",
+    timeZone: "America/Chicago",
+  },
+  end: {
+    dateTime: "2026-08-22T10:45:00-05:00",
+    timeZone: "America/Chicago",
+  },
+  attendees: [{ email: "lead@example.com" }],
+});
+let calendarFailureCalls = 0;
+assert.deepEqual(
+  await createGoogleCalendarAppointmentWithAccessToken(
+    "access-token",
+    appointmentWithoutAttendee,
+    async () => {
+      calendarFailureCalls += 1;
+      return googleJsonResponse({ error: { status: "UNAVAILABLE" } }, 503);
+    },
+  ),
+  { ok: false, errorCode: "PROVIDER_UNAVAILABLE", status: 503 },
+);
+assert.equal(calendarFailureCalls, 1);
+
 const email = normalizeGoogleEmailInput({
   to: " Lead@Example.com ",
   subject: " Próxima reunión ",
@@ -551,5 +615,87 @@ assert.deepEqual(parseGmailSendResponse({ id: "message-123" }), {
   messageId: "message-123",
 });
 assert.throws(() => parseGmailSendResponse({ threadId: "thread-123" }));
+
+let gmailSendRequest;
+assert.deepEqual(
+  await sendGoogleWorkspaceEmailWithAccessToken(
+    "access-token",
+    email,
+    async (url, init) => {
+      gmailSendRequest = { url: String(url), init };
+      return googleJsonResponse({ id: "message-123" });
+    },
+  ),
+  { ok: true, messageId: "message-123" },
+);
+assert.equal(
+  gmailSendRequest.url,
+  "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+);
+assert.equal(gmailSendRequest.init.method, "POST");
+assert.equal(gmailSendRequest.init.redirect, "error");
+assert.equal(
+  gmailSendRequest.init.headers.Authorization,
+  "Bearer access-token",
+);
+assert.equal(gmailSendRequest.init.headers["Content-Type"], "application/json");
+assert.deepEqual(JSON.parse(gmailSendRequest.init.body), {
+  raw: encodedMessage,
+});
+let gmailFailureCalls = 0;
+assert.deepEqual(
+  await sendGoogleWorkspaceEmailWithAccessToken(
+    "access-token",
+    email,
+    async () => {
+      gmailFailureCalls += 1;
+      return googleJsonResponse({ error: { status: "UNAVAILABLE" } }, 503);
+    },
+  ),
+  { ok: false, errorCode: "PROVIDER_UNAVAILABLE", status: 503 },
+);
+assert.equal(gmailFailureCalls, 1);
+
+const tallyMigrationPath = resolve(
+  "supabase/migrations/00034_phase_14_6e_tally_inbound.sql",
+);
+assert.equal(
+  createHash("sha256").update(readFileSync(tallyMigrationPath)).digest("hex"),
+  "d0ce003d57c42a612da497efccaaf28013c24de7b701938a04604d0b3329e643",
+  "Migration 00034 must remain immutable.",
+);
+const googleMigration = readFileSync(
+  resolve("supabase/migrations/00035_phase_14_6f_google_workspace_audit.sql"),
+  "utf8",
+);
+for (const establishedEventType of [
+  "connected",
+  "disconnected",
+  "reconnected",
+  "credentials_rotated",
+  "connection_failed",
+  "token_refreshed",
+  "token_refresh_failed",
+  "webhook_verified",
+  "webhook_delivered",
+  "webhook_delivery_failed",
+  "contact_synced",
+  "webhook_received",
+  "webhook_duplicate",
+  "webhook_rejected",
+  "lead_captured",
+]) {
+  assert.ok(
+    googleMigration.includes(`'${establishedEventType}'`),
+    `Migration 00035 must preserve ${establishedEventType}.`,
+  );
+}
+assert.ok(googleMigration.includes("'calendar_event_created'"));
+assert.ok(googleMigration.includes("'gmail_message_sent'"));
+assert.equal(
+  googleMigration.includes("create table"),
+  false,
+  "Migration 00035 must only extend the audit event allowlist.",
+);
 
 console.log("Phase 14.6F Google Workspace contract verification passed.");

@@ -12,11 +12,21 @@ import {
 } from "@/lib/integrations/connections";
 import {
   GOOGLE_WORKSPACE_SCOPES,
+  buildGoogleCalendarEventRequest,
+  buildGoogleRawEmail,
   buildGoogleWorkspaceAuthorizationUrl,
+  normalizeGoogleCalendarAppointment,
+  normalizeGoogleEmailInput,
   normalizeGoogleError,
+  parseGoogleCalendarEventResponse,
   parseGoogleTokenPayload,
   parseGoogleUserInfo,
+  parseGmailSendResponse,
+  type GoogleCalendarAppointmentInput,
+  type GoogleEmailInput,
   type GoogleIdentity,
+  type NormalizedGoogleCalendarAppointment,
+  type NormalizedGoogleEmailInput,
   type GoogleTokenGrant,
 } from "@/lib/integrations/google-workspace-contract";
 import {
@@ -32,6 +42,8 @@ const GOOGLE_REVOKE_URL = "https://oauth2.googleapis.com/revoke";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 const GOOGLE_CALENDAR_EVENTS_URL =
   "https://www.googleapis.com/calendar/v3/calendars/primary/events";
+const GMAIL_SEND_URL =
+  "https://gmail.googleapis.com/gmail/v1/users/me/messages/send";
 const REQUEST_TIMEOUT_MS = 15_000;
 const MAX_RESPONSE_BYTES = 64 * 1024;
 const TOKEN_REFRESH_SKEW_MS = 60_000;
@@ -376,6 +388,107 @@ export async function revokeGoogleGrant(
   }
 }
 
+export async function createGoogleCalendarAppointmentWithAccessToken(
+  accessToken: string,
+  appointment: NormalizedGoogleCalendarAppointment,
+  fetchImplementation: FetchImplementation = fetch,
+): Promise<
+  | {
+      ok: true;
+      eventId: string;
+      durationMinutes: number;
+      hasAttendee: boolean;
+    }
+  | GoogleProviderFailure
+> {
+  const request = buildGoogleCalendarEventRequest(appointment);
+  try {
+    const response = await requestGoogle(
+      request.url,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request.body),
+      },
+      fetchImplementation,
+    );
+    if (response.status < 200 || response.status >= 300) {
+      return responseFailure(response);
+    }
+    try {
+      const event = parseGoogleCalendarEventResponse(response.data);
+      return {
+        ok: true,
+        eventId: event.eventId,
+        durationMinutes: appointment.durationMinutes,
+        hasAttendee: Boolean(appointment.attendee),
+      };
+    } catch {
+      return {
+        ok: false,
+        errorCode: "INVALID_RESPONSE",
+        status: response.status,
+      };
+    }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes("exceeded the allowed size")
+    ) {
+      return { ok: false, errorCode: "INVALID_RESPONSE", status: 200 };
+    }
+    return networkFailure();
+  }
+}
+
+export async function sendGoogleWorkspaceEmailWithAccessToken(
+  accessToken: string,
+  email: NormalizedGoogleEmailInput,
+  fetchImplementation: FetchImplementation = fetch,
+): Promise<{ ok: true; messageId: string } | GoogleProviderFailure> {
+  const raw = buildGoogleRawEmail(email);
+  try {
+    const response = await requestGoogle(
+      GMAIL_SEND_URL,
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ raw }),
+      },
+      fetchImplementation,
+    );
+    if (response.status < 200 || response.status >= 300) {
+      return responseFailure(response);
+    }
+    try {
+      const message = parseGmailSendResponse(response.data);
+      return { ok: true, messageId: message.messageId };
+    } catch {
+      return {
+        ok: false,
+        errorCode: "INVALID_RESPONSE",
+        status: response.status,
+      };
+    }
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.includes("exceeded the allowed size")
+    ) {
+      return { ok: false, errorCode: "INVALID_RESPONSE", status: 200 };
+    }
+    return networkFailure();
+  }
+}
+
 async function recordBundleAudit(
   organizationId: string,
   eventType: string,
@@ -615,6 +728,96 @@ export async function testGmailConnection(
   }
   await markGoogleWorkspaceHealthy(organizationId);
   return { success: true };
+}
+
+export async function createGoogleCalendarAppointment(
+  organizationId: string,
+  input: GoogleCalendarAppointmentInput,
+  profileId?: string,
+): Promise<
+  { success: true; eventId: string } | { success: false; error: string }
+> {
+  let appointment: NormalizedGoogleCalendarAppointment;
+  try {
+    appointment = normalizeGoogleCalendarAppointment(input);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Appointment is invalid.",
+    };
+  }
+
+  const token = await getValidGoogleWorkspaceAccessToken(organizationId);
+  if (!token.ok) {
+    return failGoogleWorkspaceTest(organizationId, token.errorCode);
+  }
+  const result = await createGoogleCalendarAppointmentWithAccessToken(
+    token.accessToken,
+    appointment,
+  );
+  if (!result.ok) {
+    await markGoogleWorkspaceError(organizationId, result.errorCode);
+    return {
+      success: false,
+      error: getSafeIntegrationError(result.errorCode).userMessage,
+    };
+  }
+  await markGoogleWorkspaceHealthy(organizationId);
+  await recordAuditEvent(
+    organizationId,
+    "google-calendar",
+    "calendar_event_created",
+    profileId,
+    {
+      event_id: result.eventId,
+      attendee_present: result.hasAttendee,
+      duration_minutes: result.durationMinutes,
+    },
+  );
+  return { success: true, eventId: result.eventId };
+}
+
+export async function sendGoogleWorkspaceEmail(
+  organizationId: string,
+  input: GoogleEmailInput,
+  profileId?: string,
+): Promise<
+  { success: true; messageId: string } | { success: false; error: string }
+> {
+  let email: NormalizedGoogleEmailInput;
+  try {
+    email = normalizeGoogleEmailInput(input);
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Email is invalid.",
+    };
+  }
+
+  const token = await getValidGoogleWorkspaceAccessToken(organizationId);
+  if (!token.ok) {
+    return failGoogleWorkspaceTest(organizationId, token.errorCode);
+  }
+  const result = await sendGoogleWorkspaceEmailWithAccessToken(
+    token.accessToken,
+    email,
+  );
+  if (!result.ok) {
+    await markGoogleWorkspaceError(organizationId, result.errorCode);
+    return {
+      success: false,
+      error: getSafeIntegrationError(result.errorCode).userMessage,
+    };
+  }
+  await markGoogleWorkspaceHealthy(organizationId);
+  await recordAuditEvent(
+    organizationId,
+    "gmail",
+    "gmail_message_sent",
+    profileId,
+    { message_id: result.messageId, recipient_count: 1 },
+  );
+  return { success: true, messageId: result.messageId };
 }
 
 export async function disconnectGoogleWorkspace(
