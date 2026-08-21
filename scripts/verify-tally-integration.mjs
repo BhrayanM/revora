@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash, createHmac } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
@@ -732,11 +733,27 @@ assert.deepEqual(
   [...immutableMigrationHashes.keys()],
   "Migrations 00001-00033 must keep their exact names.",
 );
-for (const [name, expectedHash] of immutableMigrationHashes) {
-  const actualHash = createHash("sha256")
-    .update(readFileSync(resolve(migrationsDirectory, name)))
-    .digest("hex");
-  assert.equal(actualHash, expectedHash, `${name} must remain immutable.`);
+function normalizedMigrationText(value) {
+  return value
+    .toString("utf8")
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n");
+}
+for (const name of immutableMigrationHashes.keys()) {
+  const gitPath = `supabase/migrations/${name}`;
+  const baseline = execFileSync("git", ["show", `f5cfb95:${gitPath}`]);
+  const current = execFileSync("git", ["show", `HEAD:${gitPath}`]);
+  const working = readFileSync(resolve(migrationsDirectory, name));
+  assert.equal(
+    createHash("sha256").update(current).digest("hex"),
+    createHash("sha256").update(baseline).digest("hex"),
+    `${name} committed content must remain immutable.`,
+  );
+  assert.equal(
+    normalizedMigrationText(working),
+    normalizedMigrationText(current),
+    `${name} working content must match its committed content.`,
+  );
 }
 
 const tallyMigrationName = "00034_phase_14_6e_tally_inbound.sql";
@@ -823,7 +840,7 @@ assert.ok(
 const integrationActions = readFileSync(
   resolve("src/app/(dashboard)/settings/integrations-actions.ts"),
   "utf8",
-);
+).replace(/\r\n/g, "\n");
 function serverActionBody(source, name) {
   const start = source.indexOf(`export async function ${name}`);
   assert.notEqual(start, -1, `Missing server action: ${name}`);

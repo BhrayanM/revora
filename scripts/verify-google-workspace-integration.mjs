@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -659,10 +660,30 @@ assert.equal(gmailFailureCalls, 1);
 const tallyMigrationPath = resolve(
   "supabase/migrations/00034_phase_14_6e_tally_inbound.sql",
 );
+const tallyMigrationGitPath =
+  "supabase/migrations/00034_phase_14_6e_tally_inbound.sql";
+const tallyMigrationBaseline = execFileSync("git", [
+  "show",
+  `f5cfb95:${tallyMigrationGitPath}`,
+]);
+const tallyMigrationCurrent = execFileSync("git", [
+  "show",
+  `HEAD:${tallyMigrationGitPath}`,
+]);
 assert.equal(
-  createHash("sha256").update(readFileSync(tallyMigrationPath)).digest("hex"),
-  "d0ce003d57c42a612da497efccaaf28013c24de7b701938a04604d0b3329e643",
-  "Migration 00034 must remain immutable.",
+  createHash("sha256").update(tallyMigrationCurrent).digest("hex"),
+  createHash("sha256").update(tallyMigrationBaseline).digest("hex"),
+  "Migration 00034 committed content must remain immutable.",
+);
+assert.equal(
+  readFileSync(tallyMigrationPath, "utf8")
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n"),
+  tallyMigrationCurrent
+    .toString("utf8")
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n"),
+  "Migration 00034 working content must match its committed content.",
 );
 const googleMigration = readFileSync(
   resolve("supabase/migrations/00035_phase_14_6f_google_workspace_audit.sql"),
