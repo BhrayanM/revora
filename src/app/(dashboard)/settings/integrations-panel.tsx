@@ -24,6 +24,7 @@ import {
   disconnectHubSpot,
   disconnectGHL,
   disconnectSlack,
+  disconnectTally,
   disconnectTwilio,
   getOrganizationIntegrations,
   saveAutomationWebhookIntegration,
@@ -36,8 +37,10 @@ import {
   testHubSpot,
   testIntegration,
   testSlack,
+  testTally,
   testTwilio,
 } from "./integrations-actions";
+import { TallyConnectForm } from "./tally-connect-form";
 
 function statusBadge(status: IntegrationStatus) {
   switch (status) {
@@ -135,6 +138,10 @@ function IntegrationCard({
       const r = (await testSlack()) as { success: boolean; error?: string };
       success = r.success;
       errorMsg = r.error;
+    } else if (providerId === "tally") {
+      const r = await testTally();
+      success = r.success;
+      errorMsg = r.error ?? undefined;
     } else {
       const r = await testIntegration(providerId);
       success = "success" in r && r.success === true;
@@ -152,7 +159,13 @@ function IntegrationCard({
       else if (providerId === "gohighlevel") await disconnectGHL();
       else if (providerId === "slack") await disconnectSlack();
       else if (providerId === "twilio") await disconnectTwilio();
-      else await deleteIntegration(providerId);
+      else if (providerId === "tally") {
+        const result = await disconnectTally();
+        if (result.error) setTestResult(result.error);
+        else if ("warning" in result && result.warning) {
+          setTestResult(result.warning);
+        }
+      } else await deleteIntegration(providerId);
       onRefresh();
     });
   };
@@ -251,6 +264,10 @@ function ConnectForm({
   const [saved, setSaved] = useState(false);
 
   if (!provider) return null;
+
+  if (provider.id === "tally") {
+    return <TallyConnectForm onClose={onClose} onSaved={onSaved} />;
+  }
 
   const fields: Record<
     string,
