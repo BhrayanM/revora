@@ -244,8 +244,11 @@ export async function markConnectionHealthy(
   await supabase
     .from("integrations")
     .update({
+      status: "connected",
       health_status: "healthy",
       last_success_at: new Date().toISOString(),
+      last_error_at: null,
+      last_error_code: null,
     })
     .eq("organization_id", organizationId)
     .eq("provider", provider);
@@ -257,9 +260,16 @@ export async function markConnectionError(
   errorCode: string,
 ): Promise<void> {
   const supabase = await createServiceAdminClient();
+  const reauthRequired = [
+    "INVALID_CREDENTIALS",
+    "REAUTH_REQUIRED",
+    "REFRESH_FAILED",
+  ].includes(errorCode);
   await supabase
     .from("integrations")
     .update({
+      status: reauthRequired ? "reauth_required" : "degraded",
+      health_status: reauthRequired ? "reauth_required" : "degraded",
       last_error_at: new Date().toISOString(),
       last_error_code: errorCode,
     })

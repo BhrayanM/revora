@@ -4,7 +4,9 @@ import {
   buildSlackAuthorizationUrl,
   normalizeSlackError,
   parseSlackOAuthPayload,
+  shouldSendSlackHotAlert,
 } from "../src/lib/integrations/slack-contract.ts";
+import { sendHOTLeadAlert } from "../src/lib/notifications/slack.ts";
 import {
   normalizeTwilioCredentials,
   validateTwilioSignature,
@@ -111,6 +113,94 @@ assert.equal(normalizeSlackError(200, "missing_scope"), "CONFIGURATION_ERROR");
 assert.equal(normalizeSlackError(429), "RATE_LIMITED");
 assert.equal(normalizeSlackError(503), "PROVIDER_UNAVAILABLE");
 assert.equal(normalizeSlackError(200, "malformed_payload"), "INVALID_RESPONSE");
+assert.equal(shouldSendSlackHotAlert("HOT"), true);
+assert.equal(shouldSendSlackHotAlert("WARM"), false);
+assert.equal(shouldSendSlackHotAlert("COLD"), false);
+assert.equal(shouldSendSlackHotAlert("hot"), false);
+
+const hotLead = {
+  first_name: "<script>alert(1)</script>",
+  last_name: "Buyer & Co",
+  email: "buyer@example.com",
+  phone: "+15551234567",
+  company: "Example > Rivals",
+  score: 95,
+  temperature: "HOT",
+  summary: "Asked for pricing <today>",
+  recommendedAction: "Call & qualify",
+  source: "website",
+  lead_url: "https://app.revora.test/leads/lead-1",
+};
+let capturedSlackRequest;
+const successfulSlackFetch = async (url, init) => {
+  capturedSlackRequest = { url: String(url), init };
+  return new Response("ok", {
+    status: 200,
+    headers: { "content-length": "2" },
+  });
+};
+assert.deepEqual(
+  await sendHOTLeadAlert(
+    "https://hooks.slack.com/services/T/B/X",
+    hotLead,
+    successfulSlackFetch,
+  ),
+  { success: true },
+);
+assert.equal(
+  capturedSlackRequest.url,
+  "https://hooks.slack.com/services/T/B/X",
+);
+assert.equal(capturedSlackRequest.init.redirect, "error");
+assert.ok(capturedSlackRequest.init.signal instanceof AbortSignal);
+assert.match(capturedSlackRequest.init.body, /&lt;script&gt;/);
+assert.match(capturedSlackRequest.init.body, /Buyer &amp; Co/);
+
+let invalidSlackFetchCalls = 0;
+const invalidSlackFetch = async () => {
+  invalidSlackFetchCalls += 1;
+  return new Response("ok");
+};
+for (const invalidUrl of [
+  "https://hooks.slack.com.evil.test/services/T/B/X",
+  "https://hooks.slack.com:444/services/T/B/X",
+  "https://user:pass@hooks.slack.com/services/T/B/X",
+]) {
+  const result = await sendHOTLeadAlert(invalidUrl, hotLead, invalidSlackFetch);
+  assert.equal(result.success, false);
+  assert.match(result.error, /Invalid Slack webhook URL/);
+}
+assert.equal(invalidSlackFetchCalls, 0);
+
+const redirectResult = await sendHOTLeadAlert(
+  "https://hooks.slack.com/services/T/B/X",
+  hotLead,
+  async () => new Response("redirect", { status: 302 }),
+);
+assert.equal(redirectResult.success, false);
+
+const abortResult = await sendHOTLeadAlert(
+  "https://hooks.slack.com/services/T/B/X",
+  hotLead,
+  async (_url, init) => {
+    assert.ok(init.signal instanceof AbortSignal);
+    throw new DOMException("Aborted", "AbortError");
+  },
+);
+assert.equal(abortResult.success, false);
+assert.equal(abortResult.error, "Slack request timed out");
+
+const oversizedResult = await sendHOTLeadAlert(
+  "https://hooks.slack.com/services/T/B/X",
+  hotLead,
+  async () =>
+    new Response("x".repeat(64 * 1024 + 1), {
+      status: 200,
+      headers: { "content-length": String(64 * 1024 + 1) },
+    }),
+);
+assert.equal(oversizedResult.success, false);
+assert.equal(oversizedResult.error, "Slack response was too large");
 
 const accountSid = `AC${"a".repeat(32)}`;
 assert.deepEqual(
