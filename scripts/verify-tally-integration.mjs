@@ -812,4 +812,59 @@ assert.ok(
   connectionRepository.includes('.in("status", ["connected", "degraded"])'),
 );
 
+const integrationActions = readFileSync(
+  resolve("src/app/(dashboard)/settings/integrations-actions.ts"),
+  "utf8",
+);
+function serverActionBody(source, name) {
+  const start = source.indexOf(`export async function ${name}`);
+  assert.notEqual(start, -1, `Missing server action: ${name}`);
+  const next = source.indexOf("\nexport async function ", start + 1);
+  return source.slice(start, next === -1 ? source.length : next);
+}
+for (const actionName of [
+  "discoverTallyForms",
+  "inspectTallyForm",
+  "connectTally",
+  "testTally",
+  "disconnectTally",
+]) {
+  assert.ok(
+    serverActionBody(integrationActions, actionName).includes(
+      'requireCurrentOrganizationPermission(\n    "integrations.manage"',
+    ),
+    `${actionName} must re-authorize integrations.manage.`,
+  );
+}
+const connectTallySource = serverActionBody(integrationActions, "connectTally");
+assert.ok((connectTallySource.match(/randomBytes\(32\)/g) ?? []).length >= 2);
+assert.ok(connectTallySource.includes('createHash("sha256")'));
+assert.ok(connectTallySource.includes("routing_token_hash"));
+assert.ok(connectTallySource.includes("field_mapping"));
+assert.ok(connectTallySource.includes("signing_secret"));
+assert.ok(connectTallySource.includes("deleteTallyWebhook"));
+assert.equal(connectTallySource.includes("return { routingToken"), false);
+assert.equal(connectTallySource.includes("return { signingSecret"), false);
+assert.equal(connectTallySource.includes("return { apiKey"), false);
+
+const tallyFormUi = readFileSync(
+  resolve("src/app/(dashboard)/settings/tally-connect-form.tsx"),
+  "utf8",
+);
+assert.ok(tallyFormUi.includes('type="password"'));
+assert.ok(tallyFormUi.includes("discoverTallyForms"));
+assert.ok(tallyFormUi.includes("inspectTallyForm"));
+assert.ok(tallyFormUi.includes("connectTally"));
+assert.ok(tallyFormUi.includes("suggestedMapping"));
+assert.equal(tallyFormUi.includes("localStorage"), false);
+assert.equal(tallyFormUi.includes("sessionStorage"), false);
+
+const integrationsPanel = readFileSync(
+  resolve("src/app/(dashboard)/settings/integrations-panel.tsx"),
+  "utf8",
+);
+assert.ok(integrationsPanel.includes("TallyConnectForm"));
+assert.ok(integrationsPanel.includes("testTally"));
+assert.ok(integrationsPanel.includes("disconnectTally"));
+
 console.log("Phase 14.6E Tally contract verification passed.");

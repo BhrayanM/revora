@@ -1,19 +1,37 @@
 "use server";
 
+import { createHash, randomBytes } from "node:crypto";
+
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { dispatchIntegrationTestEvent } from "@/lib/automation/webhook-dispatcher";
+import {
+  createTallyWebhook,
+  deleteTallyWebhook,
+  getTallyFormFields,
+  listTallyForms,
+  verifyTallyWebhook,
+} from "@/lib/integrations/adapters/tally";
 import {
   normalizeAutomationWebhookCredentials,
   sendAutomationWebhookEvent,
 } from "@/lib/integrations/automation-webhook-adapters";
 import {
   disconnectConnection,
+  getActiveTallyConnection,
   getDecryptedCredentials,
   listConnections,
+  markConnectionError,
+  markConnectionHealthy,
   saveConnection,
 } from "@/lib/integrations/connections";
 import { recordAuditEvent } from "@/lib/integrations/oauth";
 import { buildIntegrationTestEvent } from "@/lib/integrations/outbound-events";
+import {
+  normalizeTallyApiKey,
+  suggestTallyFieldMapping,
+  validateTallyFieldMapping,
+  type TallyFieldMapping,
+} from "@/lib/integrations/tally-contract";
 import { getSafeIntegrationError } from "@/lib/integrations/types";
 import {
   AUTOMATION_WEBHOOK_PROVIDER_IDS,
@@ -106,6 +124,9 @@ export async function saveIntegration(
   if (provider === "twilio") {
     return { error: "Use the verified Twilio connection flow." };
   }
+  if (provider === "tally") {
+    return { error: "Use the secure Tally form connection flow." };
+  }
 
   const profileId = authorization.data.membership.profile_id;
   const result = await saveConnection(org.id, provider, credentials, profileId);
@@ -182,6 +203,10 @@ export async function deleteIntegration(provider: IntegrationProviderId) {
 
   const org = authorization.data.organization;
   const profileId = authorization.data.membership.profile_id;
+
+  if (provider === "tally") {
+    return { error: "Use the secure Tally disconnect flow." };
+  }
 
   const result = await disconnectConnection(org.id, provider);
 
@@ -370,6 +395,322 @@ export async function startSlackOAuth() {
   } catch {
     return { error: "Slack OAuth setup failed." };
   }
+}
+
+function tallyActionError(
+  errorCode:
+    | "AUTH_ERROR"
+    | "RATE_LIMITED"
+    | "PROVIDER_UNAVAILABLE"
+    | "INVALID_CREDENTIALS"
+    | "REAUTH_REQUIRED"
+    | "NETWORK_ERROR"
+    | "INVALID_RESPONSE"
+    | "CONFIGURATION_ERROR",
+): string {
+  return getSafeIntegrationError(errorCode).userMessage;
+}
+
+function buildTallyWebhookUrl(routingToken: string): string {
+  const configuredUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (!configuredUrl) {
+    throw new Error("Public app URL is not configured.");
+  }
+  const appUrl = new URL(configuredUrl);
+  if (
+    appUrl.protocol !== "https:" ||
+    appUrl.username ||
+    appUrl.password ||
+    appUrl.hash
+  ) {
+    throw new Error("Public app URL must be a secure HTTPS origin.");
+  }
+  return new URL(
+    `/api/integrations/tally/webhook/${routingToken}`,
+    appUrl.origin,
+  ).toString();
+}
+
+export async function discoverTallyForms(apiKey: string) {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { data: null, error: authorization.error };
+
+  let normalizedApiKey: string;
+  try {
+    normalizedApiKey = normalizeTallyApiKey(apiKey);
+  } catch {
+    return { data: null, error: "Enter a valid Tally API key." };
+  }
+
+  const result = await listTallyForms(normalizedApiKey);
+  if (!result.ok) {
+    return { data: null, error: tallyActionError(result.errorCode) };
+  }
+  return { data: { forms: result.forms }, error: null };
+}
+
+export async function inspectTallyForm(apiKey: string, formId: string) {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { data: null, error: authorization.error };
+
+  let normalizedApiKey: string;
+  try {
+    normalizedApiKey = normalizeTallyApiKey(apiKey);
+  } catch {
+    return { data: null, error: "Enter a valid Tally API key." };
+  }
+
+  const result = await getTallyFormFields(normalizedApiKey, formId);
+  if (!result.ok) {
+    return { data: null, error: tallyActionError(result.errorCode) };
+  }
+  return {
+    data: {
+      fields: result.fields,
+      suggestedMapping: suggestTallyFieldMapping(result.fields),
+    },
+    error: null,
+  };
+}
+
+export async function connectTally(input: {
+  apiKey: string;
+  formId: string;
+  mapping: TallyFieldMapping;
+}) {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  const organizationId = authorization.data.organization.id;
+  const profileId = authorization.data.membership.profile_id;
+  let apiKey: string;
+  try {
+    apiKey = normalizeTallyApiKey(input.apiKey);
+  } catch {
+    return { error: "Enter a valid Tally API key." };
+  }
+
+  const formsResult = await listTallyForms(apiKey);
+  if (!formsResult.ok) {
+    await recordAuditEvent(
+      organizationId,
+      "tally",
+      "connection_failed",
+      profileId,
+      { error_code: formsResult.errorCode },
+    );
+    return { error: tallyActionError(formsResult.errorCode) };
+  }
+  const form = formsResult.forms.find(
+    (candidate) =>
+      candidate.id === input.formId &&
+      candidate.status === "PUBLISHED" &&
+      !candidate.isClosed,
+  );
+  if (!form) {
+    return { error: "Select an open, published Tally form." };
+  }
+
+  const fieldsResult = await getTallyFormFields(apiKey, form.id);
+  if (!fieldsResult.ok) {
+    await recordAuditEvent(
+      organizationId,
+      "tally",
+      "connection_failed",
+      profileId,
+      { error_code: fieldsResult.errorCode },
+    );
+    return { error: tallyActionError(fieldsResult.errorCode) };
+  }
+
+  let fieldMapping: TallyFieldMapping;
+  try {
+    fieldMapping = validateTallyFieldMapping(
+      input.mapping,
+      fieldsResult.fields,
+    );
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Invalid Tally field mapping.",
+    };
+  }
+
+  const routingToken = randomBytes(32).toString("base64url");
+  const signingSecret = randomBytes(32).toString("base64url");
+  const routingTokenHash = createHash("sha256")
+    .update(routingToken, "utf8")
+    .digest("hex");
+  let webhookUrl: string;
+  try {
+    webhookUrl = buildTallyWebhookUrl(routingToken);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Public app URL is not configured.",
+    };
+  }
+
+  const webhookResult = await createTallyWebhook({
+    apiKey,
+    formId: form.id,
+    webhookUrl,
+    signingSecret,
+    externalSubscriber: "revora",
+  });
+  if (!webhookResult.ok) {
+    await recordAuditEvent(
+      organizationId,
+      "tally",
+      "connection_failed",
+      profileId,
+      { error_code: webhookResult.errorCode },
+    );
+    return { error: tallyActionError(webhookResult.errorCode) };
+  }
+
+  let persistenceError: string | null;
+  try {
+    const saved = await saveConnection(
+      organizationId,
+      "tally",
+      { api_key: apiKey, signing_secret: signingSecret },
+      profileId,
+      {
+        config: {
+          form_id: form.id,
+          form_name: form.name,
+          webhook_id: webhookResult.webhook.id,
+          field_mapping: fieldMapping,
+          routing_token_hash: routingTokenHash,
+        },
+        externalAccountId: form.id,
+        externalAccountName: form.name,
+        healthStatus: "healthy",
+      },
+    );
+    persistenceError = saved.error;
+  } catch {
+    persistenceError = "PERSISTENCE_ERROR";
+  }
+
+  if (persistenceError) {
+    await deleteTallyWebhook(apiKey, webhookResult.webhook.id);
+    await recordAuditEvent(
+      organizationId,
+      "tally",
+      "connection_failed",
+      profileId,
+      { error_code: "PERSISTENCE_ERROR" },
+    );
+    return { error: "Tally connection could not be saved." };
+  }
+
+  await recordAuditEvent(organizationId, "tally", "connected", profileId, {
+    form_id: form.id,
+  });
+  await recordAuditEvent(
+    organizationId,
+    "tally",
+    "webhook_verified",
+    profileId,
+    { form_id: form.id },
+  );
+  return { error: null };
+}
+
+export async function testTally() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) {
+    return { success: false, error: authorization.error };
+  }
+
+  const organizationId = authorization.data.organization.id;
+  const profileId = authorization.data.membership.profile_id;
+  const connection = await getActiveTallyConnection(organizationId);
+  if (!connection) {
+    return { success: false, error: "Tally is not configured." };
+  }
+
+  const [fieldsResult, webhookResult] = await Promise.all([
+    getTallyFormFields(connection.credentials.apiKey, connection.config.formId),
+    verifyTallyWebhook(
+      connection.credentials.apiKey,
+      connection.config.webhookId,
+      connection.config.formId,
+    ),
+  ]);
+  const failure = !fieldsResult.ok
+    ? fieldsResult
+    : !webhookResult.ok
+      ? webhookResult
+      : null;
+  if (failure) {
+    await markConnectionError(organizationId, "tally", failure.errorCode);
+    await recordAuditEvent(
+      organizationId,
+      "tally",
+      "connection_failed",
+      profileId,
+      { error_code: failure.errorCode },
+    );
+    return { success: false, error: tallyActionError(failure.errorCode) };
+  }
+
+  await markConnectionHealthy(organizationId, "tally");
+  await recordAuditEvent(
+    organizationId,
+    "tally",
+    "webhook_verified",
+    profileId,
+    { validation_mode: "read_only" },
+  );
+  return { success: true };
+}
+
+export async function disconnectTally() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  const organizationId = authorization.data.organization.id;
+  const profileId = authorization.data.membership.profile_id;
+  const connection = await getActiveTallyConnection(organizationId);
+  const cleanup = connection
+    ? await deleteTallyWebhook(
+        connection.credentials.apiKey,
+        connection.config.webhookId,
+      )
+    : null;
+  const disconnected = await disconnectConnection(organizationId, "tally");
+  if (disconnected.error) {
+    return { error: "Tally could not be disconnected locally." };
+  }
+
+  await recordAuditEvent(organizationId, "tally", "disconnected", profileId, {
+    remote_cleanup:
+      cleanup === null ? "not_available" : cleanup.ok ? "succeeded" : "failed",
+  });
+  return {
+    error: null,
+    ...(cleanup && !cleanup.ok
+      ? {
+          warning:
+            "Tally was disconnected; remote cleanup could not be verified.",
+        }
+      : {}),
+  };
 }
 
 export async function saveTwilioIntegration(

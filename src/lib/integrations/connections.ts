@@ -233,30 +233,23 @@ export interface ActiveTallyConnection {
   };
 }
 
-export async function getActiveTallyConnectionByRoutingToken(
-  routingToken: string,
-): Promise<ActiveTallyConnection | null> {
-  if (!TALLY_ROUTING_TOKEN_PATTERN.test(routingToken)) return null;
-  const routingTokenHash = createHash("sha256")
-    .update(routingToken, "utf8")
-    .digest("hex");
-  const supabase = await createServiceAdminClient();
-  const { data, error } = await supabase
-    .from("integrations")
-    .select("id, organization_id, credentials, config")
-    .eq("provider", "tally")
-    .eq("is_active", true)
-    .in("status", ["connected", "degraded"])
-    .eq("config->>routing_token_hash", routingTokenHash)
-    .limit(2);
-
-  if (error || !data || data.length !== 1) return null;
-  const row = data[0];
-  if (!row) return null;
-
+function buildActiveTallyConnection(
+  row: {
+    id: string;
+    organization_id: string;
+    credentials: unknown;
+    config: unknown;
+  },
+  expectedRoutingTokenHash?: string,
+): ActiveTallyConnection | null {
   try {
     const config = parseStoredTallyConfig(row.config);
-    if (config.routingTokenHash !== routingTokenHash) return null;
+    if (
+      expectedRoutingTokenHash &&
+      config.routingTokenHash !== expectedRoutingTokenHash
+    ) {
+      return null;
+    }
     if (!isRecord(row.credentials)) return null;
     const decrypted = decryptCredentialsObject(row.credentials);
     const apiKey = decrypted["api_key"];
@@ -281,6 +274,46 @@ export async function getActiveTallyConnectionByRoutingToken(
   } catch {
     return null;
   }
+}
+
+export async function getActiveTallyConnection(
+  organizationId: string,
+): Promise<ActiveTallyConnection | null> {
+  const supabase = await createServiceAdminClient();
+  const { data, error } = await supabase
+    .from("integrations")
+    .select("id, organization_id, credentials, config")
+    .eq("organization_id", organizationId)
+    .eq("provider", "tally")
+    .eq("is_active", true)
+    .in("status", ["connected", "degraded"])
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return buildActiveTallyConnection(data);
+}
+
+export async function getActiveTallyConnectionByRoutingToken(
+  routingToken: string,
+): Promise<ActiveTallyConnection | null> {
+  if (!TALLY_ROUTING_TOKEN_PATTERN.test(routingToken)) return null;
+  const routingTokenHash = createHash("sha256")
+    .update(routingToken, "utf8")
+    .digest("hex");
+  const supabase = await createServiceAdminClient();
+  const { data, error } = await supabase
+    .from("integrations")
+    .select("id, organization_id, credentials, config")
+    .eq("provider", "tally")
+    .eq("is_active", true)
+    .in("status", ["connected", "degraded"])
+    .eq("config->>routing_token_hash", routingTokenHash)
+    .limit(2);
+
+  if (error || !data || data.length !== 1) return null;
+  const row = data[0];
+  if (!row) return null;
+  return buildActiveTallyConnection(row, routingTokenHash);
 }
 
 export async function listActiveAutomationWebhookConnections(
