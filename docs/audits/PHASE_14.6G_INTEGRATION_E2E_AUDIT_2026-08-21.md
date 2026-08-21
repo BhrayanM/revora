@@ -121,6 +121,9 @@ default Next production build, `npm audit`, whitespace/format checks, secret
 and control-character scans, and route inspection. Exact outputs and commit IDs
 are recorded in the completion handoff.
 
+The final default Next 16.3 Turbopack build passed on local `master` and
+generated 37 routes after the isolated worktree was removed.
+
 ## Migration and Environment Evidence
 
 - Immutable baseline: commit `a3b4f95`, migrations `00001`-`00035`.

@@ -23,7 +23,7 @@ The canonical detailed report is:
 - `439ff2d fix(integrations): harden oauth lifecycle boundaries`
 - `c3de574 fix(integrations): harden crm provider transport`
 - `59cc39f test(integrations): add complete e2e audit gate`
-- final documentation/closure commit follows this handoff
+- `50c94bb docs: complete phase 14.6g integration e2e audit`
 
 ## Delivered
 
@@ -65,8 +65,8 @@ The following passed in the isolated Phase 14.6G worktree:
 
 The webpack build generated all 37 expected routes, including CRM, Slack,
 Google Workspace, Tally webhook, retry worker, and lead ingestion routes. The
-default Turbopack build is repeated on local `master` after removing the
-dependency junction/worktree; its final result is recorded below.
+default Turbopack build was repeated successfully on local `master` after
+removing the dependency junction/worktree and generated the same 37 routes.
 
 ## External Status
 
@@ -86,10 +86,12 @@ from missing evidence.
 
 ## Final Master Readback
 
-- Feature branch fast-forwarded into local `master`: pending closure sequence.
-- Temporary worktree removed cleanly: pending closure sequence.
-- Default `npm.cmd run build` on local `master`: pending closure sequence.
-- Final local `master` working tree: pending closure sequence.
+- Feature branch fast-forwarded into local `master`: PASS at `50c94bb`.
+- Temporary worktree and its dependency junction removed cleanly: PASS.
+- Default `npm.cmd run build` on local `master`: PASS with Turbopack and 37
+  routes.
+- Final local `master` working tree: clean after the readback confirmation
+  commit.
 - Push/deployment: not performed.
 
 ## Exact Next Boundary
