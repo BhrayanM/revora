@@ -1,7 +1,7 @@
 # Revora Roadmap
 
-**Current checkpoint:** Phase 14.6E Tally complete and locally validated; live
-credential and linked-migration gates remain (2026-08-21)
+**Current checkpoint:** Phase 14.6F Google Workspace complete and locally
+validated; live credential and linked-migration gates remain (2026-08-21)
 
 ## Completed
 
@@ -19,18 +19,15 @@ credential and linked-migration gates remain (2026-08-21)
   to read-only account and source-number validation.
 - Phase 14.6E: Tally automatic form discovery/mapping, signed inbound lead
   capture, tenant-scoped replay protection, and safe Connect/Test/Disconnect.
+- Phase 14.6F: one Google Workspace OAuth bundle, exact least-privilege scopes,
+  coordinated token lifecycle, read-only Tests, and bounded Calendar/Gmail
+  mutations.
 
-## Next — Phase 14.6F: Google Calendar + Gmail
+## Next — Phase 14.6G: Complete Integration E2E Audit
 
-Implement secure OAuth, least-privilege scopes, organization-scoped tokens,
-safe Test/Disconnect flows, and the constrained Calendar/Gmail operations in an
-approved design before implementation.
-
-## Then
-
-- **14.6G — Complete integration E2E audit:** provider regression, tenant
-  isolation, retry/idempotency, credential exposure, build/audit, and live-vs-
-  blocked evidence.
+Audit every provider regression, tenant boundary, retry/idempotency contract,
+credential exposure path, build/audit result, and live-vs-blocked gate before
+product completion work begins.
 
 ## Product Completion
 
@@ -54,7 +51,7 @@ Slack work was completed inside Phases 14.6B-14.6D; it must not be repeated.
 
 ## Guardrails
 
-- Migrations `00001` through `00034` are immutable.
+- Migrations `00001` through `00035` are immutable.
 - RLS and organization authorization remain the tenant boundary.
 - Secrets remain server-only and encrypted at rest.
 - Do not push, deploy, purchase, or perform paid provider actions without

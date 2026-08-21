@@ -7,6 +7,7 @@
 ## Local Release Gate
 
 - [x] `npm.cmd run test:tally`
+- [x] `npm.cmd run test:google-workspace`
 - [x] `npm.cmd run test:communications`
 - [x] `npm.cmd run test:integrations`
 - [x] `npm.cmd run lint`
@@ -14,8 +15,10 @@
 - [x] `npm.cmd run build`
 - [x] `npm.cmd audit` reports zero vulnerabilities
 - [x] `git diff --check`
-- [x] Migrations `00001`-`00033` remain unchanged; `00034` is the only addition
+- [x] Migrations `00001`-`00034` remain unchanged; `00035` is the only Phase
+      14.6F addition
 - [ ] Migration `00034` applied and verified in the authorized linked project
+- [ ] Migration `00035` applied and verified in the authorized linked project
 - [x] Modified/untracked secret scan reports no real credential values
 - [ ] Git working tree is clean after the authorized local phase commit
 
@@ -36,7 +39,7 @@
 
 ## Supabase and Tenant Isolation
 
-- [ ] Migrations `00001`-`00034` applied in order; existing files unchanged
+- [ ] Migrations `00001`-`00035` applied in order; existing files unchanged
 - [ ] RLS enabled on every organization-owned business table
 - [ ] Service-role key never reaches browser bundles
 - [ ] Org A cannot read, test, disconnect, or use Org B integrations
@@ -50,6 +53,7 @@
 - [x] Zapier implementation and prior provider validation
 - [x] Make implementation and prior provider validation
 - [x] Tally implementation and local contract validation
+- [x] Google Calendar and Gmail implementation and local contract validation
 
 Re-run each live gate after production-domain or credential rotation.
 
@@ -90,6 +94,20 @@ Re-run each live gate after production-domain or credential rotation.
 - [ ] Disconnect clears credentials and disables local ingestion regardless of
       remote cleanup outcome
 
+## Google Workspace
+
+- [ ] Calendar API and Gmail API enabled in the intended Google Cloud project
+- [ ] Consent/test users configured with only the four documented scopes
+- [ ] Exact HTTPS Google Workspace callback registered
+- [ ] Three server-only `GOOGLE_WORKSPACE_*` variables configured
+- [ ] One OAuth consent connects both cards to the same organization identity
+- [ ] Calendar Test lists at most one primary-calendar event and creates none
+- [ ] Gmail Test validates identity/scope and sends no synthetic message
+- [ ] Calendar mutation is limited to one bounded primary-calendar appointment
+- [ ] Gmail mutation is limited to one recipient and plain text only
+- [ ] Org B cannot read, refresh, test, disconnect, or use Org A credentials
+- [ ] Disconnect from either card revokes and clears both local capabilities
+
 ## Automation Reliability
 
 - [ ] n8n/Zapier/Make credentials are organization-scoped and encrypted
@@ -111,5 +129,5 @@ Re-run each live gate after production-domain or credential rotation.
 
 ## Remaining Roadmap
 
-- [ ] Phase 14.6F — Google Calendar + Gmail
+- [x] Phase 14.6F — Google Calendar + Gmail (local implementation)
 - [ ] Phase 14.6G — Complete integration E2E audit

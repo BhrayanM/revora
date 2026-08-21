@@ -2,13 +2,14 @@
 
 **Last updated:** 2026-08-21
 
-**Working branch:** `master` after the authorized local Phase 14.6E merge
+**Working branch:** `master` after the authorized local Phase 14.6F merge
 
-**Latest implementation checkpoint:** `60cd231 feat(integrations): ingest signed tally leads`
+**Latest implementation checkpoint:** `2758924 feat(integrations): wire google workspace settings`
 
-**Current status:** Phase 14.6E is implemented and locally validated. The Tally
-live gate is `BLOCKED_CREDENTIALS`; migration `00034` is local and has not been
-applied or verified against a linked Supabase project.
+**Current status:** Phase 14.6F is implemented and locally validated. Google
+Workspace live OAuth/mutation gates are `BLOCKED_CREDENTIALS`; migration
+`00035` is local and has not been applied or verified against a linked Supabase
+project.
 
 ## Current Architecture
 
@@ -16,7 +17,7 @@ applied or verified against a linked Supabase project.
 - Supabase Auth and PostgreSQL with generated types and organization-scoped RLS.
 - Server actions and route handlers re-authorize organization permissions;
   provider credentials stay encrypted and server-only.
-- Immutable migrations `00001` through `00033`; Phase 14.6E adds only `00034`.
+- Immutable migrations `00001` through `00034`; Phase 14.6F adds only `00035`.
   The current worktree is not linked to Supabase, so linked history through
   `00034` remains pending rather than assumed.
 
@@ -31,6 +32,8 @@ applied or verified against a linked Supabase project.
 - Phase 14.6D: Slack OAuth/HOT alerts and Twilio read-only infrastructure.
 - Phase 14.6E: Tally automatic connection, signed inbound lead capture,
   tenant-scoped replay protection, and local phase gate.
+- Phase 14.6F: shared Google Workspace OAuth, coordinated refresh/revocation,
+  read-only Tests, and bounded Calendar/Gmail operations.
 
 ## Provider Status
 
@@ -44,6 +47,8 @@ applied or verified against a linked Supabase project.
 | Slack | Implemented; live gate blocked by credentials | OAuth `incoming-webhook`, test/disconnect, exact-HOT alert |
 | Twilio | Implemented; live gate blocked by credentials | Account and optional number ownership validation; GET only |
 | Tally | Implemented; live gate blocked by credentials | Automatic form/mapping setup, signed webhook, replay-safe lead capture |
+| Google Calendar | Implemented; live gate blocked by credentials | Shared OAuth, primary-calendar read-only Test, bounded appointment creation |
+| Gmail | Implemented; live gate blocked by credentials | Shared OAuth, OIDC/scope Test, one-recipient plain-text send |
 
 No usable Tally API key or encrypted Tally test connection is available in the
 current local context, and `NEXT_PUBLIC_APP_URL` is not an externally reachable
@@ -77,11 +82,24 @@ purchase, and public callbacks remain out of scope.
 - Connect, Test, and Disconnect re-authorize `integrations.manage`; Test is
   read-only and Disconnect disables local ingestion even if cleanup fails.
 
+## Phase 14.6F Security Properties
+
+- One verified Google subject is shared by Calendar and Gmail for each
+  organization; both encrypted credential rows are written and refreshed
+  atomically.
+- OAuth requests exactly `openid`, `email`, `calendar.events.owned`, and
+  `gmail.send`; broad Calendar and all Gmail read scopes are absent.
+- Calendar Test lists at most one `primary` event. Gmail Test validates OIDC
+  identity/scope and sends nothing.
+- Mutations allow one bounded primary-calendar appointment or one-recipient
+  plain-text email, with no automatic retry of ambiguous failures.
+- Disconnect from either card revokes the shared grant when possible and always
+  clears both local credential rows.
+- Message/event contents and recipient addresses never enter audit metadata.
+
 ## Remaining Integration Plan
 
-1. **14.6F — Google Calendar + Gmail:** OAuth lifecycle and constrained provider
-   operations.
-2. **14.6G — Complete E2E audit:** cross-provider, tenant-isolation, error,
+1. **14.6G — Complete E2E audit:** cross-provider, tenant-isolation, error,
    retry, and production-readiness gates.
 
 ## Remaining Global Product Plan
