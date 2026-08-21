@@ -103,25 +103,56 @@ export function getSafeIntegrationError(
   };
 }
 
-export interface OutboundEvent {
-  eventId: string;
-  organizationId: string;
-  type: string;
-  occurredAt: string;
-  resourceType: string;
-  resourceId: string;
-  data: Record<string, unknown>;
-}
-
-export const OUTBOUND_EVENT_TYPES = [
-  "lead.created",
-  "lead.updated",
-  "lead.qualified",
-  "lead.stage_changed",
-  "appointment.created",
-] as const;
+export const OUTBOUND_EVENT_TYPES = ["lead.created", "lead.updated"] as const;
 
 export type OutboundEventType = (typeof OUTBOUND_EVENT_TYPES)[number];
+
+export const AUTOMATION_WEBHOOK_PROVIDER_IDS = [
+  "n8n",
+  "zapier",
+  "make",
+] as const;
+
+export type AutomationWebhookProviderId =
+  (typeof AUTOMATION_WEBHOOK_PROVIDER_IDS)[number];
+
+export interface OutboundLeadData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string | null;
+  phone: string | null;
+  company: string | null;
+  source: string;
+  status: string;
+  score: number;
+  pipeline_stage_id: string | null;
+}
+
+export interface OutboundEvent {
+  version: "1";
+  id: string;
+  type: OutboundEventType;
+  occurred_at: string;
+  organization_id: string;
+  data: {
+    lead: OutboundLeadData;
+    changed_fields?: string[];
+  };
+}
+
+export interface IntegrationTestEvent {
+  version: "1";
+  id: string;
+  type: "integration.test";
+  occurred_at: string;
+  organization_id: string;
+  data: {
+    provider: AutomationWebhookProviderId;
+  };
+}
+
+export type AutomationWebhookEvent = OutboundEvent | IntegrationTestEvent;
 
 export interface IntegrationAdapter {
   provider: IntegrationProviderId;

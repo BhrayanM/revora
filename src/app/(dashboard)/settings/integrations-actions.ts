@@ -1,6 +1,11 @@
 "use server";
 
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import { dispatchIntegrationTestEvent } from "@/lib/automation/webhook-dispatcher";
+import {
+  normalizeAutomationWebhookCredentials,
+  sendAutomationWebhookEvent,
+} from "@/lib/integrations/automation-webhook-adapters";
 import {
   disconnectConnection,
   getDecryptedCredentials,
@@ -8,9 +13,38 @@ import {
   saveConnection,
 } from "@/lib/integrations/connections";
 import { recordAuditEvent } from "@/lib/integrations/oauth";
-import { INTEGRATION_PROVIDER_IDS } from "@/lib/integrations/types";
-import type { IntegrationProviderId } from "@/lib/integrations/types";
+import { buildIntegrationTestEvent } from "@/lib/integrations/outbound-events";
+import {
+  AUTOMATION_WEBHOOK_PROVIDER_IDS,
+  INTEGRATION_PROVIDER_IDS,
+} from "@/lib/integrations/types";
+import type {
+  AutomationWebhookProviderId,
+  IntegrationProviderId,
+} from "@/lib/integrations/types";
 import { createClient } from "@/lib/supabase/server";
+
+function isAutomationWebhookProvider(
+  provider: IntegrationProviderId,
+): provider is AutomationWebhookProviderId {
+  return AUTOMATION_WEBHOOK_PROVIDER_IDS.includes(
+    provider as AutomationWebhookProviderId,
+  );
+}
+
+function webhookTestError(code: string | null): string {
+  if (code === "INVALID_WEBHOOK_URL") {
+    return "Webhook URL failed security validation.";
+  }
+  if (code === "INVALID_CREDENTIALS") {
+    return "Webhook authentication failed.";
+  }
+  if (code === "ENDPOINT_INACTIVE") {
+    return "Webhook endpoint is inactive or unavailable.";
+  }
+  if (code === "RATE_LIMITED") return "Webhook provider rate limited the test.";
+  return "Webhook connection test failed.";
+}
 
 export async function getOrganizationIntegrations() {
   const authorization =
@@ -62,6 +96,10 @@ export async function saveIntegration(
     return { error: `Invalid provider: ${provider}` };
   }
 
+  if (isAutomationWebhookProvider(provider)) {
+    return { error: "Use the secure webhook connection flow." };
+  }
+
   const profileId = authorization.data.membership.profile_id;
   const result = await saveConnection(org.id, provider, credentials, profileId);
 
@@ -70,6 +108,63 @@ export async function saveIntegration(
   }
 
   return result;
+}
+
+export async function saveAutomationWebhookIntegration(
+  provider: AutomationWebhookProviderId,
+  credentials: Record<string, unknown>,
+) {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  if (!AUTOMATION_WEBHOOK_PROVIDER_IDS.includes(provider)) {
+    return { error: "Invalid automation provider." };
+  }
+
+  const org = authorization.data.organization;
+  const profileId = authorization.data.membership.profile_id;
+
+  let normalized: Record<string, string>;
+  try {
+    normalized = normalizeAutomationWebhookCredentials(provider, credentials);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Invalid credentials.",
+    };
+  }
+
+  const test = await sendAutomationWebhookEvent({
+    provider,
+    credentials: normalized,
+    event: buildIntegrationTestEvent(org.id, provider),
+  });
+
+  if (!test.ok) {
+    await recordAuditEvent(org.id, provider, "connection_failed", profileId, {
+      error_code: test.errorCode,
+      http_status: test.status,
+    });
+    return { error: webhookTestError(test.errorCode) };
+  }
+
+  const webhookUrl = normalized["webhook_url"];
+  if (!webhookUrl) return { error: "Webhook URL is required." };
+
+  const result = await saveConnection(org.id, provider, normalized, profileId, {
+    config: { subscribed_events: ["lead.created", "lead.updated"] },
+    externalAccountName: new URL(webhookUrl).hostname,
+    healthStatus: "healthy",
+  });
+
+  if (result.error) return result;
+
+  await recordAuditEvent(org.id, provider, "connected", profileId);
+  await recordAuditEvent(org.id, provider, "webhook_verified", profileId, {
+    http_status: test.status,
+  });
+  return { error: null };
 }
 
 export async function deleteIntegration(provider: IntegrationProviderId) {
@@ -105,6 +200,34 @@ export async function testIntegration(provider: IntegrationProviderId) {
   }
 
   try {
+    if (isAutomationWebhookProvider(provider)) {
+      const result = await dispatchIntegrationTestEvent(
+        buildIntegrationTestEvent(org.id, provider),
+      );
+
+      if (result === "success") {
+        await recordAuditEvent(
+          org.id,
+          provider,
+          "webhook_verified",
+          authorization.data.membership.profile_id,
+        );
+        return { success: true, provider };
+      }
+
+      await recordAuditEvent(
+        org.id,
+        provider,
+        "connection_failed",
+        authorization.data.membership.profile_id,
+        {
+          error_code:
+            result === "skipped" ? "DELIVERY_NOT_QUEUED" : "DELIVERY_FAILED",
+        },
+      );
+      return { success: false, error: "Webhook connection test failed." };
+    }
+
     if (provider === "hubspot" && creds["access_token"]) {
       const res = await fetch(
         "https://api.hubapi.com/crm/v3/objects/contacts?limit=1",

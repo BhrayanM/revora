@@ -54,12 +54,16 @@ OPENAI_API_KEY=sk-...                  # SERVER-ONLY
 OPENAI_MODEL=gpt-4o-mini
 ```
 
-### n8n (server-only)
+### Automation webhook delivery (server-only)
 ```
-N8N_WEBHOOK_URL=https://n8n.example.com/webhook/lead-automation
-N8N_WEBHOOK_SECRET=<random-string>    # HMAC signing secret
-N8N_INTERNAL_SECRET=<random-string>   # Internal API auth
+AUTOMATION_RETRY_SECRET=<random-value-at-least-32-characters>
+INTEGRATION_ENCRYPTION_KEY=<64-hex-character-key>
+ALLOW_INSECURE_INTEGRATION_WEBHOOKS=false
 ```
+
+n8n, Zapier, and Make endpoint credentials are configured per organization in
+Revora Settings and encrypted at rest. They are not application environment
+variables.
 
 ### Rate Limiter (optional)
 ```
@@ -70,7 +74,7 @@ REDIS_URL=redis://...                 # Only if RATE_LIMITER=redis
 ## Database Setup
 
 1. Create Supabase project
-2. Run all 9 migrations in order (00001–00009):
+2. Apply every pending migration in order:
    ```bash
    supabase db push
    ```
@@ -85,15 +89,16 @@ REDIS_URL=redis://...                 # Only if RATE_LIMITER=redis
 
 ## n8n Setup
 
-1. Import `docs/n8n/lead-automation-workflow.json`
-2. Configure environment variables in n8n:
-   - `APP_URL` — your Next.js deployment URL
-   - `N8N_WEBHOOK_SECRET` — shared HMAC secret
-   - `N8N_INTERNAL_SECRET` — shared internal secret
-   - `HUBSPOT_ACCESS_TOKEN` — optional
-   - `SLACK_WEBHOOK_URL` — optional
-3. Activate workflow
-4. Configure `N8N_WEBHOOK_URL` in your app's `.env`
+1. Import `docs/n8n/lead-automation-workflow.json`.
+2. Create an n8n Header Auth credential named for Revora:
+   - Header: `X-Revora-Webhook-Secret`
+   - Value: an organization-specific random secret of at least 16 characters.
+3. Attach the credential to the **Revora Webhook** node and activate the
+   workflow.
+4. Copy the production webhook URL and configure it with the same secret under
+   **Revora Settings → Integrations → n8n**.
+5. Use Revora's **Test** action. Do not put HubSpot, GoHighLevel, or Slack
+   credentials in this workflow.
 
 ## CRM Setup
 
@@ -143,5 +148,5 @@ After deployment:
 
 1. **Retry processor** requires external scheduling (cron/Vercel Cron/n8n scheduler)
 2. **Rate limiter** is in-memory — single-instance only. Use Redis/Upstash for multi-instance
-3. **Slack notifications** may produce duplicates on n8n retry (not idempotent at Slack level)
+3. **Automation webhooks** are delivered at least once; consumers must deduplicate by Revora event ID
 4. **GoHighLevel API** uses `rest.gohighlevel.com/v1` — verify against current GHL API docs

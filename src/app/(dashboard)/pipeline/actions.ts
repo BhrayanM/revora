@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import { dispatchOutboundEvent } from "@/lib/automation/webhook-dispatcher";
+import { buildLeadOutboundEvent } from "@/lib/integrations/outbound-events";
 import { getLeadById } from "@/lib/queries/leads";
 import {
   getPipelineStages,
@@ -38,6 +40,19 @@ export async function moveLeadStage(
 
   const { error } = await updateLeadStage(leadId, pipelineStageId, pipelineId);
   if (error) return { error: "Failed to move lead" };
+
+  const { data: updatedLead } = await getLeadById(leadId);
+  if (updatedLead && updatedLead.organization_id === org.id) {
+    await dispatchOutboundEvent(
+      buildLeadOutboundEvent({
+        type: "lead.updated",
+        organizationId: org.id,
+        lead: updatedLead,
+        changedFields: ["pipeline_id", "pipeline_stage_id"],
+      }),
+    );
+  }
+
   revalidatePath("/pipeline");
   revalidatePath("/leads");
   revalidatePath("/dashboard");

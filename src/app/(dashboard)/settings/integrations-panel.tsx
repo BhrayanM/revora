@@ -24,6 +24,7 @@ import {
   disconnectHubSpot,
   disconnectGHL,
   getOrganizationIntegrations,
+  saveAutomationWebhookIntegration,
   saveIntegration,
   startGHLOAuth,
   startHubSpotOAuth,
@@ -50,6 +51,12 @@ function statusBadge(status: IntegrationStatus) {
       return (
         <Badge variant="warning" size="sm">
           Reauth Required
+        </Badge>
+      );
+    case "degraded":
+      return (
+        <Badge variant="warning" size="sm">
+          Degraded
         </Badge>
       );
     default:
@@ -79,7 +86,9 @@ function IntegrationCard({
 
   if (!provider) return null;
 
-  const configured = connection !== null && connection.status === "connected";
+  const configured =
+    connection !== null &&
+    (connection.status === "connected" || connection.status === "degraded");
 
   const handleConnect = async () => {
     if (providerId === "hubspot") {
@@ -141,7 +150,7 @@ function IntegrationCard({
                 <p className="text-sm font-semibold text-foreground">
                   {provider.displayName}
                 </p>
-                {configured && statusBadge("connected")}
+                {configured && statusBadge(connection.status)}
                 {connection && !configured && statusBadge(connection.status)}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -224,8 +233,21 @@ function ConnectForm({
   if (!provider) return null;
 
   const fields: Record<string, { label: string; type: string }> = {};
+  const automationWebhookProvider = ["n8n", "zapier", "make"].includes(
+    provider.id,
+  );
 
-  if (provider.supportsApiKey || provider.authType === "api_key") {
+  if (automationWebhookProvider) {
+    fields["webhook_url"] = {
+      label:
+        provider.id === "zapier"
+          ? "Catch Hook URL"
+          : provider.id === "make"
+            ? "Custom Webhook URL"
+            : "Production Webhook URL",
+      type: "url",
+    };
+  } else if (provider.supportsApiKey || provider.authType === "api_key") {
     fields["api_key"] = { label: "API Key", type: "password" };
   }
 
@@ -237,12 +259,22 @@ function ConnectForm({
     fields["location_id"] = { label: "Location ID", type: "text" };
   }
 
-  if (provider.id === "slack" || provider.supportsWebhooks) {
+  if (
+    !automationWebhookProvider &&
+    (provider.id === "slack" || provider.supportsWebhooks)
+  ) {
     fields["webhook_url"] = { label: "Webhook URL", type: "text" };
   }
 
   if (provider.id === "n8n") {
-    fields["webhook_secret"] = { label: "Webhook Secret", type: "password" };
+    fields["webhook_secret"] = {
+      label: "Header Authentication Secret",
+      type: "password",
+    };
+  }
+
+  if (provider.id === "make") {
+    fields["api_key"] = { label: "Webhook API Key", type: "password" };
   }
 
   if (provider.id === "twilio") {
@@ -261,7 +293,12 @@ function ConnectForm({
     }
 
     startTransition(async () => {
-      const result = await saveIntegration(providerId, creds);
+      const result = automationWebhookProvider
+        ? await saveAutomationWebhookIntegration(
+            providerId as "n8n" | "zapier" | "make",
+            creds,
+          )
+        : await saveIntegration(providerId, creds);
       if (result.error) {
         setError(result.error);
       } else {

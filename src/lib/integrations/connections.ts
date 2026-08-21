@@ -5,12 +5,14 @@ import {
   encryptCredentialsObject,
 } from "@/lib/integrations/encryption";
 import type {
+  AutomationWebhookProviderId,
   IntegrationConnection,
   IntegrationHealthStatus,
   IntegrationProviderId,
   IntegrationStatus,
 } from "@/lib/integrations/types";
 import { createServiceAdminClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/types";
 
 export async function getConnection(
   organizationId: string,
@@ -86,9 +88,15 @@ export async function saveConnection(
   provider: IntegrationProviderId,
   credentials: Record<string, unknown>,
   userId?: string,
+  options?: {
+    config?: Record<string, unknown>;
+    externalAccountName?: string;
+    healthStatus?: IntegrationHealthStatus;
+  },
 ): Promise<{ error: string | null }> {
   const supabase = await createServiceAdminClient();
   const encrypted = encryptCredentialsObject(credentials);
+  const connectedAt = new Date().toISOString();
 
   const { error } = await supabase.from("integrations").upsert(
     {
@@ -97,15 +105,73 @@ export async function saveConnection(
       credentials: encrypted,
       is_active: true,
       status: "connected",
-      health_status: "unknown",
-      connected_at: new Date().toISOString(),
+      connected_at: connectedAt,
       connected_by: userId ?? null,
+      health_status: options?.healthStatus ?? "unknown",
+      ...(options?.config ? { config: options.config as Json } : {}),
+      ...(options?.externalAccountName !== undefined
+        ? { external_account_name: options.externalAccountName }
+        : {}),
+      ...(options?.healthStatus === "healthy"
+        ? {
+            last_success_at: connectedAt,
+            last_error_at: null,
+            last_error_code: null,
+          }
+        : {}),
     },
     { onConflict: "organization_id, provider" },
   );
 
   if (error) return { error: error.message };
   return { error: null };
+}
+
+export interface ActiveAutomationWebhookConnection {
+  id: string;
+  provider: AutomationWebhookProviderId;
+  credentials: Record<string, unknown>;
+}
+
+export async function listActiveAutomationWebhookConnections(
+  organizationId: string,
+): Promise<ActiveAutomationWebhookConnection[]> {
+  const supabase = await createServiceAdminClient();
+  const providers: AutomationWebhookProviderId[] = ["n8n", "zapier", "make"];
+
+  const { data, error } = await supabase
+    .from("integrations")
+    .select("id, provider, credentials")
+    .eq("organization_id", organizationId)
+    .eq("is_active", true)
+    .in("status", ["connected", "degraded"])
+    .in("provider", providers);
+
+  if (error) {
+    console.error("[Automation Webhook] Connection lookup failed:", error.code);
+    return [];
+  }
+  if (!data) return [];
+
+  return data.flatMap((row) => {
+    const provider = row.provider as AutomationWebhookProviderId;
+    const stored = row.credentials as Record<string, unknown>;
+    const hasEncryptedKey = Object.keys(stored).some((key) =>
+      key.startsWith("encrypted_"),
+    );
+
+    try {
+      const credentials = hasEncryptedKey
+        ? decryptCredentialsObject(stored)
+        : stored;
+      return [{ id: row.id, provider, credentials }];
+    } catch {
+      console.error(
+        `[Automation Webhook] Credential decryption failed for ${provider}.`,
+      );
+      return [];
+    }
+  });
 }
 
 export async function disconnectConnection(
@@ -193,6 +259,58 @@ export async function markConnectionError(
     })
     .eq("organization_id", organizationId)
     .eq("provider", provider);
+}
+
+export async function markWebhookConnectionHealthy(
+  organizationId: string,
+  provider: AutomationWebhookProviderId,
+): Promise<void> {
+  const supabase = await createServiceAdminClient();
+  const { error } = await supabase
+    .from("integrations")
+    .update({
+      status: "connected",
+      health_status: "healthy",
+      last_success_at: new Date().toISOString(),
+      last_error_at: null,
+      last_error_code: null,
+    })
+    .eq("organization_id", organizationId)
+    .eq("provider", provider);
+
+  if (error) {
+    console.error(
+      "[Automation Webhook] Healthy status update failed:",
+      error.code,
+    );
+  }
+}
+
+export async function markWebhookConnectionError(
+  organizationId: string,
+  provider: AutomationWebhookProviderId,
+  errorCode: string,
+): Promise<void> {
+  const supabase = await createServiceAdminClient();
+  const credentialsRejected = errorCode === "INVALID_CREDENTIALS";
+
+  const { error } = await supabase
+    .from("integrations")
+    .update({
+      status: credentialsRejected ? "reauth_required" : "degraded",
+      health_status: credentialsRejected ? "reauth_required" : "degraded",
+      last_error_at: new Date().toISOString(),
+      last_error_code: errorCode,
+    })
+    .eq("organization_id", organizationId)
+    .eq("provider", provider);
+
+  if (error) {
+    console.error(
+      "[Automation Webhook] Error status update failed:",
+      error.code,
+    );
+  }
 }
 
 export async function rotateCredentials(

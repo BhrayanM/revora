@@ -11,6 +11,8 @@ export async function getIntegrationCredentials(
     | "twilio"
     | "gohighlevel"
     | "n8n"
+    | "zapier"
+    | "make"
     | "sendgrid"
     | "openai",
 ): Promise<Record<string, unknown> | null> {

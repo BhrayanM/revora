@@ -135,9 +135,9 @@ In Vercel Dashboard → Settings → Environment Variables, add:
 | `OPENAI_MODEL` | `gpt-4o-mini` | No |
 | `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` | No |
 | `NEXT_PUBLIC_APP_ENV` | `production` | No |
-| `N8N_WEBHOOK_URL` | From n8n setup (step 4) | YES |
-| `N8N_WEBHOOK_SECRET` | Random string (step 4) | YES |
-| `N8N_INTERNAL_SECRET` | Random string (step 4) | YES |
+| `AUTOMATION_RETRY_SECRET` | Random value, at least 32 characters | YES |
+| `INTEGRATION_ENCRYPTION_KEY` | 32 random bytes encoded as 64 hex characters | YES |
+| `ALLOW_INSECURE_INTEGRATION_WEBHOOKS` | `false` | No |
 | `RATE_LIMITER` | `memory` | No |
 
 ### 3.3 Deploy
@@ -188,40 +188,42 @@ Test from Lead Detail page → "AI Qualify Lead" button. Should return score 0-1
 Option A — n8n Cloud: [app.n8n.cloud](https://app.n8n.cloud)
 Option B — Self-hosted: [docs.n8n.io/hosting](https://docs.n8n.io/hosting/)
 
-### 5.2 Generate Secrets
+### 5.2 Generate the Header Auth Secret
 
 ```bash
-# Generate random secrets (run once, save securely)
+# Generate one organization-specific secret and save it securely
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Run twice — you need:
-- `N8N_WEBHOOK_SECRET` — HMAC signing between app → n8n
-- `N8N_INTERNAL_SECRET` — HMAC signing between n8n → app
+This value is entered only in n8n's Header Auth credential and the matching
+organization's Revora integration form. It is encrypted before Revora stores
+it and is not an application environment variable.
 
-### 5.3 Configure App Env Vars
+### 5.3 Configure the Retry Worker
 
-Set in Vercel:
+Set a separate random value in Vercel:
 ```
-N8N_WEBHOOK_URL=https://your-n8n.example.com/webhook/lead-automation
-N8N_WEBHOOK_SECRET=<first-generated-secret>
-N8N_INTERNAL_SECRET=<second-generated-secret>
+AUTOMATION_RETRY_SECRET=<random-value-at-least-32-characters>
 ```
+
+Configure the scheduler to POST to `/api/internal/integrations/retries` with
+`Authorization: Bearer <AUTOMATION_RETRY_SECRET>`. Never reuse the n8n Header
+Auth secret for the worker.
 
 ### 5.4 Import Workflow
 
 1. In n8n, go to Workflows → Import from File
 2. Select `docs/n8n/lead-automation-workflow.json`
-3. Set environment variables in n8n:
-   - `APP_URL` = `https://your-app.vercel.app`
-   - `N8N_WEBHOOK_SECRET` = same as above
-   - `N8N_INTERNAL_SECRET` = same as above
+3. Create a Header Auth credential:
+   - Header name: `X-Revora-Webhook-Secret`
+   - Header value: the organization-specific secret from step 5.2
+4. Attach it to the **Revora Webhook** node.
 
-### 5.5 Configure CRM Credentials (in n8n)
+### 5.5 Preserve Provider Boundaries
 
-In the imported workflow, set n8n environment variables:
-- `HUBSPOT_ACCESS_TOKEN` — if using HubSpot
-- `SLACK_WEBHOOK_URL` — if using Slack
+Do not add HubSpot, GoHighLevel, Slack, or other Revora provider credentials to
+n8n. Revora owns CRM synchronization; the imported workflow validates and
+acknowledges Revora events only.
 
 ### 5.6 Activate
 
@@ -231,18 +233,16 @@ Click **Active** toggle in n8n workflow editor.
 
 In the activated workflow, click the Webhook node → Production URL.
 
-This is your `N8N_WEBHOOK_URL` for the app's environment variables.
+In Revora, open **Settings → Integrations → n8n** and enter this production
+URL plus the same Header Auth secret. Use **Test** after connecting.
 
-### 5.8 HMAC Flow
+### 5.8 Authentication Flow
 
 ```
-App sends lead.created event
-  → X-Signature = HMAC-SHA256(body, N8N_WEBHOOK_SECRET)
-  → n8n verifies X-Signature matches
-
-n8n calls internal qualify endpoint
-  → X-Internal-Signature = HMAC-SHA256(request_url, N8N_INTERNAL_SECRET)
-  → App verifies signature with timing-safe comparison
+Revora sends integration.test, lead.created, or lead.updated
+  → X-Revora-Webhook-Secret = organization-specific secret
+  → n8n Header Auth performs exact credential validation before workflow code
+  → workflow validates the versioned event and acknowledges it
 ```
 
 ---
@@ -396,11 +396,11 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 |---------|-------------|-----|
 | Signup fails | Supabase Auth not configured | Check Site URL + Redirect URLs in Supabase Auth settings |
 | 401 on /api/leads | Invalid or revoked API key | Settings → API Keys → verify key is active |
-| Lead created but no n8n execution | N8N_WEBHOOK_URL incorrect | Verify env var + check n8n workflow is active |
+| Lead created but no n8n execution | Integration inactive or production URL incorrect | Test the organization-scoped n8n connection and confirm the workflow is active |
 | AI qualification fails | OPENAI_API_KEY missing/invalid | Check Vercel env vars + OpenAI dashboard |
 | HubSpot sync fails | Token expired or wrong scopes | Re-create HubSpot private app with contacts scope |
 | Slack notification not received | Wrong webhook URL or channel | Re-create Slack webhook |
-| Retry processor doesn't run | No scheduler configured | Set up Vercel Cron or n8n schedule |
+| Retry processor doesn't run | No scheduler or wrong worker authorization | POST to `/api/internal/integrations/retries` with the configured bearer secret |
 | Cross-org data visible | RLS not enabled | Run migration 00002 + verify with `SELECT tablename FROM pg_tables WHERE rowsecurity=true` |
 
 ---
@@ -416,9 +416,9 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 | OPENAI_MODEL | .env | ✓ | — | No |
 | NEXT_PUBLIC_APP_URL | .env | ✓ | — | No |
 | NEXT_PUBLIC_APP_ENV | .env | ✓ | — | No |
-| N8N_WEBHOOK_URL | .env | ✓ | — | YES |
-| N8N_WEBHOOK_SECRET | .env | ✓ | ✓ | YES |
-| N8N_INTERNAL_SECRET | .env | ✓ | ✓ | YES |
+| AUTOMATION_RETRY_SECRET | .env | ✓ | — | YES |
+| INTEGRATION_ENCRYPTION_KEY | .env | ✓ | — | YES |
+| ALLOW_INSECURE_INTEGRATION_WEBHOOKS | .env | ✓ | — | No |
 | RATE_LIMITER | .env | ✓ | — | No |
 | REDIS_URL | .env | ✓ | — | YES |
 
@@ -466,7 +466,8 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 - [ ] Rate limiter decision documented
 
 ### Final
-- [ ] Complete E2E flow succeeded (lead → n8n → AI → CRM → Slack)
+- [ ] n8n `integration.test`, `lead.created`, and `lead.updated` E2E succeeded
+- [ ] AI qualification and each configured CRM integration passed its independent E2E
 - [ ] Idempotency verified (duplicate source_id → 200)
 - [ ] Dashboard displays real data
 - [ ] Automation Activity page shows execution history

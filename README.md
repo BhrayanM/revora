@@ -55,9 +55,10 @@ Do not treat an adapter or UI panel as proof that an external provider is live.
 - `src/lib/supabase/` - browser, SSR server, and narrowly scoped service-admin
   clients plus generated database types.
 - `src/lib/legal/` - current-document lookup and consent enforcement helpers.
-- `src/lib/ai/`, `src/lib/crm/`, `src/lib/automation/`, and `src/lib/webhooks/`
-  - AI, provider adapters, execution support, and event delivery.
-- `supabase/migrations/` - immutable migration history 00001 through 00017.
+- `src/lib/ai/`, `src/lib/crm/`, `src/lib/automation/`, and
+  `src/lib/integrations/` - AI, provider adapters, execution support, and
+  organization-scoped event delivery.
+- `supabase/migrations/` - immutable sequential migration history.
 
 ## Routes
 
@@ -67,7 +68,8 @@ Do not treat an adapter or UI panel as proof that an external provider is live.
   `/legal/consent`.
 - Dashboard: `/dashboard`, `/analytics`, `/leads`, `/pipeline`, `/automation`,
   `/settings`, `/profile`, and `/notifications`.
-- API: `/api/leads` and `/api/internal/leads/[id]/qualify`.
+- API: `/api/leads` and the authenticated automation retry worker at
+  `/api/internal/integrations/retries`.
 
 ## Getting Started
 
