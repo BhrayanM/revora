@@ -1,12 +1,14 @@
 # Revora Project Status
 
-**Last updated:** 2026-08-20
+**Last updated:** 2026-08-21
 
-**Working branch:** `feature/phase-14-6d-communications`
+**Working branch:** `master`
 
-**Latest implementation checkpoint:** `01d3cba feat(integrations): add read-only twilio infrastructure`
+**Latest implementation checkpoint:** `1bec2f7 docs: complete phase 14.6d communication integrations`
 
-**Current status:** Phase 14.6D implementation complete; live Slack/Twilio gates await credentials.
+**Current status:** Phase 14.6D is merged locally; Phase 14.6E Tally design is
+approved for autonomous local implementation. Live Slack/Twilio gates await
+credentials.
 
 ## Current Architecture
 
@@ -66,6 +68,16 @@ scope.
    operations.
 3. **14.6G — Complete E2E audit:** cross-provider, tenant-isolation, error,
    retry, and production-readiness gates.
+
+## Remaining Global Product Plan
+
+1. **14.7 — Product UX Completion:** visual polish, provider logos, validated
+   settings selectors, and explicit delivery decisions for remaining `Soon`
+   modules.
+2. **14.8 — Production Infrastructure and Release Readiness:** production
+   environment, deployment, SMTP, distributed rate limiting, monitoring,
+   backups, security controls, credential rotation, legal review, and final
+   global regression.
 
 ## Operational Boundaries
 

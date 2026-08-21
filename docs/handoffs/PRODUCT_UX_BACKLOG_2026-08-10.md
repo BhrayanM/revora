@@ -3,7 +3,7 @@
 **Date:** 2026-08-10
 **Reviewed:** 2026-08-12
 **Repository:** `C:\Users\bhray\ai-growth-platform`
-**Status:** Backlog recorded — not started
+**Status:** Scheduled as Phase 14.7 — not started
 
 Identified during Phase 14.6B HubSpot E2E testing.
 
@@ -50,4 +50,7 @@ Identified during Phase 14.6B HubSpot E2E testing.
 
 Phase 14.6B — HubSpot + GoHighLevel real OAuth and CRM E2E — is complete.
 
-The next integration phase is Phase 14.6C — n8n + Zapier + Make — but it has not started. These Product UX items remain deferred until they receive separate prioritization and explicit approval.
+The integration roadmap now continues through Phase 14.6G. These Product UX
+items are explicitly scheduled as Phase 14.7 and must not be mixed into the
+provider implementation phases. The functional `Soon` modules require scoped
+designs before their placeholders are removed.

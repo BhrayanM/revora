@@ -1,6 +1,7 @@
 # Revora Roadmap
 
-**Current checkpoint:** Phase 14.6D communication integrations (2026-08-20)
+**Current checkpoint:** Phase 14.6D merged locally; Phase 14.6E Tally design
+approved (2026-08-21)
 
 ## Completed
 
@@ -30,6 +31,20 @@ tenant-isolation tests. Preserve all Slack and Twilio contracts from 14.6D.
 - **14.6G — Complete integration E2E audit:** provider regression, tenant
   isolation, retry/idempotency, credential exposure, build/audit, and live-vs-
   blocked evidence.
+
+## Product Completion
+
+- **14.7 — Product UX Completion:** provider logos, consistent responsive
+  polish, accessibility and interaction-state review, validated language and
+  timezone selectors, and explicit scoping of Notifications, Global Search,
+  Calendar, AI Insights, and Chat before removing any `Soon` placeholder.
+- **14.8 — Production Infrastructure and Release Readiness:** production
+  environment, deployment, SMTP, distributed rate limiting, monitoring,
+  backups, security headers/WAF decisions, credential rotation, legal review,
+  and final global regression before a go-live claim.
+
+The older provisional 14.7-14.10 sequence is superseded. Its n8n, HubSpot, and
+Slack work was completed inside Phases 14.6B-14.6D; it must not be repeated.
 
 ## Deferred
 
