@@ -49,7 +49,7 @@ Supabase Dashboard → Authentication → Settings:
 ### 2.4 Apply Migrations
 
 Apply every immutable migration in `supabase/migrations` in numeric order,
-currently `00001` through `00033`. Never edit a migration already applied to a
+currently `00001` through `00034`. Never edit a migration already applied to a
 linked environment.
 
 Verify using CLI:
@@ -124,7 +124,7 @@ In Vercel Dashboard → Settings → Environment Variables, add:
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service_role key | YES |
 | `OPENAI_API_KEY` | OpenAI API key | YES |
 | `OPENAI_MODEL` | `gpt-4o-mini` | No |
-| `NEXT_PUBLIC_APP_URL` | `https://your-app.vercel.app` | No |
+| `NEXT_PUBLIC_APP_URL` | Externally reachable `https://your-app.vercel.app` origin | No |
 | `NEXT_PUBLIC_APP_ENV` | `production` | No |
 | `AUTOMATION_RETRY_SECRET` | Random value, at least 32 characters | YES |
 | `INTEGRATION_ENCRYPTION_KEY` | 32 random bytes encoded as 64 hex characters | YES |
@@ -326,6 +326,43 @@ persisted qualification.
 Phase 14.6D does not send SMS or WhatsApp messages, place calls, buy numbers,
 or register Twilio callbacks.
 
+## 8B. Tally Setup (Organization-Scoped)
+
+Tally does not use a global application environment variable. An authorized
+organization administrator creates an API key in Tally and enters it only in
+**Settings → Integrations → Tally**. Never paste the key into chat, source,
+screenshots, logs, or documentation.
+
+Prerequisites:
+
+1. Set `NEXT_PUBLIC_APP_URL` to the externally reachable HTTPS Revora origin.
+2. Apply migration `00034_phase_14_6e_tally_inbound.sql` to the authorized
+   non-production Supabase project before a live test.
+3. Create or reuse an open, published Tally form with an email or phone field.
+
+Connect performs only these provider operations:
+
+- `GET /forms?page=1&limit=500`
+- `GET /forms/{formId}/questions`
+- `POST /webhooks` for the selected `FORM_RESPONSE` subscription
+
+Revora proposes mappings for name, email, phone, company, and message. The
+administrator confirms the mapping, including at least email or phone. Revora
+then creates the callback automatically at
+`/api/integrations/tally/webhook/{routingToken}`; do not copy or persist that
+raw URL. The API key and signing secret are encrypted, while only a SHA-256
+routing-token hash is stored in safe config.
+
+**Test** is read-only: it fetches the selected form questions and paginates
+`GET /webhooks` to verify the stored webhook. **Disconnect** calls
+`DELETE /webhooks/{webhookId}`, then disables the local endpoint and clears
+encrypted credentials even when provider cleanup cannot be confirmed.
+
+Inbound requests must use `application/json`, stay at or below 1 MiB, and carry
+a valid `Tally-Signature` HMAC over the exact body. Valid submissions create one
+organization-scoped lead; identical retries return 2xx without duplication,
+payload conflicts return 409, and invalid signatures return 401.
+
 ---
 
 ## 9. Production API Key
@@ -369,11 +406,13 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 2. Confirm email → redirected to dashboard
 3. Settings → Integrations → HubSpot → Connect → Test
 4. Settings → Integrations → Slack → OAuth Connect → Test (when configured)
-5. Settings → API Keys → Create → copy raw key
-6. Run curl command from step 9.3
-7. Check dashboard `/leads` — lead should appear
-8. Click lead → "AI Qualify Lead" — should return score + summary
-9. Check n8n execution history — workflow should show success
+5. Settings → Integrations → Tally → Connect → Test (when configured)
+6. Submit one unique Tally response and verify exactly one lead
+7. Settings → API Keys → Create → copy raw key
+8. Run curl command from step 9.3
+9. Check dashboard `/leads` — lead should appear
+10. Click lead → "AI Qualify Lead" — should return score + summary
+11. Check n8n execution history — workflow should show success
 10. Check HubSpot — contact should exist
 11. If HOT (score ≥ 80), check Slack for exactly one alert; WARM/COLD send none
 12. Check `/automation` — execution records should show all steps
@@ -449,7 +488,7 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 
 ### Infrastructure
 - [ ] Supabase project created
-- [ ] All migrations `00001` through `00033` applied and synchronized
+- [ ] All migrations `00001` through `00034` applied and synchronized
 - [ ] Auth configured (Site URL + Redirect URLs)
 - [ ] Vercel deployed
 - [ ] Required core and provider env vars configured
@@ -477,6 +516,13 @@ Expected: `201 Created` with `{"success": true, "lead": {...}, "qualification": 
 - [ ] WARM/COLD produce no Slack notification
 - [ ] Twilio read-only account/number test verified (optional)
 - [ ] No Twilio messaging/call operation performed
+
+### Lead Capture
+- [ ] Tally API key entered only through the organization integration UI
+- [ ] Selected form and field mapping confirmed with email or phone
+- [ ] Signed Tally submission creates exactly one organization-scoped lead
+- [ ] Identical replay creates no second lead; conflicting replay fails closed
+- [ ] Tally Test is read-only and Disconnect disables local ingestion
 
 ### Security
 - [ ] API key created, raw key stored securely

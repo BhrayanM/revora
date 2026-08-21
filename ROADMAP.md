@@ -1,7 +1,7 @@
 # Revora Roadmap
 
-**Current checkpoint:** Phase 14.6D merged locally; Phase 14.6E Tally design
-approved (2026-08-21)
+**Current checkpoint:** Phase 14.6E Tally complete and locally validated; live
+credential and linked-migration gates remain (2026-08-21)
 
 ## Completed
 
@@ -17,17 +17,17 @@ approved (2026-08-21)
 - Phase 14.6C: n8n, Zapier, and Make.
 - Phase 14.6D: Slack OAuth plus exact-HOT alerts; Twilio infrastructure limited
   to read-only account and source-number validation.
+- Phase 14.6E: Tally automatic form discovery/mapping, signed inbound lead
+  capture, tenant-scoped replay protection, and safe Connect/Test/Disconnect.
 
-## Next — Phase 14.6E: Tally
+## Next — Phase 14.6F: Google Calendar + Gmail
 
-Implement inbound Tally lead capture with signature verification,
-organization routing, replay-safe deduplication, bounded payload handling, and
-tenant-isolation tests. Preserve all Slack and Twilio contracts from 14.6D.
+Implement secure OAuth, least-privilege scopes, organization-scoped tokens,
+safe Test/Disconnect flows, and the constrained Calendar/Gmail operations in an
+approved design before implementation.
 
 ## Then
 
-- **14.6F — Google Calendar + Gmail:** secure OAuth, least-privilege scopes,
-  organization-scoped tokens, test/disconnect flows, and constrained actions.
 - **14.6G — Complete integration E2E audit:** provider regression, tenant
   isolation, retry/idempotency, credential exposure, build/audit, and live-vs-
   blocked evidence.
@@ -54,7 +54,7 @@ Slack work was completed inside Phases 14.6B-14.6D; it must not be repeated.
 
 ## Guardrails
 
-- Migrations `00001` through `00033` are immutable.
+- Migrations `00001` through `00034` are immutable.
 - RLS and organization authorization remain the tenant boundary.
 - Secrets remain server-only and encrypted at rest.
 - Do not push, deploy, purchase, or perform paid provider actions without
