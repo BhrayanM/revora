@@ -6,6 +6,8 @@
 
 ## Local Release Gate
 
+- [x] `npm.cmd run test:integration-e2e`
+- [x] `npm.cmd run test:crm-integrations`
 - [x] `npm.cmd run test:tally`
 - [x] `npm.cmd run test:google-workspace`
 - [x] `npm.cmd run test:communications`
@@ -15,8 +17,8 @@
 - [x] `npm.cmd run build`
 - [x] `npm.cmd audit` reports zero vulnerabilities
 - [x] `git diff --check`
-- [x] Migrations `00001`-`00034` remain unchanged; `00035` is the only Phase
-      14.6F addition
+- [x] Migrations `00001`-`00035` remain unchanged from the 14.6F checkpoint;
+      14.6G adds no migration
 - [ ] Migration `00034` applied and verified in the authorized linked project
 - [ ] Migration `00035` applied and verified in the authorized linked project
 - [x] Modified/untracked secret scan reports no real credential values
@@ -54,6 +56,8 @@
 - [x] Make implementation and prior provider validation
 - [x] Tally implementation and local contract validation
 - [x] Google Calendar and Gmail implementation and local contract validation
+- [x] Cross-provider OAuth, tenant, transport, idempotency, client-boundary,
+      and migration audit
 
 Re-run each live gate after production-domain or credential rotation.
 
@@ -125,9 +129,13 @@ Re-run each live gate after production-domain or credential rotation.
 - [ ] Database backups configured
 - [ ] Monitoring and security-event logging configured without secrets
 - [ ] WAF/HSTS/rate-limiter decisions completed
-- [ ] Full Phase 14.6G E2E audit completed before final go-live claim
+- [x] Phase 14.6G deterministic local E2E audit completed
+- [ ] External provider and tenant gates repeated on the production candidate
+      before final go-live claim
 
 ## Remaining Roadmap
 
 - [x] Phase 14.6F — Google Calendar + Gmail (local implementation)
-- [ ] Phase 14.6G — Complete integration E2E audit
+- [x] Phase 14.6G — Complete integration E2E audit (local)
+- [ ] Phase 14.7 — Product UX Completion
+- [ ] Phase 14.8 — Production Infrastructure and Release Readiness

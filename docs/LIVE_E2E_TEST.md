@@ -2,29 +2,29 @@
 
 **Updated:** 2026-08-21
 
-**Current phase:** 14.6F — Google Calendar + Gmail
+**Current phase:** 14.6G — Complete Integration E2E Audit
 
 ## Current Evidence
 
 | Provider | Implementation | Live status |
 | --- | --- | --- |
-| HubSpot | Complete | Validated in Phase 14.6B |
-| GoHighLevel | Complete | Validated in Phase 14.6B |
-| n8n | Complete | Validated in Phase 14.6C |
-| Zapier | Complete | Validated in Phase 14.6C |
-| Make | Complete | Validated in Phase 14.6C |
+| HubSpot | Local 14.6G PASS | `PRIOR_LIVE_PASS_14.6B`; current recheck `BLOCKED_ENVIRONMENT` |
+| GoHighLevel | Local 14.6G PASS | `PRIOR_LIVE_PASS_14.6B`; current recheck `BLOCKED_CREDENTIALS` |
+| n8n | Local 14.6G PASS | `PRIOR_LIVE_PASS_14.6C`; no new mutation |
+| Zapier | Local 14.6G PASS | `PRIOR_LIVE_PASS_14.6C`; no new mutation |
+| Make | Local 14.6G PASS | `PRIOR_LIVE_PASS_14.6C`; no new mutation |
 | Slack | OAuth + test/disconnect + HOT alert complete | `BLOCKED_CREDENTIALS` |
 | Twilio | Read-only account/number validation complete | `BLOCKED_CREDENTIALS` |
 | Tally | Automatic form mapping + signed inbound capture complete | `BLOCKED_CREDENTIALS` |
 | Google Calendar | Shared OAuth + read-only Test + bounded event creation complete | `BLOCKED_CREDENTIALS` |
 | Gmail | Shared OAuth + non-mutating Test + bounded plain-text send complete | `BLOCKED_CREDENTIALS` |
 
-The current local environment has no configured `SLACK_CLIENT_ID`,
-`SLACK_CLIENT_SECRET`, or `SLACK_REDIRECT_URI`. The linked database has no
-Slack or Twilio integration row. Therefore this report does not claim a live
-Slack or Twilio gate. The current context also has no usable Tally API key or
-encrypted Tally test connection, and no externally reachable HTTPS app origin;
-therefore `TALLY_LIVE_GATE=BLOCKED_CREDENTIALS`.
+The current process has no complete Slack, GHL, Google Workspace, Supabase, or
+public-app configuration. It has no Supabase project ref and the local database
+is stopped, so no current provider-row claim is possible. This report therefore
+does not claim a new live Slack or Twilio gate. There is also no usable Tally
+API key, encrypted Tally test connection, or externally reachable HTTPS app
+origin; therefore `TALLY_LIVE_GATE=BLOCKED_CREDENTIALS_AND_PUBLIC_HTTPS`.
 
 The current context has no complete `GOOGLE_WORKSPACE_CLIENT_ID`,
 `GOOGLE_WORKSPACE_CLIENT_SECRET`, and `GOOGLE_WORKSPACE_REDIRECT_URI` set, no
@@ -33,16 +33,20 @@ migration `00035`. Therefore
 `GOOGLE_WORKSPACE_LIVE_GATE=BLOCKED_CREDENTIALS` and no message or event was
 created.
 
-## Local Phase 14.6E Gate
+## Local Phase 14.6G Gate
 
-Final local run on 2026-08-21: **PASS** for Tally contracts, communications,
-14.6C automation regression, lint, typecheck, production build, npm audit, and
-whitespace. Migration `00034` is statically validated; linked verification is
-pending because this worktree has no Supabase project link.
+Final local run on 2026-08-21: **PASS** for the aggregate ten-provider audit,
+CRM transport, automation, communications, Tally and Google Workspace suites,
+lint, self-contained typecheck, production build, npm audit, and whitespace.
+Migrations `00001`-`00035` are statically unchanged from the 14.6F checkpoint;
+linked verification is pending because this worktree has no Supabase project
+link.
 
 Run from the project root:
 
 ```powershell
+npm.cmd run test:integration-e2e
+npm.cmd run test:crm-integrations
 npm.cmd run test:tally
 npm.cmd run test:google-workspace
 npm.cmd run test:communications
@@ -58,13 +62,13 @@ npx.cmd supabase migration list --linked
 Expected:
 
 - Tally API/lifecycle/signature/ingestion/tenant contracts pass.
+- HubSpot/GoHighLevel bounded transport and CRM failure contracts pass.
 - Slack/Twilio behavioral contracts pass.
 - The Phase 14.6C automation regression passes.
 - Lint, strict types, and the production build pass.
 - Audit reports zero vulnerabilities.
-- Migrations `00001`-`00034` remain byte-for-byte unchanged and only `00035`
-  is added for Phase 14.6F; linked application remains an explicit external
-  gate.
+- Migrations `00001`-`00035` remain unchanged; 14.6G adds no migration and
+  linked application remains an explicit external gate.
 
 ## Slack Live Gate
 
@@ -190,8 +194,9 @@ For Slack, Twilio, Tally, and Google Workspace, use Org A and Org B:
 4. Confirm no credential, webhook URL, or Basic Auth value reaches client DTOs
    or audit metadata.
 
-## Next E2E Boundary
+## Next Product Boundary
 
-Phase 14.6G audits every integration end to end. It must preserve the
-14.6B-14.6F provider contracts above and distinguish live PASS from external
-credential or migration blockers.
+Phase 14.7 performs Product UX Completion. It must preserve the complete 14.6G
+integration gate while improving visual consistency, accessibility, responsive
+behavior, provider identity, settings selectors, and the explicit scope of each
+remaining `Soon` module.
