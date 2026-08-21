@@ -147,6 +147,7 @@ export function parseGoogleTokenPayload(
   options: {
     requireRefreshToken?: boolean;
     currentRefreshToken?: string;
+    currentScopes?: string[];
   } = {},
 ): GoogleTokenGrant {
   if (!isRecord(payload)) {
@@ -185,7 +186,10 @@ export function parseGoogleTokenPayload(
     accessToken,
     refreshToken,
     expiresInSeconds,
-    scopes: parseExactScopes(payload["scope"]),
+    scopes:
+      payload["scope"] === undefined && options.currentScopes
+        ? parseExactScopes(options.currentScopes.join(" "))
+        : parseExactScopes(payload["scope"]),
   };
 }
 

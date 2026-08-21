@@ -6,6 +6,10 @@ import {
   decryptCredentialsObject,
   encryptCredentialsObject,
 } from "@/lib/integrations/encryption";
+import {
+  GOOGLE_WORKSPACE_SCOPES,
+  hasExactGoogleWorkspaceScopes,
+} from "@/lib/integrations/google-workspace-contract";
 import type { TallyFieldMapping } from "@/lib/integrations/tally-contract";
 import type {
   AutomationWebhookProviderId,
@@ -27,6 +31,7 @@ const TALLY_MAPPING_KEYS = [
   "company",
   "message",
 ] as const;
+const GOOGLE_WORKSPACE_PROVIDER_IDS = ["google-calendar", "gmail"] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -209,6 +214,288 @@ export async function saveConnection(
 
   if (error) return { error: error.message };
   return { error: null };
+}
+
+export interface ActiveGoogleWorkspaceConnection {
+  organizationId: string;
+  accessToken: string;
+  refreshToken: string;
+  subject: string;
+  email: string;
+  scopes: string[];
+  tokenExpiresAt: string;
+}
+
+type GoogleWorkspaceConnectionRow = {
+  organization_id: string;
+  provider: string;
+  credentials: unknown;
+  external_account_id: string | null;
+  external_account_name: string | null;
+  scopes: string[] | null;
+  token_expires_at: string | null;
+};
+
+export function parseGoogleWorkspaceConnectionRows(
+  rows: GoogleWorkspaceConnectionRow[],
+): ActiveGoogleWorkspaceConnection | null {
+  if (rows.length !== GOOGLE_WORKSPACE_PROVIDER_IDS.length) return null;
+  const byProvider = new Map(rows.map((row) => [row.provider, row]));
+  const calendar = byProvider.get("google-calendar");
+  const gmail = byProvider.get("gmail");
+  if (!calendar || !gmail) return null;
+
+  const subject = calendar.external_account_id;
+  const email = calendar.external_account_name?.trim().toLowerCase() ?? null;
+  const tokenExpiresAt = calendar.token_expires_at;
+  if (
+    !subject ||
+    subject.length > 255 ||
+    !email ||
+    email.length > 320 ||
+    !email.includes("@") ||
+    !tokenExpiresAt ||
+    !Number.isFinite(new Date(tokenExpiresAt).getTime()) ||
+    gmail.organization_id !== calendar.organization_id ||
+    gmail.external_account_id !== subject ||
+    gmail.external_account_name?.trim().toLowerCase() !== email ||
+    gmail.token_expires_at !== tokenExpiresAt ||
+    !hasExactGoogleWorkspaceScopes(calendar.scopes) ||
+    !hasExactGoogleWorkspaceScopes(gmail.scopes)
+  ) {
+    return null;
+  }
+
+  try {
+    if (!isRecord(calendar.credentials) || !isRecord(gmail.credentials)) {
+      return null;
+    }
+    const calendarCredentials = decryptCredentialsObject(calendar.credentials);
+    const gmailCredentials = decryptCredentialsObject(gmail.credentials);
+    const accessToken = calendarCredentials["access_token"];
+    const refreshToken = calendarCredentials["refresh_token"];
+    if (
+      typeof accessToken !== "string" ||
+      accessToken.length < 1 ||
+      accessToken.length > 4096 ||
+      typeof refreshToken !== "string" ||
+      refreshToken.length < 1 ||
+      refreshToken.length > 4096 ||
+      gmailCredentials["access_token"] !== accessToken ||
+      gmailCredentials["refresh_token"] !== refreshToken
+    ) {
+      return null;
+    }
+    return {
+      organizationId: calendar.organization_id,
+      accessToken,
+      refreshToken,
+      subject,
+      email,
+      scopes: [...GOOGLE_WORKSPACE_SCOPES],
+      tokenExpiresAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function saveGoogleWorkspaceConnections(input: {
+  organizationId: string;
+  accessToken: string;
+  refreshToken: string;
+  subject: string;
+  email: string;
+  scopes: string[];
+  tokenExpiresAt: string;
+  userId?: string;
+}): Promise<{ error: string | null }> {
+  const expiresAt = new Date(input.tokenExpiresAt);
+  if (
+    !input.organizationId ||
+    input.accessToken.length < 1 ||
+    input.accessToken.length > 4096 ||
+    input.refreshToken.length < 1 ||
+    input.refreshToken.length > 4096 ||
+    input.subject.length < 1 ||
+    input.subject.length > 255 ||
+    input.email.length < 3 ||
+    input.email.length > 320 ||
+    !input.email.includes("@") ||
+    !Number.isFinite(expiresAt.getTime()) ||
+    expiresAt.getTime() <= Date.now() ||
+    !hasExactGoogleWorkspaceScopes(input.scopes)
+  ) {
+    return { error: "Invalid Google Workspace connection data." };
+  }
+  const supabase = await createServiceAdminClient();
+  const encrypted = encryptCredentialsObject({
+    access_token: input.accessToken,
+    refresh_token: input.refreshToken,
+  });
+  const connectedAt = new Date().toISOString();
+  const common = {
+    organization_id: input.organizationId,
+    credentials: encrypted,
+    config: { workspace_bundle: "google-workspace" } as Json,
+    is_active: true,
+    status: "connected",
+    connected_at: connectedAt,
+    connected_by: input.userId ?? null,
+    health_status: "healthy",
+    external_account_id: input.subject,
+    external_account_name: input.email,
+    scopes: [...GOOGLE_WORKSPACE_SCOPES],
+    token_expires_at: input.tokenExpiresAt,
+    last_success_at: connectedAt,
+    last_error_at: null,
+    last_error_code: null,
+  };
+  const { error } = await supabase.from("integrations").upsert(
+    GOOGLE_WORKSPACE_PROVIDER_IDS.map((provider) => ({
+      ...common,
+      provider,
+    })),
+    { onConflict: "organization_id,provider" },
+  );
+  return { error: error?.message ?? null };
+}
+
+async function loadGoogleWorkspaceConnection(
+  organizationId: string,
+  statuses: string[],
+): Promise<ActiveGoogleWorkspaceConnection | null> {
+  const supabase = await createServiceAdminClient();
+  const { data, error } = await supabase
+    .from("integrations")
+    .select(
+      "organization_id, provider, credentials, external_account_id, external_account_name, scopes, token_expires_at",
+    )
+    .eq("organization_id", organizationId)
+    .eq("is_active", true)
+    .in("status", statuses)
+    .in("provider", [...GOOGLE_WORKSPACE_PROVIDER_IDS]);
+  if (error || !data) return null;
+  return parseGoogleWorkspaceConnectionRows(data);
+}
+
+export async function getActiveGoogleWorkspaceConnection(
+  organizationId: string,
+): Promise<ActiveGoogleWorkspaceConnection | null> {
+  return loadGoogleWorkspaceConnection(organizationId, [
+    "connected",
+    "degraded",
+  ]);
+}
+
+export async function getGoogleWorkspaceConnectionForDisconnect(
+  organizationId: string,
+): Promise<ActiveGoogleWorkspaceConnection | null> {
+  return loadGoogleWorkspaceConnection(organizationId, [
+    "connected",
+    "degraded",
+    "reauth_required",
+    "error",
+  ]);
+}
+
+export async function updateGoogleWorkspaceTokens(input: {
+  organizationId: string;
+  accessToken: string;
+  refreshToken: string;
+  tokenExpiresAt: string;
+}): Promise<{ error: string | null }> {
+  const supabase = await createServiceAdminClient();
+  const encrypted = encryptCredentialsObject({
+    access_token: input.accessToken,
+    refresh_token: input.refreshToken,
+  });
+  const { data, error } = await supabase
+    .from("integrations")
+    .update({
+      credentials: encrypted,
+      token_expires_at: input.tokenExpiresAt,
+      status: "connected",
+      health_status: "healthy",
+      last_success_at: new Date().toISOString(),
+      last_error_at: null,
+      last_error_code: null,
+    })
+    .eq("organization_id", input.organizationId)
+    .in("provider", [...GOOGLE_WORKSPACE_PROVIDER_IDS])
+    .select("provider");
+  if (error) return { error: error.message };
+  const updated = new Set((data ?? []).map((row) => row.provider));
+  if (
+    !GOOGLE_WORKSPACE_PROVIDER_IDS.every((provider) => updated.has(provider))
+  ) {
+    return { error: "Google Workspace connection is incomplete." };
+  }
+  return { error: null };
+}
+
+export async function markGoogleWorkspaceHealthy(
+  organizationId: string,
+): Promise<void> {
+  const supabase = await createServiceAdminClient();
+  await supabase
+    .from("integrations")
+    .update({
+      status: "connected",
+      health_status: "healthy",
+      last_success_at: new Date().toISOString(),
+      last_error_at: null,
+      last_error_code: null,
+    })
+    .eq("organization_id", organizationId)
+    .in("provider", [...GOOGLE_WORKSPACE_PROVIDER_IDS]);
+}
+
+export async function markGoogleWorkspaceError(
+  organizationId: string,
+  errorCode: string,
+): Promise<void> {
+  const supabase = await createServiceAdminClient();
+  const reauthRequired = [
+    "INVALID_CREDENTIALS",
+    "REAUTH_REQUIRED",
+    "REFRESH_FAILED",
+  ].includes(errorCode);
+  await supabase
+    .from("integrations")
+    .update({
+      status: reauthRequired ? "reauth_required" : "degraded",
+      health_status: reauthRequired ? "reauth_required" : "degraded",
+      last_error_at: new Date().toISOString(),
+      last_error_code: errorCode,
+    })
+    .eq("organization_id", organizationId)
+    .in("provider", [...GOOGLE_WORKSPACE_PROVIDER_IDS]);
+}
+
+export async function disconnectGoogleWorkspaceConnections(
+  organizationId: string,
+): Promise<{ error: string | null }> {
+  const supabase = await createServiceAdminClient();
+  const { error } = await supabase
+    .from("integrations")
+    .update({
+      status: "disconnected",
+      health_status: "unknown",
+      credentials: {},
+      config: {},
+      is_active: false,
+      external_account_id: null,
+      external_account_name: null,
+      scopes: null,
+      token_expires_at: null,
+      last_success_at: null,
+      last_error_at: null,
+      last_error_code: null,
+    })
+    .eq("organization_id", organizationId)
+    .in("provider", [...GOOGLE_WORKSPACE_PROVIDER_IDS]);
+  return { error: error?.message ?? null };
 }
 
 export interface ActiveAutomationWebhookConnection {
