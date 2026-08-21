@@ -2,6 +2,10 @@ import "server-only";
 
 import { createHash, randomBytes } from "crypto";
 
+import {
+  decryptCredential,
+  encryptCredential,
+} from "@/lib/integrations/encryption";
 import type { IntegrationProviderId } from "@/lib/integrations/types";
 import { createServiceAdminClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
@@ -19,7 +23,7 @@ export async function generateOAuthState(
   const expiresAt = new Date(Date.now() + OAUTH_STATE_EXPIRATION_MS);
 
   const supabase = await createServiceAdminClient();
-  await supabase.from("integration_oauth_states").insert({
+  const { error } = await supabase.from("integration_oauth_states").insert({
     organization_id: organizationId,
     provider,
     state_hash: stateHash,
@@ -27,6 +31,9 @@ export async function generateOAuthState(
     expires_at: expiresAt.toISOString(),
     return_path: returnPath,
   });
+  if (error) {
+    throw new Error("OAuth state could not be created.");
+  }
 
   return { state: rawState, stateHash };
 }
@@ -45,12 +52,20 @@ export async function storePKCEVerifier(
   verifier: string,
 ): Promise<void> {
   const supabase = await createServiceAdminClient();
-  await supabase
+  const encryptedVerifier = encryptCredential(verifier);
+  const { data, error } = await supabase
     .from("integration_oauth_states")
     .update({
-      pkce_verifier_encrypted: verifier,
+      pkce_verifier_encrypted: encryptedVerifier,
     })
-    .eq("state_hash", stateHash);
+    .eq("state_hash", stateHash)
+    .is("consumed_at", null)
+    .gt("expires_at", new Date().toISOString())
+    .select("id")
+    .maybeSingle();
+  if (error || !data) {
+    throw new Error("OAuth PKCE verifier could not be stored.");
+  }
 }
 
 export async function validateOAuthState(
@@ -93,16 +108,36 @@ export async function validateOAuthState(
     return { valid: false, error: "OAuth state does not match provider" };
   }
 
-  await supabase
+  const consumedAt = new Date().toISOString();
+  const { data: consumed, error: consumeError } = await supabase
     .from("integration_oauth_states")
-    .update({ consumed_at: new Date().toISOString() })
-    .eq("id", data.id);
+    .update({ consumed_at: consumedAt })
+    .eq("id", data.id)
+    .eq("organization_id", organizationId)
+    .eq("provider", provider)
+    .is("consumed_at", null)
+    .gt("expires_at", consumedAt)
+    .select("id")
+    .maybeSingle();
+
+  if (consumeError || !consumed) {
+    return { valid: false, error: "OAuth state could not be consumed" };
+  }
+
+  let verifier: string | undefined;
+  if (data.pkce_verifier_encrypted) {
+    try {
+      verifier = decryptCredential(data.pkce_verifier_encrypted);
+    } catch {
+      return { valid: false, error: "OAuth state is invalid" };
+    }
+  }
 
   return {
     valid: true,
     stateHash: data.state_hash,
     returnPath: data.return_path ?? undefined,
-    verifier: data.pkce_verifier_encrypted ?? undefined,
+    verifier,
   };
 }
 

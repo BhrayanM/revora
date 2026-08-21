@@ -118,6 +118,9 @@ export async function saveIntegration(
   if (isAutomationWebhookProvider(provider)) {
     return { error: "Use the secure webhook connection flow." };
   }
+  if (provider === "hubspot" || provider === "gohighlevel") {
+    return { error: "Use the CRM OAuth connection flow." };
+  }
   if (provider === "slack") {
     return { error: "Use the Slack OAuth connection flow." };
   }
@@ -207,6 +210,15 @@ export async function deleteIntegration(provider: IntegrationProviderId) {
   const org = authorization.data.organization;
   const profileId = authorization.data.membership.profile_id;
 
+  if (provider === "hubspot" || provider === "gohighlevel") {
+    return { error: "Use the CRM OAuth disconnect flow." };
+  }
+  if (provider === "slack") {
+    return { error: "Use the Slack OAuth disconnect flow." };
+  }
+  if (provider === "twilio") {
+    return { error: "Use the verified Twilio disconnect flow." };
+  }
   if (provider === "tally") {
     return { error: "Use the secure Tally disconnect flow." };
   }
