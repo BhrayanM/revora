@@ -2,6 +2,13 @@ import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 
 import {
+  createTallyWebhook,
+  deleteTallyWebhook,
+  getTallyFormFields,
+  listTallyForms,
+  verifyTallyWebhook,
+} from "../src/lib/integrations/adapters/tally.ts";
+import {
   mapTallyEventToLeadInput,
   normalizeTallyApiKey,
   parseTallyFields,
@@ -333,6 +340,249 @@ assert.throws(
       data: { formId: "form-1", submissionId: "submission-2", fields: [] },
     }),
   /event id/i,
+);
+
+const formsApiPayload = {
+  items: [
+    {
+      id: "form-1",
+      name: "Website leads",
+      workspaceId: "workspace-1",
+      status: "PUBLISHED",
+      numberOfSubmissions: 12,
+      isClosed: false,
+      createdAt: "2026-08-01T10:00:00.000Z",
+      updatedAt: "2026-08-20T10:00:00.000Z",
+    },
+  ],
+  page: 1,
+  limit: 500,
+  total: 1,
+  hasMore: false,
+};
+let capturedFormsRequest;
+const formsResult = await listTallyForms("test-api-key", async (url, init) => {
+  capturedFormsRequest = { url: String(url), init };
+  const body = JSON.stringify(formsApiPayload);
+  return new Response(body, {
+    status: 200,
+    headers: { "content-length": String(Buffer.byteLength(body)) },
+  });
+});
+assert.deepEqual(formsResult, {
+  ok: true,
+  forms: [
+    {
+      id: "form-1",
+      name: "Website leads",
+      status: "PUBLISHED",
+      isClosed: false,
+    },
+  ],
+});
+assert.equal(
+  capturedFormsRequest.url,
+  "https://api.tally.so/forms?page=1&limit=500",
+);
+assert.equal(capturedFormsRequest.init.method, "GET");
+assert.equal(capturedFormsRequest.init.redirect, "error");
+assert.equal(
+  capturedFormsRequest.init.headers.Authorization,
+  "Bearer test-api-key",
+);
+assert.equal(capturedFormsRequest.init.headers["tally-version"], "2025-02-01");
+assert.ok(capturedFormsRequest.init.signal instanceof AbortSignal);
+
+const questionsPayload = {
+  questions: [
+    {
+      id: "question-email",
+      type: "INPUT_EMAIL",
+      title: "Email address",
+      isDeleted: false,
+      fields: [
+        {
+          uuid: "email-id",
+          type: "INPUT_EMAIL",
+          blockGroupUuid: "question-email",
+          title: "Email address",
+        },
+      ],
+    },
+  ],
+  hasResponses: false,
+};
+let capturedQuestionsRequest;
+const fieldsResult = await getTallyFormFields(
+  "test-api-key",
+  "form-1",
+  async (url, init) => {
+    capturedQuestionsRequest = { url: String(url), init };
+    return Response.json(questionsPayload);
+  },
+);
+assert.deepEqual(fieldsResult, {
+  ok: true,
+  fields: [{ id: "email-id", label: "Email address", type: "INPUT_EMAIL" }],
+});
+assert.equal(
+  capturedQuestionsRequest.url,
+  "https://api.tally.so/forms/form-1/questions",
+);
+
+let capturedCreateRequest;
+const createResult = await createTallyWebhook(
+  {
+    apiKey: "test-api-key",
+    formId: "form-1",
+    webhookUrl:
+      "https://app.revora.test/api/integrations/tally/webhook/token-1",
+    signingSecret: "test-signing-secret",
+    externalSubscriber: "revora",
+  },
+  async (url, init) => {
+    capturedCreateRequest = { url: String(url), init };
+    return Response.json(
+      {
+        id: "webhook-1",
+        url: "https://app.revora.test/api/integrations/tally/webhook/token-1",
+        eventTypes: ["FORM_RESPONSE"],
+        isEnabled: true,
+        createdAt: "2026-08-21T12:00:00.000Z",
+      },
+      { status: 201 },
+    );
+  },
+);
+assert.deepEqual(createResult, {
+  ok: true,
+  webhook: { id: "webhook-1", isEnabled: true },
+});
+assert.equal(capturedCreateRequest.url, "https://api.tally.so/webhooks");
+assert.equal(capturedCreateRequest.init.method, "POST");
+assert.deepEqual(JSON.parse(capturedCreateRequest.init.body), {
+  formId: "form-1",
+  url: "https://app.revora.test/api/integrations/tally/webhook/token-1",
+  eventTypes: ["FORM_RESPONSE"],
+  signingSecret: "test-signing-secret",
+  externalSubscriber: "revora",
+});
+
+const webhookPages = [
+  {
+    webhooks: [
+      {
+        id: "other-webhook",
+        formId: "other-form",
+        url: "https://example.invalid/other",
+        signingSecret: "must-not-leak",
+        httpHeaders: [],
+        eventTypes: ["FORM_RESPONSE"],
+        externalSubscriber: "other",
+        isEnabled: true,
+        createdAt: "2026-08-01T10:00:00.000Z",
+        updatedAt: "2026-08-01T10:00:00.000Z",
+      },
+    ],
+    page: 1,
+    limit: 100,
+    hasMore: true,
+    totalCount: 2,
+  },
+  {
+    webhooks: [
+      {
+        id: "webhook-1",
+        formId: "form-1",
+        url: "https://app.revora.test/api/integrations/tally/webhook/token-1",
+        signingSecret: "must-not-leak",
+        httpHeaders: [],
+        eventTypes: ["FORM_RESPONSE"],
+        externalSubscriber: "revora",
+        isEnabled: true,
+        createdAt: "2026-08-21T12:00:00.000Z",
+        updatedAt: "2026-08-21T12:00:00.000Z",
+      },
+    ],
+    page: 2,
+    limit: 100,
+    hasMore: false,
+    totalCount: 2,
+  },
+];
+const verificationRequests = [];
+const verifyResult = await verifyTallyWebhook(
+  "test-api-key",
+  "webhook-1",
+  "form-1",
+  async (url) => {
+    verificationRequests.push(String(url));
+    return Response.json(webhookPages[verificationRequests.length - 1]);
+  },
+);
+assert.deepEqual(verifyResult, {
+  ok: true,
+  webhook: { id: "webhook-1", formId: "form-1", isEnabled: true },
+});
+assert.equal("signingSecret" in verifyResult.webhook, false);
+assert.deepEqual(verificationRequests, [
+  "https://api.tally.so/webhooks?page=1&limit=100",
+  "https://api.tally.so/webhooks?page=2&limit=100",
+]);
+
+let capturedDeleteRequest;
+const deleteResult = await deleteTallyWebhook(
+  "test-api-key",
+  "webhook-1",
+  async (url, init) => {
+    capturedDeleteRequest = { url: String(url), init };
+    return new Response(null, { status: 204 });
+  },
+);
+assert.deepEqual(deleteResult, { ok: true });
+assert.equal(
+  capturedDeleteRequest.url,
+  "https://api.tally.so/webhooks/webhook-1",
+);
+assert.equal(capturedDeleteRequest.init.method, "DELETE");
+
+for (const [status, errorCode] of [
+  [401, "INVALID_CREDENTIALS"],
+  [403, "REAUTH_REQUIRED"],
+  [429, "RATE_LIMITED"],
+  [503, "PROVIDER_UNAVAILABLE"],
+]) {
+  assert.deepEqual(
+    await listTallyForms(
+      "test-api-key",
+      async () => new Response("provider detail", { status }),
+    ),
+    { ok: false, errorCode },
+  );
+}
+assert.deepEqual(
+  await listTallyForms("test-api-key", async () => {
+    throw new DOMException("Aborted", "AbortError");
+  }),
+  { ok: false, errorCode: "NETWORK_ERROR" },
+);
+assert.deepEqual(
+  await listTallyForms(
+    "test-api-key",
+    async () =>
+      new Response("too large", {
+        status: 200,
+        headers: { "content-length": String(1024 * 1024 + 1) },
+      }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE" },
+);
+assert.deepEqual(
+  await listTallyForms(
+    "test-api-key",
+    async () => new Response("not-json", { status: 200 }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE" },
 );
 
 console.log("Phase 14.6E Tally contract verification passed.");
