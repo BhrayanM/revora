@@ -11,10 +11,10 @@ site with a protected organization dashboard.
 | Framework | Next.js 16.3 App Router, React 19, TypeScript strict mode |
 | Styling | Tailwind CSS v4, semantic design tokens, custom CVA components |
 | Auth | Supabase Auth with SSR cookies, email/password, PKCE OAuth, TOTP MFA |
-| Data | Supabase PostgreSQL, generated types, RLS, SQL migrations 00001-00033 |
+| Data | Supabase PostgreSQL, generated types, RLS, SQL migrations 00001-00034 |
 | Tenancy | Organizations, memberships, workspaces, organization-scoped data |
 | Security | Turnstile, MFA AAL2 enforcement, safe redirects, RLS, legal-consent gates |
-| Integrations | HubSpot, GoHighLevel, n8n, Zapier, Make, Slack OAuth/HOT alerts, Twilio read-only validation |
+| Integrations | HubSpot, GoHighLevel, n8n, Zapier, Make, Slack OAuth/HOT alerts, Twilio read-only validation, signed Tally lead capture |
 
 The application does not use Prisma, NextAuth, or Framer Motion. Docker files
 remain available for optional local/container workflows; Docker is not required
@@ -39,8 +39,8 @@ for the normal Next.js plus Supabase development path.
 | Status | Integrations |
 | --- | --- |
 | Completed and provider-validated | HubSpot, GoHighLevel, n8n, Zapier, Make |
-| Implemented and locally validated | Slack OAuth + HOT alerts; Twilio account/source-number validation (read-only) |
-| Next | Tally inbound capture (14.6E), Google Calendar + Gmail (14.6F), full E2E audit (14.6G) |
+| Implemented and locally validated | Slack OAuth + HOT alerts; Twilio account/source-number validation (read-only); Tally automatic form mapping + signed inbound capture |
+| Next | Google Calendar + Gmail (14.6F), full integration E2E audit (14.6G) |
 | Deferred | Twilio messaging/calls, Apple OAuth, enterprise SSO/SCIM, customer portal |
 
 Do not treat an adapter or UI panel as proof that an external provider is live.
@@ -69,9 +69,10 @@ Do not treat an adapter or UI panel as proof that an external provider is live.
   `/legal/consent`.
 - Dashboard: `/dashboard`, `/analytics`, `/leads`, `/pipeline`, `/automation`,
   `/settings`, `/profile`, and `/notifications`.
-- API: `/api/leads`, the authenticated automation retry worker at
-  `/api/internal/integrations/retries`, and server-side OAuth callbacks for
-  HubSpot, GoHighLevel, and Slack.
+- API: `/api/leads`, signed Tally ingestion at
+  `/api/integrations/tally/webhook/[token]`, the authenticated automation retry
+  worker at `/api/internal/integrations/retries`, and server-side OAuth
+  callbacks for HubSpot, GoHighLevel, and Slack.
 
 ## Getting Started
 
@@ -95,21 +96,23 @@ work.
 | `npm run format` | Format repository files with Prettier |
 | `npm run test:integrations` | Verify automation webhook contracts |
 | `npm run test:communications` | Verify Slack and Twilio contracts |
+| `npm run test:tally` | Verify Tally API, lifecycle, signature, ingestion, and tenant contracts |
 
 ## Current Roadmap Position
 
-Phases 14.4D, 14.5, and 14.6A-14.6D are complete in local history. The next
-boundary is **Phase 14.6E - Tally inbound lead capture, signature verification,
-and replay-safe deduplication**.
+Phases 14.4D, 14.5, and 14.6A-14.6E are complete in local history. Tally's live
+provider gate remains blocked until an authorized API key and HTTPS app origin
+are available. The next implementation boundary is **Phase 14.6F - Google
+Calendar + Gmail**.
 
 See [PROJECT_STATUS.md](./PROJECT_STATUS.md), [ROADMAP.md](./ROADMAP.md), and
-[the Phase 14.6D handoff](./docs/handoffs/PHASE_14.6D_COMPLETION_HANDOFF_2026-08-20.md).
+[the Phase 14.6E handoff](./docs/handoffs/PHASE_14.6E_COMPLETION_HANDOFF_2026-08-21.md).
 
 ## Security and Change Rules
 
 - Do not weaken Supabase RLS, tenant isolation, PKCE, Turnstile, MFA/AAL2,
   legal-consent enforcement, or service-role boundaries.
-- Do not modify migrations 00001 through 00033.
+- Do not modify migrations 00001 through 00034.
 - Never commit secrets, tokens, service-role credentials, webhook secrets, or
   provider credentials.
 - Do not push local commits without explicit authorization.

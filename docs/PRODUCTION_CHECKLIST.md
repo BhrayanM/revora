@@ -1,11 +1,12 @@
 # Revora Production Checklist
 
-**Last updated:** 2026-08-20
+**Last updated:** 2026-08-21
 
 **Status:** Local production candidate; external credential and deployment gates remain.
 
 ## Local Release Gate
 
+- [x] `npm.cmd run test:tally`
 - [x] `npm.cmd run test:communications`
 - [x] `npm.cmd run test:integrations`
 - [x] `npm.cmd run lint`
@@ -13,7 +14,8 @@
 - [x] `npm.cmd run build`
 - [x] `npm.cmd audit` reports zero vulnerabilities
 - [x] `git diff --check`
-- [x] Local/linked Supabase migrations match through `00033`
+- [x] Migrations `00001`-`00033` remain unchanged; `00034` is the only addition
+- [ ] Migration `00034` applied and verified in the authorized linked project
 - [x] Modified/untracked secret scan reports no real credential values
 - [ ] Git working tree is clean after the authorized local phase commit
 
@@ -34,7 +36,7 @@
 
 ## Supabase and Tenant Isolation
 
-- [ ] Migrations `00001`-`00033` applied in order; existing files unchanged
+- [ ] Migrations `00001`-`00034` applied in order; existing files unchanged
 - [ ] RLS enabled on every organization-owned business table
 - [ ] Service-role key never reaches browser bundles
 - [ ] Org A cannot read, test, disconnect, or use Org B integrations
@@ -47,6 +49,7 @@
 - [x] n8n implementation and prior provider validation
 - [x] Zapier implementation and prior provider validation
 - [x] Make implementation and prior provider validation
+- [x] Tally implementation and local contract validation
 
 Re-run each live gate after production-domain or credential rotation.
 
@@ -71,6 +74,22 @@ Re-run each live gate after production-domain or credential rotation.
 - [ ] Disconnect clears stored credentials
 - [ ] No SMS, WhatsApp, call, number-purchase, or callback action exists
 
+## Tally
+
+- [ ] `NEXT_PUBLIC_APP_URL` is an externally reachable HTTPS origin
+- [ ] Migration `00034` is applied to the authorized non-production project
+- [ ] API key entered only in the masked organization-scoped connection UI
+- [ ] Form discovery and question inspection use the documented Tally API only
+- [ ] Mapping requires email or phone and stores no raw/unmapped form data
+- [ ] Connect creates one signed `FORM_RESPONSE` webhook automatically
+- [ ] Test is read-only and validates the selected form plus remote webhook
+- [ ] Valid signed submission creates exactly one organization-scoped lead
+- [ ] Identical replay is idempotent; payload conflict fails closed
+- [ ] Invalid signature, unknown token, and oversized body fail safely
+- [ ] Org B cannot read, test, disconnect, or route through Org A's connection
+- [ ] Disconnect clears credentials and disables local ingestion regardless of
+      remote cleanup outcome
+
 ## Automation Reliability
 
 - [ ] n8n/Zapier/Make credentials are organization-scoped and encrypted
@@ -92,6 +111,5 @@ Re-run each live gate after production-domain or credential rotation.
 
 ## Remaining Roadmap
 
-- [ ] Phase 14.6E — Tally inbound capture, signatures, replay deduplication
 - [ ] Phase 14.6F — Google Calendar + Gmail
 - [ ] Phase 14.6G — Complete integration E2E audit
