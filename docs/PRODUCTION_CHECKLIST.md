@@ -20,7 +20,7 @@
 - [ ] Migration `00034` applied and verified in the authorized linked project
 - [ ] Migration `00035` applied and verified in the authorized linked project
 - [x] Modified/untracked secret scan reports no real credential values
-- [ ] Git working tree is clean after the authorized local phase commit
+- [x] Git working tree is clean after the authorized local phase commit
 
 ## Core Environment
 
