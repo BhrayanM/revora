@@ -10,7 +10,7 @@ import {
   listTallyForms,
   verifyTallyWebhook,
 } from "../src/lib/integrations/adapters/tally.ts";
-import { handleTallyWebhookRequest } from "../src/app/api/integrations/tally/webhook/[token]/route.ts";
+import { handleTallyWebhookRequest } from "../src/lib/integrations/tally-webhook-route.ts";
 import { ingestTallyWebhook } from "../src/lib/integrations/tally-ingestion.ts";
 import {
   mapTallyEventToLeadInput,
@@ -740,12 +740,18 @@ for (const [name, expectedHash] of immutableMigrationHashes) {
 }
 
 const tallyMigrationName = "00034_phase_14_6e_tally_inbound.sql";
-assert.deepEqual(
-  readdirSync(migrationsDirectory)
-    .filter((name) => /^0003[4-9]_/.test(name))
-    .sort(),
-  [tallyMigrationName],
-  "Phase 14.6E must add only migration 00034 after 00033.",
+const migrationsFromTallyForward = readdirSync(migrationsDirectory)
+  .filter((name) => /^0003[4-9]_/.test(name))
+  .sort();
+assert.equal(
+  migrationsFromTallyForward[0],
+  tallyMigrationName,
+  "Phase 14.6E migration 00034 must remain the first migration after 00033.",
+);
+assert.equal(
+  migrationsFromTallyForward.filter((name) => name.startsWith("00034_")).length,
+  1,
+  "Phase 14.6E migration 00034 must remain unique.",
 );
 const tallyMigration = readFileSync(
   resolve(migrationsDirectory, tallyMigrationName),
@@ -1273,14 +1279,17 @@ for (const [ingestionResult, expectedStatus] of [
   [{ status: "retryable_error" }, 500],
 ]) {
   const response = await handleTallyWebhookRequest(
-    new Request("https://app.revora.test/api/integrations/tally/webhook/token", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "tally-signature": routeSignature,
+    new Request(
+      "https://app.revora.test/api/integrations/tally/webhook/token",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "tally-signature": routeSignature,
+        },
+        body: rawPayload,
       },
-      body: rawPayload,
-    }),
+    ),
     "A".repeat(43),
     {
       findConnection: async () => tallyConnection,
