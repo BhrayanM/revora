@@ -10,6 +10,8 @@ import {
   listTallyForms,
   verifyTallyWebhook,
 } from "../src/lib/integrations/adapters/tally.ts";
+import { handleTallyWebhookRequest } from "../src/app/api/integrations/tally/webhook/[token]/route.ts";
+import { ingestTallyWebhook } from "../src/lib/integrations/tally-ingestion.ts";
 import {
   mapTallyEventToLeadInput,
   normalizeTallyApiKey,
@@ -866,5 +868,435 @@ const integrationsPanel = readFileSync(
 assert.ok(integrationsPanel.includes("TallyConnectForm"));
 assert.ok(integrationsPanel.includes("testTally"));
 assert.ok(integrationsPanel.includes("disconnectTally"));
+
+const tallyConnection = {
+  id: "integration-1",
+  organizationId: "organization-1",
+  credentials: {
+    apiKey: "test-api-key",
+    signingSecret: "route-signing-secret",
+  },
+  config: {
+    formId: "form-1",
+    formName: "Website leads",
+    webhookId: "webhook-1",
+    fieldMapping: {
+      name: "name-id",
+      email: "email-id",
+      phone: "phone-id",
+      company: "company-id",
+      message: "message-id",
+    },
+    routingTokenHash: "a".repeat(64),
+  },
+};
+const fixedNow = new Date("2026-08-21T15:30:00.000Z");
+function createIngestionHarness(overrides = {}) {
+  const calls = [];
+  let insertedPayload;
+  const leadRow = {
+    id: "lead-1",
+    organization_id: tallyConnection.organizationId,
+    workspace_id: "workspace-1",
+    pipeline_id: "pipeline-1",
+    pipeline_stage_id: "stage-1",
+    first_name: "Ada",
+    last_name: "Lovelace",
+    email: "ada@example.com",
+    phone: "+15551234567",
+    company: "Analytical Engines",
+    source: "other",
+    source_external_id: "tally:form-1:submission-1",
+    status: "new",
+    score: 0,
+    metadata: {},
+    assigned_to: null,
+    tags: null,
+    created_at: fixedNow.toISOString(),
+    updated_at: fixedNow.toISOString(),
+  };
+  const dependencies = {
+    claimEvent: async () => ({
+      status: "claimed",
+      id: "webhook-event-1",
+      attemptCount: 1,
+    }),
+    resolveCrmDefaults: async () => ({
+      workspaceId: "workspace-1",
+      pipelineId: "pipeline-1",
+      stageId: "stage-1",
+    }),
+    insertLead: async (payload) => {
+      calls.push("insert");
+      insertedPayload = payload;
+      return { ok: true, lead: { ...leadRow, ...payload } };
+    },
+    findLeadBySource: async () => null,
+    markProcessed: async () => {
+      calls.push("processed");
+    },
+    markFailed: async () => {
+      calls.push("failed");
+    },
+    dispatchOutbound: async () => {
+      calls.push("dispatched");
+    },
+    recordAudit: async (eventType) => {
+      calls.push(`audit:${eventType}`);
+    },
+    clock: () => fixedNow,
+    hashPayload: () => "payload-hash-1",
+    ...overrides,
+  };
+  return {
+    calls,
+    dependencies,
+    getInsertedPayload: () => insertedPayload,
+    leadRow,
+  };
+}
+
+const validHarness = createIngestionHarness();
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload, connection: tallyConnection },
+    validHarness.dependencies,
+  ),
+  { status: "created", leadId: "lead-1" },
+);
+const validInsert = validHarness.getInsertedPayload();
+assert.equal(validInsert.organization_id, tallyConnection.organizationId);
+assert.equal(validInsert.source, "other");
+assert.equal(validInsert.source_external_id, "tally:form-1:submission-1");
+assert.equal(validInsert.first_name, "Ada");
+assert.equal(validInsert.last_name, "Lovelace");
+assert.equal(validInsert.email, "ada@example.com");
+assert.deepEqual(validInsert.metadata, {
+  ingested_via: "tally",
+  tally_form_id: "form-1",
+  tally_form_name: "Website leads",
+  tally_submission_id: "submission-1",
+  tally_event_id: "event-1",
+  ingested_at: fixedNow.toISOString(),
+});
+assert.equal(JSON.stringify(validInsert).includes("private-file"), false);
+assert.equal(JSON.stringify(validInsert).includes("private.pdf"), false);
+assert.ok(
+  validHarness.calls.indexOf("processed") <
+    validHarness.calls.indexOf("dispatched"),
+);
+
+function payloadWithFields(predicate, eventId, submissionId) {
+  const payload = JSON.parse(rawPayload);
+  payload.eventId = eventId;
+  payload.data.submissionId = submissionId;
+  payload.data.responseId = submissionId;
+  payload.data.fields = payload.data.fields.filter(predicate);
+  return JSON.stringify(payload);
+}
+const emailOnlyHarness = createIngestionHarness();
+const emailOnlyResult = await ingestTallyWebhook(
+  {
+    rawPayload: payloadWithFields(
+      (field) => ["name-id", "email-id"].includes(field.key),
+      "event-email",
+      "submission-email",
+    ),
+    connection: tallyConnection,
+  },
+  emailOnlyHarness.dependencies,
+);
+assert.equal(emailOnlyResult.status, "created");
+assert.equal(emailOnlyHarness.getInsertedPayload().phone, null);
+
+const phoneOnlyHarness = createIngestionHarness();
+const phoneOnlyResult = await ingestTallyWebhook(
+  {
+    rawPayload: payloadWithFields(
+      (field) => ["name-id", "phone-id"].includes(field.key),
+      "event-phone",
+      "submission-phone",
+    ),
+    connection: tallyConnection,
+  },
+  phoneOnlyHarness.dependencies,
+);
+assert.equal(phoneOnlyResult.status, "created");
+assert.equal(phoneOnlyHarness.getInsertedPayload().email, null);
+
+let invalidClaimCalls = 0;
+const invalidContactHarness = createIngestionHarness({
+  claimEvent: async () => {
+    invalidClaimCalls += 1;
+    throw new Error("must not claim invalid contact data");
+  },
+});
+const invalidContactPayload = payloadWithFields(
+  (field) => field.key === "name-id",
+  "event-invalid",
+  "submission-invalid",
+);
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload: invalidContactPayload, connection: tallyConnection },
+    invalidContactHarness.dependencies,
+  ),
+  { status: "invalid_event" },
+);
+assert.equal(invalidClaimCalls, 0);
+
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload: "{not-json", connection: tallyConnection },
+    invalidContactHarness.dependencies,
+  ),
+  { status: "invalid_event" },
+);
+assert.equal(invalidClaimCalls, 0);
+
+const foreignFormConnection = {
+  ...tallyConnection,
+  config: { ...tallyConnection.config, formId: "another-form" },
+};
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload, connection: foreignFormConnection },
+    invalidContactHarness.dependencies,
+  ),
+  { status: "invalid_event" },
+);
+assert.equal(invalidClaimCalls, 0);
+
+const duplicateHarness = createIngestionHarness({
+  claimEvent: async () => ({
+    status: "duplicate",
+    id: "webhook-event-1",
+    leadId: "lead-existing",
+  }),
+});
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload, connection: tallyConnection },
+    duplicateHarness.dependencies,
+  ),
+  { status: "duplicate", leadId: "lead-existing" },
+);
+assert.equal(duplicateHarness.calls.includes("insert"), false);
+
+const conflictHarness = createIngestionHarness({
+  claimEvent: async () => ({
+    status: "payload_conflict",
+    id: "webhook-event-1",
+  }),
+});
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload, connection: tallyConnection },
+    conflictHarness.dependencies,
+  ),
+  { status: "payload_conflict" },
+);
+assert.equal(conflictHarness.calls.includes("insert"), false);
+
+for (const attemptCount of [2, 3]) {
+  const recoveryHarness = createIngestionHarness({
+    claimEvent: async () => ({
+      status: "claimed",
+      id: `webhook-event-${attemptCount}`,
+      attemptCount,
+    }),
+  });
+  assert.equal(
+    (
+      await ingestTallyWebhook(
+        { rawPayload, connection: tallyConnection },
+        recoveryHarness.dependencies,
+      )
+    ).status,
+    "created",
+  );
+}
+
+const existingLeadHarness = createIngestionHarness({
+  insertLead: async () => ({
+    ok: false,
+    conflict: true,
+    errorCode: "23505",
+  }),
+  findLeadBySource: async () => ({ id: "lead-existing", status: "new" }),
+});
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload, connection: tallyConnection },
+    existingLeadHarness.dependencies,
+  ),
+  { status: "duplicate", leadId: "lead-existing" },
+);
+assert.equal(existingLeadHarness.calls.includes("processed"), true);
+
+const missingDefaultsHarness = createIngestionHarness({
+  resolveCrmDefaults: async () => null,
+});
+assert.deepEqual(
+  await ingestTallyWebhook(
+    { rawPayload, connection: tallyConnection },
+    missingDefaultsHarness.dependencies,
+  ),
+  { status: "configuration_error" },
+);
+assert.equal(missingDefaultsHarness.calls.includes("failed"), true);
+
+const outboundFailureHarness = createIngestionHarness({
+  dispatchOutbound: async () => {
+    outboundFailureHarness.calls.push("dispatched");
+    throw new Error("provider unavailable");
+  },
+});
+assert.equal(
+  (
+    await ingestTallyWebhook(
+      { rawPayload, connection: tallyConnection },
+      outboundFailureHarness.dependencies,
+    )
+  ).status,
+  "created",
+);
+assert.ok(
+  outboundFailureHarness.calls.indexOf("processed") <
+    outboundFailureHarness.calls.indexOf("dispatched"),
+);
+
+let routeLookupCalls = 0;
+let routeIngestCalls = 0;
+const invalidSignatureResponse = await handleTallyWebhookRequest(
+  new Request("https://app.revora.test/api/integrations/tally/webhook/token", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "tally-signature": "invalid",
+    },
+    body: rawPayload,
+  }),
+  "A".repeat(43),
+  {
+    findConnection: async () => {
+      routeLookupCalls += 1;
+      return tallyConnection;
+    },
+    ingest: async () => {
+      routeIngestCalls += 1;
+      return { status: "created", leadId: "lead-1" };
+    },
+  },
+);
+assert.equal(invalidSignatureResponse.status, 401);
+assert.equal(routeLookupCalls, 1);
+assert.equal(routeIngestCalls, 0);
+
+routeLookupCalls = 0;
+const oversizedResponse = await handleTallyWebhookRequest(
+  new Request("https://app.revora.test/api/integrations/tally/webhook/token", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "content-length": String(1024 * 1024 + 1),
+    },
+    body: "{}",
+  }),
+  "A".repeat(43),
+  {
+    findConnection: async () => {
+      routeLookupCalls += 1;
+      return tallyConnection;
+    },
+    ingest: async () => {
+      routeIngestCalls += 1;
+      return { status: "created", leadId: "lead-1" };
+    },
+  },
+);
+assert.equal(oversizedResponse.status, 413);
+assert.equal(routeLookupCalls, 0);
+
+const actualOversizedResponse = await handleTallyWebhookRequest(
+  new Request("https://app.revora.test/api/integrations/tally/webhook/token", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "x".repeat(1024 * 1024 + 1),
+  }),
+  "A".repeat(43),
+  {
+    findConnection: async () => {
+      routeLookupCalls += 1;
+      return tallyConnection;
+    },
+    ingest: async () => {
+      routeIngestCalls += 1;
+      return { status: "created", leadId: "lead-1" };
+    },
+  },
+);
+assert.equal(actualOversizedResponse.status, 413);
+assert.equal(routeLookupCalls, 0);
+
+const unknownTokenResponse = await handleTallyWebhookRequest(
+  new Request("https://app.revora.test/api/integrations/tally/webhook/token", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: rawPayload,
+  }),
+  "B".repeat(43),
+  {
+    findConnection: async () => null,
+    ingest: async () => {
+      routeIngestCalls += 1;
+      return { status: "created", leadId: "lead-1" };
+    },
+  },
+);
+assert.equal(unknownTokenResponse.status, 404);
+assert.equal(routeIngestCalls, 0);
+
+const routeSignature = createHmac(
+  "sha256",
+  tallyConnection.credentials.signingSecret,
+)
+  .update(rawPayload)
+  .digest("base64");
+for (const [ingestionResult, expectedStatus] of [
+  [{ status: "created", leadId: "lead-1" }, 201],
+  [{ status: "duplicate", leadId: "lead-1" }, 200],
+  [{ status: "in_progress" }, 202],
+  [{ status: "payload_conflict" }, 409],
+  [{ status: "configuration_error" }, 409],
+  [{ status: "invalid_event" }, 400],
+  [{ status: "retryable_error" }, 500],
+]) {
+  const response = await handleTallyWebhookRequest(
+    new Request("https://app.revora.test/api/integrations/tally/webhook/token", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "tally-signature": routeSignature,
+      },
+      body: rawPayload,
+    }),
+    "A".repeat(43),
+    {
+      findConnection: async () => tallyConnection,
+      ingest: async () => ingestionResult,
+    },
+  );
+  assert.equal(response.status, expectedStatus);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+}
+
+const tallyRouteSource = readFileSync(
+  resolve("src/app/api/integrations/tally/webhook/[token]/route.ts"),
+  "utf8",
+);
+assert.ok(tallyRouteSource.includes("await context.params"));
+assert.equal(tallyRouteSource.includes("request.json()"), false);
+assert.equal(tallyRouteSource.includes("console.log"), false);
 
 console.log("Phase 14.6E Tally contract verification passed.");
