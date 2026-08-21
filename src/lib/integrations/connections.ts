@@ -90,8 +90,10 @@ export async function saveConnection(
   userId?: string,
   options?: {
     config?: Record<string, unknown>;
+    externalAccountId?: string;
     externalAccountName?: string;
     healthStatus?: IntegrationHealthStatus;
+    scopes?: string[];
   },
 ): Promise<{ error: string | null }> {
   const supabase = await createServiceAdminClient();
@@ -112,6 +114,10 @@ export async function saveConnection(
       ...(options?.externalAccountName !== undefined
         ? { external_account_name: options.externalAccountName }
         : {}),
+      ...(options?.externalAccountId !== undefined
+        ? { external_account_id: options.externalAccountId }
+        : {}),
+      ...(options?.scopes !== undefined ? { scopes: options.scopes } : {}),
       ...(options?.healthStatus === "healthy"
         ? {
             last_success_at: connectedAt,

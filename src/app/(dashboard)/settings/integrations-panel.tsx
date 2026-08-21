@@ -23,14 +23,17 @@ import {
   deleteIntegration,
   disconnectHubSpot,
   disconnectGHL,
+  disconnectSlack,
   getOrganizationIntegrations,
   saveAutomationWebhookIntegration,
   saveIntegration,
   startGHLOAuth,
   startHubSpotOAuth,
+  startSlackOAuth,
   testGHL,
   testHubSpot,
   testIntegration,
+  testSlack,
 } from "./integrations-actions";
 
 function statusBadge(status: IntegrationStatus) {
@@ -99,6 +102,10 @@ function IntegrationCard({
       const result = await startGHLOAuth();
       if (result.url) window.location.href = result.url;
       else setTestResult(result.error ?? "OAuth setup failed");
+    } else if (providerId === "slack") {
+      const result = await startSlackOAuth();
+      if (result.url) window.location.href = result.url;
+      else setTestResult(result.error ?? "OAuth setup failed");
     } else {
       onConfigure();
     }
@@ -117,6 +124,10 @@ function IntegrationCard({
       const r = (await testGHL()) as { success: boolean; error?: string };
       success = r.success;
       errorMsg = r.error;
+    } else if (providerId === "slack") {
+      const r = (await testSlack()) as { success: boolean; error?: string };
+      success = r.success;
+      errorMsg = r.error;
     } else {
       const r = await testIntegration(providerId);
       success = "success" in r && r.success === true;
@@ -132,6 +143,7 @@ function IntegrationCard({
     startDelete(async () => {
       if (providerId === "hubspot") await disconnectHubSpot();
       else if (providerId === "gohighlevel") await disconnectGHL();
+      else if (providerId === "slack") await disconnectSlack();
       else await deleteIntegration(providerId);
       onRefresh();
     });
@@ -261,7 +273,8 @@ function ConnectForm({
 
   if (
     !automationWebhookProvider &&
-    (provider.id === "slack" || provider.supportsWebhooks)
+    provider.id !== "slack" &&
+    provider.supportsWebhooks
   ) {
     fields["webhook_url"] = { label: "Webhook URL", type: "text" };
   }

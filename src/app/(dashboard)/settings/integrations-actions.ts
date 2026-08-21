@@ -99,6 +99,9 @@ export async function saveIntegration(
   if (isAutomationWebhookProvider(provider)) {
     return { error: "Use the secure webhook connection flow." };
   }
+  if (provider === "slack") {
+    return { error: "Use the Slack OAuth connection flow." };
+  }
 
   const profileId = authorization.data.membership.profile_id;
   const result = await saveConnection(org.id, provider, credentials, profileId);
@@ -248,13 +251,10 @@ export async function testIntegration(provider: IntegrationProviderId) {
       return { success: res.ok, provider };
     }
 
-    if (provider === "slack" && creds["webhook_url"]) {
-      const res = await fetch(creds["webhook_url"] as string, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: "Revora — Integration test" }),
-      });
-      return { success: res.ok, provider };
+    if (provider === "slack") {
+      const { testSlackConnection } =
+        await import("@/lib/integrations/adapters/slack");
+      return testSlackConnection(org.id);
     }
 
     return { success: false, error: `No test method for ${provider}` };
@@ -342,6 +342,26 @@ export async function startGHLOAuth() {
   }
 }
 
+export async function startSlackOAuth() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  try {
+    const { getSlackAuthorizationUrl } =
+      await import("@/lib/integrations/adapters/slack");
+    const { url } = await getSlackAuthorizationUrl(
+      authorization.data.organization.id,
+      "/settings?tab=integrations",
+      authorization.data.membership.profile_id,
+    );
+    return { url, error: null };
+  } catch {
+    return { error: "Slack OAuth setup failed." };
+  }
+}
+
 export async function disconnectHubSpot() {
   const authorization = await requireCurrentOrganizationPermission(
     "integrations.manage",
@@ -368,6 +388,18 @@ export async function disconnectGHL() {
   );
 }
 
+export async function disconnectSlack() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { disconnectSlack } = await import("@/lib/integrations/adapters/slack");
+  return disconnectSlack(
+    authorization.data.organization.id,
+    authorization.data.membership.profile_id,
+  );
+}
+
 export async function testHubSpot() {
   const authorization = await requireCurrentOrganizationPermission(
     "integrations.manage",
@@ -386,4 +418,14 @@ export async function testGHL() {
   const { testGHLConnection } =
     await import("@/lib/integrations/adapters/gohighlevel");
   return testGHLConnection(authorization.data.organization.id);
+}
+
+export async function testSlack() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { testSlackConnection } =
+    await import("@/lib/integrations/adapters/slack");
+  return testSlackConnection(authorization.data.organization.id);
 }
