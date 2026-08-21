@@ -127,6 +127,9 @@ export async function saveIntegration(
   if (provider === "tally") {
     return { error: "Use the secure Tally form connection flow." };
   }
+  if (provider === "google-calendar" || provider === "gmail") {
+    return { error: "Use the Google Workspace OAuth connection flow." };
+  }
 
   const profileId = authorization.data.membership.profile_id;
   const result = await saveConnection(org.id, provider, credentials, profileId);
@@ -206,6 +209,9 @@ export async function deleteIntegration(provider: IntegrationProviderId) {
 
   if (provider === "tally") {
     return { error: "Use the secure Tally disconnect flow." };
+  }
+  if (provider === "google-calendar" || provider === "gmail") {
+    return { error: "Use the shared Google Workspace disconnect flow." };
   }
 
   const result = await disconnectConnection(org.id, provider);
@@ -290,6 +296,18 @@ export async function testIntegration(provider: IntegrationProviderId) {
       const { testTwilioConnection } =
         await import("@/lib/integrations/adapters/twilio");
       return testTwilioConnection(org.id);
+    }
+
+    if (provider === "google-calendar") {
+      const { testGoogleCalendarConnection } =
+        await import("@/lib/integrations/adapters/google-workspace");
+      return testGoogleCalendarConnection(org.id);
+    }
+
+    if (provider === "gmail") {
+      const { testGmailConnection } =
+        await import("@/lib/integrations/adapters/google-workspace");
+      return testGmailConnection(org.id);
     }
 
     return { success: false, error: `No test method for ${provider}` };
@@ -394,6 +412,26 @@ export async function startSlackOAuth() {
     return { url, error: null };
   } catch {
     return { error: "Slack OAuth setup failed." };
+  }
+}
+
+export async function startGoogleWorkspaceOAuth() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  try {
+    const { getGoogleWorkspaceAuthorizationUrl } =
+      await import("@/lib/integrations/adapters/google-workspace");
+    const { url } = await getGoogleWorkspaceAuthorizationUrl(
+      authorization.data.organization.id,
+      "/settings?tab=integrations",
+      authorization.data.membership.profile_id,
+    );
+    return { url, error: null };
+  } catch {
+    return { error: "Google Workspace OAuth setup failed." };
   }
 }
 
@@ -828,6 +866,19 @@ export async function disconnectTwilio() {
   );
 }
 
+export async function disconnectGoogleWorkspace() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { disconnectGoogleWorkspace } =
+    await import("@/lib/integrations/adapters/google-workspace");
+  return disconnectGoogleWorkspace(
+    authorization.data.organization.id,
+    authorization.data.membership.profile_id,
+  );
+}
+
 export async function testHubSpot() {
   const authorization = await requireCurrentOrganizationPermission(
     "integrations.manage",
@@ -866,4 +917,24 @@ export async function testTwilio() {
   const { testTwilioConnection } =
     await import("@/lib/integrations/adapters/twilio");
   return testTwilioConnection(authorization.data.organization.id);
+}
+
+export async function testGoogleCalendar() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { testGoogleCalendarConnection } =
+    await import("@/lib/integrations/adapters/google-workspace");
+  return testGoogleCalendarConnection(authorization.data.organization.id);
+}
+
+export async function testGmail() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { testGmailConnection } =
+    await import("@/lib/integrations/adapters/google-workspace");
+  return testGmailConnection(authorization.data.organization.id);
 }

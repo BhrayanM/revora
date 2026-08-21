@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 
 import {
+  exchangeGoogleAuthorizationCode,
+  fetchGoogleUserIdentity,
+  refreshGoogleAccessToken,
+  revokeGoogleGrant,
+  verifyGoogleCalendarReadOnly,
+} from "../src/lib/integrations/adapters/google-workspace.ts";
+import {
   GOOGLE_WORKSPACE_SCOPES,
   buildGoogleCalendarEventRequest,
   buildGoogleRawEmail,
@@ -52,6 +59,7 @@ assert.deepEqual(GOOGLE_WORKSPACE_SCOPES, [
 ]);
 
 const exactScopeString = GOOGLE_WORKSPACE_SCOPES.join(" ");
+const fixedNow = new Date("2026-08-21T12:00:00.000Z");
 assert.deepEqual(
   parseGoogleTokenPayload(
     {
@@ -67,6 +75,25 @@ assert.deepEqual(
     accessToken: "access-token",
     refreshToken: "refresh-token",
     expiresInSeconds: 3600,
+    scopes: GOOGLE_WORKSPACE_SCOPES,
+  },
+);
+assert.deepEqual(
+  parseGoogleTokenPayload(
+    {
+      access_token: "new-access-token",
+      expires_in: 1800,
+      token_type: "Bearer",
+    },
+    {
+      currentRefreshToken: "refresh-token",
+      currentScopes: [...GOOGLE_WORKSPACE_SCOPES],
+    },
+  ),
+  {
+    accessToken: "new-access-token",
+    refreshToken: "refresh-token",
+    expiresInSeconds: 1800,
     scopes: GOOGLE_WORKSPACE_SCOPES,
   },
 );
@@ -198,7 +225,190 @@ assert.equal(normalizeGoogleError(503), "PROVIDER_UNAVAILABLE");
 assert.equal(normalizeGoogleError(200, "invalid_scope"), "CONFIGURATION_ERROR");
 assert.equal(normalizeGoogleError(200, "other"), "INVALID_RESPONSE");
 
-const fixedNow = new Date("2026-08-21T12:00:00.000Z");
+const googleConfig = {
+  clientId: "google-client-id.apps.googleusercontent.com",
+  clientSecret: "google-client-secret",
+  redirectUri:
+    "https://app.revora.test/api/integrations/google-workspace/callback",
+};
+function googleJsonResponse(body, status = 200) {
+  const json = JSON.stringify(body);
+  return new Response(json, {
+    status,
+    headers: {
+      "content-length": String(Buffer.byteLength(json)),
+      "content-type": "application/json",
+    },
+  });
+}
+
+let tokenExchangeRequest;
+const exchangeResult = await exchangeGoogleAuthorizationCode(
+  googleConfig,
+  "authorization-code",
+  async (url, init) => {
+    tokenExchangeRequest = { url: String(url), init };
+    return googleJsonResponse({
+      access_token: "access-token",
+      refresh_token: "refresh-token",
+      expires_in: 3600,
+      scope: exactScopeString,
+      token_type: "Bearer",
+    });
+  },
+);
+assert.equal(exchangeResult.ok, true);
+assert.equal(tokenExchangeRequest.url, "https://oauth2.googleapis.com/token");
+assert.equal(tokenExchangeRequest.init.method, "POST");
+assert.equal(tokenExchangeRequest.init.redirect, "error");
+assert.ok(tokenExchangeRequest.init.signal instanceof AbortSignal);
+assert.equal(
+  tokenExchangeRequest.init.headers["Content-Type"],
+  "application/x-www-form-urlencoded",
+);
+const exchangeBody = new URLSearchParams(tokenExchangeRequest.init.body);
+assert.equal(exchangeBody.get("client_id"), googleConfig.clientId);
+assert.equal(exchangeBody.get("client_secret"), googleConfig.clientSecret);
+assert.equal(exchangeBody.get("code"), "authorization-code");
+assert.equal(exchangeBody.get("grant_type"), "authorization_code");
+assert.equal(exchangeBody.get("redirect_uri"), googleConfig.redirectUri);
+
+let userInfoRequest;
+assert.deepEqual(
+  await fetchGoogleUserIdentity("access-token", async (url, init) => {
+    userInfoRequest = { url: String(url), init };
+    return googleJsonResponse({
+      sub: "google-subject-123",
+      email: "owner@example.com",
+      email_verified: true,
+    });
+  }),
+  {
+    ok: true,
+    identity: { subject: "google-subject-123", email: "owner@example.com" },
+  },
+);
+assert.equal(
+  userInfoRequest.url,
+  "https://openidconnect.googleapis.com/v1/userinfo",
+);
+assert.equal(userInfoRequest.init.method, "GET");
+assert.equal(userInfoRequest.init.headers.Authorization, "Bearer access-token");
+assert.equal(userInfoRequest.init.redirect, "error");
+
+let refreshRequest;
+const refreshResult = await refreshGoogleAccessToken(
+  googleConfig,
+  "refresh-token",
+  async (url, init) => {
+    refreshRequest = { url: String(url), init };
+    return googleJsonResponse({
+      access_token: "refreshed-access-token",
+      expires_in: 3600,
+      scope: exactScopeString,
+      token_type: "Bearer",
+    });
+  },
+);
+assert.deepEqual(refreshResult, {
+  ok: true,
+  grant: {
+    accessToken: "refreshed-access-token",
+    refreshToken: "refresh-token",
+    expiresInSeconds: 3600,
+    scopes: GOOGLE_WORKSPACE_SCOPES,
+  },
+});
+const refreshBody = new URLSearchParams(refreshRequest.init.body);
+assert.equal(refreshBody.get("grant_type"), "refresh_token");
+assert.equal(refreshBody.get("refresh_token"), "refresh-token");
+
+let calendarTestRequest;
+assert.deepEqual(
+  await verifyGoogleCalendarReadOnly(
+    "access-token",
+    fixedNow,
+    async (url, init) => {
+      calendarTestRequest = { url: new URL(String(url)), init };
+      return googleJsonResponse({ kind: "calendar#events", items: [] });
+    },
+  ),
+  { ok: true },
+);
+assert.equal(calendarTestRequest.url.origin, "https://www.googleapis.com");
+assert.equal(
+  calendarTestRequest.url.pathname,
+  "/calendar/v3/calendars/primary/events",
+);
+assert.equal(calendarTestRequest.url.searchParams.get("maxResults"), "1");
+assert.equal(calendarTestRequest.url.searchParams.get("singleEvents"), "true");
+assert.equal(
+  calendarTestRequest.url.searchParams.get("timeMin"),
+  fixedNow.toISOString(),
+);
+assert.equal(calendarTestRequest.init.method, "GET");
+assert.equal(calendarTestRequest.init.body, undefined);
+
+let revokeRequest;
+assert.deepEqual(
+  await revokeGoogleGrant("refresh-token", async (url, init) => {
+    revokeRequest = { url: String(url), init };
+    return new Response(null, { status: 200 });
+  }),
+  { ok: true },
+);
+assert.equal(revokeRequest.url, "https://oauth2.googleapis.com/revoke");
+assert.equal(revokeRequest.init.method, "POST");
+assert.equal(
+  new URLSearchParams(revokeRequest.init.body).get("token"),
+  "refresh-token",
+);
+
+assert.deepEqual(
+  await refreshGoogleAccessToken(googleConfig, "refresh-token", async () =>
+    googleJsonResponse({ error: "invalid_grant" }, 400),
+  ),
+  { ok: false, errorCode: "REAUTH_REQUIRED", status: 400 },
+);
+assert.deepEqual(
+  await fetchGoogleUserIdentity("access-token", async () =>
+    googleJsonResponse({ error: { status: "PERMISSION_DENIED" } }, 403),
+  ),
+  { ok: false, errorCode: "CONFIGURATION_ERROR", status: 403 },
+);
+assert.deepEqual(
+  await verifyGoogleCalendarReadOnly("access-token", fixedNow, async () =>
+    googleJsonResponse({ kind: "calendar#events", items: [] }, 429),
+  ),
+  { ok: false, errorCode: "RATE_LIMITED", status: 429 },
+);
+assert.deepEqual(
+  await exchangeGoogleAuthorizationCode(
+    googleConfig,
+    "authorization-code",
+    async () => new Response("redirect", { status: 302 }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE", status: 302 },
+);
+assert.deepEqual(
+  await exchangeGoogleAuthorizationCode(
+    googleConfig,
+    "authorization-code",
+    async () =>
+      new Response("x".repeat(64 * 1024 + 1), {
+        status: 200,
+        headers: { "content-length": String(64 * 1024 + 1) },
+      }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE", status: 200 },
+);
+assert.deepEqual(
+  await fetchGoogleUserIdentity("access-token", async () => {
+    throw new DOMException("Aborted", "AbortError");
+  }),
+  { ok: false, errorCode: "NETWORK_ERROR", status: null },
+);
+
 const appointment = normalizeGoogleCalendarAppointment(
   {
     summary: "  Product demo  ",
