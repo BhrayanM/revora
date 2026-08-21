@@ -24,9 +24,11 @@ import {
   disconnectHubSpot,
   disconnectGHL,
   disconnectSlack,
+  disconnectTwilio,
   getOrganizationIntegrations,
   saveAutomationWebhookIntegration,
   saveIntegration,
+  saveTwilioIntegration,
   startGHLOAuth,
   startHubSpotOAuth,
   startSlackOAuth,
@@ -34,6 +36,7 @@ import {
   testHubSpot,
   testIntegration,
   testSlack,
+  testTwilio,
 } from "./integrations-actions";
 
 function statusBadge(status: IntegrationStatus) {
@@ -120,6 +123,10 @@ function IntegrationCard({
       const r = (await testHubSpot()) as { success: boolean; error?: string };
       success = r.success;
       errorMsg = r.error;
+    } else if (providerId === "twilio") {
+      const r = (await testTwilio()) as { success: boolean; error?: string };
+      success = r.success;
+      errorMsg = r.error;
     } else if (providerId === "gohighlevel") {
       const r = (await testGHL()) as { success: boolean; error?: string };
       success = r.success;
@@ -144,6 +151,7 @@ function IntegrationCard({
       if (providerId === "hubspot") await disconnectHubSpot();
       else if (providerId === "gohighlevel") await disconnectGHL();
       else if (providerId === "slack") await disconnectSlack();
+      else if (providerId === "twilio") await disconnectTwilio();
       else await deleteIntegration(providerId);
       onRefresh();
     });
@@ -244,7 +252,10 @@ function ConnectForm({
 
   if (!provider) return null;
 
-  const fields: Record<string, { label: string; type: string }> = {};
+  const fields: Record<
+    string,
+    { label: string; type: string; required?: boolean }
+  > = {};
   const automationWebhookProvider = ["n8n", "zapier", "make"].includes(
     provider.id,
   );
@@ -259,7 +270,10 @@ function ConnectForm({
             : "Production Webhook URL",
       type: "url",
     };
-  } else if (provider.supportsApiKey || provider.authType === "api_key") {
+  } else if (
+    provider.id !== "twilio" &&
+    (provider.supportsApiKey || provider.authType === "api_key")
+  ) {
     fields["api_key"] = { label: "API Key", type: "password" };
   }
 
@@ -293,7 +307,11 @@ function ConnectForm({
   if (provider.id === "twilio") {
     fields["account_sid"] = { label: "Account SID", type: "text" };
     fields["auth_token"] = { label: "Auth Token", type: "password" };
-    fields["phone_number"] = { label: "Phone Number", type: "text" };
+    fields["phone_number"] = {
+      label: "Source Phone Number (optional)",
+      type: "tel",
+      required: false,
+    };
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -311,7 +329,9 @@ function ConnectForm({
             providerId as "n8n" | "zapier" | "make",
             creds,
           )
-        : await saveIntegration(providerId, creds);
+        : providerId === "twilio"
+          ? await saveTwilioIntegration(creds)
+          : await saveIntegration(providerId, creds);
       if (result.error) {
         setError(result.error);
       } else {
@@ -350,7 +370,7 @@ function ConnectForm({
               name={key}
               type={field.type}
               inputSize="sm"
-              required
+              required={field.required !== false}
             />
           ))}
           <div className="flex justify-end gap-2 pt-2">

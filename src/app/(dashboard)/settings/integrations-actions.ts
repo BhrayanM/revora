@@ -14,6 +14,7 @@ import {
 } from "@/lib/integrations/connections";
 import { recordAuditEvent } from "@/lib/integrations/oauth";
 import { buildIntegrationTestEvent } from "@/lib/integrations/outbound-events";
+import { getSafeIntegrationError } from "@/lib/integrations/types";
 import {
   AUTOMATION_WEBHOOK_PROVIDER_IDS,
   INTEGRATION_PROVIDER_IDS,
@@ -101,6 +102,9 @@ export async function saveIntegration(
   }
   if (provider === "slack") {
     return { error: "Use the Slack OAuth connection flow." };
+  }
+  if (provider === "twilio") {
+    return { error: "Use the verified Twilio connection flow." };
   }
 
   const profileId = authorization.data.membership.profile_id;
@@ -257,6 +261,12 @@ export async function testIntegration(provider: IntegrationProviderId) {
       return testSlackConnection(org.id);
     }
 
+    if (provider === "twilio") {
+      const { testTwilioConnection } =
+        await import("@/lib/integrations/adapters/twilio");
+      return testTwilioConnection(org.id);
+    }
+
     return { success: false, error: `No test method for ${provider}` };
   } catch {
     return { success: false, error: "Connection test failed" };
@@ -362,6 +372,70 @@ export async function startSlackOAuth() {
   }
 }
 
+export async function saveTwilioIntegration(
+  credentials: Record<string, unknown>,
+) {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+
+  const { normalizeTwilioCredentials } =
+    await import("@/lib/integrations/twilio-contract");
+  const { validateTwilioCredentials } =
+    await import("@/lib/integrations/adapters/twilio");
+
+  let normalized;
+  try {
+    normalized = normalizeTwilioCredentials(credentials);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Invalid Twilio credentials.",
+    };
+  }
+
+  const orgId = authorization.data.organization.id;
+  const profileId = authorization.data.membership.profile_id;
+  const validation = await validateTwilioCredentials(normalized);
+  if (!validation.ok) {
+    await recordAuditEvent(orgId, "twilio", "connection_failed", profileId, {
+      error_code: validation.errorCode,
+    });
+    return { error: getSafeIntegrationError(validation.errorCode).userMessage };
+  }
+
+  const storedCredentials: Record<string, unknown> = {
+    account_sid: normalized.account_sid,
+    auth_token: normalized.auth_token,
+    ...(normalized.phone_number
+      ? { phone_number: normalized.phone_number }
+      : {}),
+  };
+  const result = await saveConnection(
+    orgId,
+    "twilio",
+    storedCredentials,
+    profileId,
+    {
+      externalAccountId: validation.accountSid,
+      externalAccountName: validation.friendlyName,
+      healthStatus: "healthy",
+    },
+  );
+  if (result.error) {
+    await recordAuditEvent(orgId, "twilio", "connection_failed", profileId, {
+      error_code: "PERSISTENCE_ERROR",
+    });
+    return { error: "Twilio connection could not be saved." };
+  }
+
+  await recordAuditEvent(orgId, "twilio", "connected", profileId, {
+    validation_mode: "read_only",
+  });
+  return { error: null };
+}
+
 export async function disconnectHubSpot() {
   const authorization = await requireCurrentOrganizationPermission(
     "integrations.manage",
@@ -400,6 +474,19 @@ export async function disconnectSlack() {
   );
 }
 
+export async function disconnectTwilio() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { disconnectTwilio } =
+    await import("@/lib/integrations/adapters/twilio");
+  return disconnectTwilio(
+    authorization.data.organization.id,
+    authorization.data.membership.profile_id,
+  );
+}
+
 export async function testHubSpot() {
   const authorization = await requireCurrentOrganizationPermission(
     "integrations.manage",
@@ -428,4 +515,14 @@ export async function testSlack() {
   const { testSlackConnection } =
     await import("@/lib/integrations/adapters/slack");
   return testSlackConnection(authorization.data.organization.id);
+}
+
+export async function testTwilio() {
+  const authorization = await requireCurrentOrganizationPermission(
+    "integrations.manage",
+  );
+  if (!authorization.data) return { error: authorization.error };
+  const { testTwilioConnection } =
+    await import("@/lib/integrations/adapters/twilio");
+  return testTwilioConnection(authorization.data.organization.id);
 }

@@ -8,7 +8,9 @@ import {
 } from "../src/lib/integrations/slack-contract.ts";
 import { sendHOTLeadAlert } from "../src/lib/notifications/slack.ts";
 import {
+  normalizeTwilioError,
   normalizeTwilioCredentials,
+  validateTwilioAccountReadOnly,
   validateTwilioSignature,
 } from "../src/lib/integrations/twilio-contract.ts";
 
@@ -292,6 +294,159 @@ assert.equal(
     authToken: "wrong-token",
   }),
   false,
+);
+
+const twilioJsonResponse = (body, status = 200) => {
+  const json = JSON.stringify(body);
+  return new Response(json, {
+    status,
+    headers: {
+      "content-length": String(Buffer.byteLength(json)),
+      "content-type": "application/json",
+    },
+  });
+};
+const twilioRequests = [];
+const twilioReadOnlyFetch = async (url, init) => {
+  twilioRequests.push({ url: String(url), init });
+  if (twilioRequests.length === 1) {
+    return twilioJsonResponse({
+      sid: accountSid,
+      friendly_name: "Revora Twilio",
+      status: "active",
+    });
+  }
+  return twilioJsonResponse({
+    incoming_phone_numbers: [
+      { sid: `PN${"b".repeat(32)}`, phone_number: "+15551234567" },
+    ],
+  });
+};
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    {
+      account_sid: accountSid,
+      auth_token: "secret-token",
+      phone_number: "+15551234567",
+    },
+    twilioReadOnlyFetch,
+  ),
+  {
+    ok: true,
+    accountSid,
+    friendlyName: "Revora Twilio",
+    phoneNumber: "+15551234567",
+  },
+);
+assert.equal(twilioRequests.length, 2);
+assert.equal(
+  twilioRequests[0].url,
+  `https://api.twilio.com/2010-04-01/Accounts/${accountSid}.json`,
+);
+assert.equal(twilioRequests[0].init.method, "GET");
+assert.equal(
+  twilioRequests[0].init.headers.Authorization,
+  `Basic ${Buffer.from(`${accountSid}:secret-token`).toString("base64")}`,
+);
+assert.equal(twilioRequests[0].init.redirect, "error");
+assert.ok(twilioRequests[0].init.signal instanceof AbortSignal);
+assert.equal(
+  twilioRequests[1].url,
+  `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/IncomingPhoneNumbers.json?PhoneNumber=%2B15551234567`,
+);
+for (const request of twilioRequests) {
+  assert.equal(request.init.method, "GET");
+  assert.doesNotMatch(request.url, /Messages|Calls|AvailablePhoneNumbers/);
+}
+
+const noPhoneRequests = [];
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    { account_sid: accountSid, auth_token: "secret-token" },
+    async (url, init) => {
+      noPhoneRequests.push({ url: String(url), init });
+      return twilioJsonResponse({
+        sid: accountSid,
+        friendly_name: "Revora Twilio",
+      });
+    },
+  ),
+  { ok: true, accountSid, friendlyName: "Revora Twilio" },
+);
+assert.equal(noPhoneRequests.length, 1);
+
+for (const [status, errorCode] of [
+  [401, "INVALID_CREDENTIALS"],
+  [403, "INVALID_CREDENTIALS"],
+  [429, "RATE_LIMITED"],
+  [500, "PROVIDER_UNAVAILABLE"],
+]) {
+  assert.deepEqual(
+    await validateTwilioAccountReadOnly(
+      { account_sid: accountSid, auth_token: "secret-token" },
+      async () => twilioJsonResponse({ code: 20_003 }, status),
+    ),
+    { ok: false, errorCode },
+  );
+  assert.equal(normalizeTwilioError(status), errorCode);
+}
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    { account_sid: accountSid, auth_token: "secret-token" },
+    async () => {
+      throw new DOMException("Aborted", "AbortError");
+    },
+  ),
+  { ok: false, errorCode: "NETWORK_ERROR" },
+);
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    { account_sid: accountSid, auth_token: "secret-token" },
+    async () => new Response("{not-json", { status: 200 }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE" },
+);
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    { account_sid: accountSid, auth_token: "secret-token" },
+    async () =>
+      twilioJsonResponse({
+        sid: `AC${"c".repeat(32)}`,
+        friendly_name: "Wrong account",
+      }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE" },
+);
+let missingPhoneRequestCount = 0;
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    {
+      account_sid: accountSid,
+      auth_token: "secret-token",
+      phone_number: "+15551234567",
+    },
+    async () => {
+      missingPhoneRequestCount += 1;
+      return missingPhoneRequestCount === 1
+        ? twilioJsonResponse({
+            sid: accountSid,
+            friendly_name: "Revora Twilio",
+          })
+        : twilioJsonResponse({ incoming_phone_numbers: [] });
+    },
+  ),
+  { ok: false, errorCode: "CONFIGURATION_ERROR" },
+);
+assert.deepEqual(
+  await validateTwilioAccountReadOnly(
+    { account_sid: accountSid, auth_token: "secret-token" },
+    async () =>
+      new Response("x".repeat(64 * 1024 + 1), {
+        status: 200,
+        headers: { "content-length": String(64 * 1024 + 1) },
+      }),
+  ),
+  { ok: false, errorCode: "INVALID_RESPONSE" },
 );
 
 console.log("Phase 14.6D communication contract verification passed.");
