@@ -698,4 +698,69 @@ assert.equal(
   "Migration 00035 must only extend the audit event allowlist.",
 );
 
+const providerCatalogSource = readFileSync(
+  resolve("src/lib/integrations/providers.ts"),
+  "utf8",
+);
+assert.ok(
+  providerCatalogSource.includes(
+    '"https://www.googleapis.com/auth/calendar.events.owned"',
+  ),
+);
+assert.equal(
+  providerCatalogSource.includes(
+    'requiredScopes: ["https://www.googleapis.com/auth/calendar"]',
+  ),
+  false,
+);
+assert.equal(providerCatalogSource.includes("Send and track emails"), false);
+
+const integrationPanelSource = readFileSync(
+  resolve("src/app/(dashboard)/settings/integrations-panel.tsx"),
+  "utf8",
+);
+for (const lifecycleAction of [
+  "startGoogleWorkspaceOAuth",
+  "testGoogleCalendar",
+  "testGmail",
+  "disconnectGoogleWorkspace",
+]) {
+  assert.ok(
+    integrationPanelSource.includes(lifecycleAction),
+    `Settings must wire ${lifecycleAction}.`,
+  );
+}
+assert.match(
+  integrationPanelSource,
+  /providerId === "google-calendar" \|\| providerId === "gmail"/,
+);
+
+const integrationActionsSource = readFileSync(
+  resolve("src/app/(dashboard)/settings/integrations-actions.ts"),
+  "utf8",
+);
+for (const actionName of [
+  "startGoogleWorkspaceOAuth",
+  "testGoogleCalendar",
+  "testGmail",
+  "disconnectGoogleWorkspace",
+]) {
+  const start = integrationActionsSource.indexOf(
+    `export async function ${actionName}`,
+  );
+  assert.ok(start >= 0, `${actionName} server action must exist.`);
+  const next = integrationActionsSource.indexOf(
+    "\nexport async function ",
+    start + 1,
+  );
+  const body = integrationActionsSource.slice(
+    start,
+    next === -1 ? integrationActionsSource.length : next,
+  );
+  assert.ok(
+    body.includes('"integrations.manage"'),
+    `${actionName} must re-authorize integrations.manage.`,
+  );
+}
+
 console.log("Phase 14.6F Google Workspace contract verification passed.");

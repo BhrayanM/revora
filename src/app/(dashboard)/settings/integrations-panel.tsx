@@ -21,6 +21,7 @@ import type {
 
 import {
   deleteIntegration,
+  disconnectGoogleWorkspace,
   disconnectHubSpot,
   disconnectGHL,
   disconnectSlack,
@@ -31,9 +32,12 @@ import {
   saveIntegration,
   saveTwilioIntegration,
   startGHLOAuth,
+  startGoogleWorkspaceOAuth,
   startHubSpotOAuth,
   startSlackOAuth,
   testGHL,
+  testGmail,
+  testGoogleCalendar,
   testHubSpot,
   testIntegration,
   testSlack,
@@ -112,6 +116,10 @@ function IntegrationCard({
       const result = await startSlackOAuth();
       if (result.url) window.location.href = result.url;
       else setTestResult(result.error ?? "OAuth setup failed");
+    } else if (providerId === "google-calendar" || providerId === "gmail") {
+      const result = await startGoogleWorkspaceOAuth();
+      if (result.url) window.location.href = result.url;
+      else setTestResult(result.error ?? "OAuth setup failed");
     } else {
       onConfigure();
     }
@@ -142,6 +150,14 @@ function IntegrationCard({
       const r = await testTally();
       success = r.success;
       errorMsg = r.error ?? undefined;
+    } else if (providerId === "google-calendar") {
+      const r = await testGoogleCalendar();
+      success = "success" in r && r.success === true;
+      errorMsg = r.error;
+    } else if (providerId === "gmail") {
+      const r = await testGmail();
+      success = "success" in r && r.success === true;
+      errorMsg = r.error;
     } else {
       const r = await testIntegration(providerId);
       success = "success" in r && r.success === true;
@@ -165,6 +181,10 @@ function IntegrationCard({
         else if ("warning" in result && result.warning) {
           setTestResult(result.warning);
         }
+      } else if (providerId === "google-calendar" || providerId === "gmail") {
+        const result = await disconnectGoogleWorkspace();
+        if (result.error) setTestResult(result.error);
+        else if (result.warning) setTestResult(result.warning);
       } else await deleteIntegration(providerId);
       onRefresh();
     });
@@ -267,6 +287,10 @@ function ConnectForm({
 
   if (provider.id === "tally") {
     return <TallyConnectForm onClose={onClose} onSaved={onSaved} />;
+  }
+
+  if (provider.id === "google-calendar" || provider.id === "gmail") {
+    return null;
   }
 
   const fields: Record<
