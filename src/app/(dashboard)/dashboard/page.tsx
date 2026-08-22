@@ -89,7 +89,7 @@ export default async function DashboardPage() {
         className="mb-8"
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Total Leads"
           value={totalLeads}
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
           <div className="mb-2">
             <h3 className="text-sm font-semibold text-foreground">
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         {hasPipeline && (
           <div className="rounded-xl border border-border bg-surface p-5 shadow-sm lg:col-span-2">
             <div className="mb-2">

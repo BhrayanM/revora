@@ -14,7 +14,10 @@ export function BarChart({ data, height = 200, className }: BarChartProps) {
   const maxValue = Math.max(...data.map((d) => d.value), 1);
 
   return (
-    <div className={cn("flex items-end gap-3", className)} style={{ height }}>
+    <div
+      className={cn("flex min-w-0 items-end gap-1 sm:gap-3", className)}
+      style={{ height }}
+    >
       {maxValue === 0 && (
         <div className="flex w-full items-center justify-center h-full">
           <p className="text-sm text-muted-foreground">No data yet</p>
@@ -24,7 +27,7 @@ export function BarChart({ data, height = 200, className }: BarChartProps) {
         data.map((item) => (
           <div
             key={item.label}
-            className="flex flex-1 flex-col items-center gap-1.5 justify-end h-full"
+            className="flex min-w-0 flex-1 flex-col items-center gap-1.5 justify-end h-full"
           >
             <span className="text-xs font-medium text-muted-foreground">
               {item.value}
@@ -37,7 +40,9 @@ export function BarChart({ data, height = 200, className }: BarChartProps) {
                 opacity: 0.85,
               }}
             />
-            <span className="text-xs text-muted-foreground">{item.label}</span>
+            <span className="w-full break-words text-center text-[0.625rem] leading-tight text-muted-foreground sm:text-xs">
+              {item.label}
+            </span>
           </div>
         ))}
     </div>
