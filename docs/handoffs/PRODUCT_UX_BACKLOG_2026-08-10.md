@@ -1,56 +1,65 @@
 # Product UX Completion Backlog
 
 **Date:** 2026-08-10
-**Reviewed:** 2026-08-12
-**Repository:** `C:\Users\bhray\ai-growth-platform`
-**Status:** Scheduled as Phase 14.7 — not started
+**Reviewed:** 2026-08-21
+**Repository:** `C:\Users\bhray\proyectos\01_Activos\Plataformas\ai-growth-platform`
+**Status:** Phase 14.7 complete locally
 
-Identified during Phase 14.6B HubSpot E2E testing.
+Identified during Phase 14.6B HubSpot E2E testing and completed during Phase
+14.7 without a schema migration.
 
-## Visual Polish
+## Completed Visual Polish
 
-1. **Integration provider logos**
-   - Current cards use generic plug icons.
-   - Replace with recognizable provider branding for: HubSpot, GoHighLevel, n8n, Zapier, Make, Slack, Twilio, Tally, Google Calendar, Gmail.
-   - Use trusted/local brand assets. Preserve consistent card sizing.
+1. **Integration provider identities — COMPLETE**
+   - HubSpot, n8n, Zapier, Make, Slack, Tally, Google Calendar, and Gmail use
+     reviewed package-local assets.
+   - GoHighLevel and Twilio use neutral Revora-owned marks because the reviewed
+     public brand terms do not authorize repackaging their marks for this use.
+   - All ten provider IDs retain consistent sizing, accessible text identity,
+     responsive action layout, and local-only runtime assets.
 
-## Settings UX
+## Completed Settings UX
 
-2. **Language selector**
-   - Current field is free-form text.
-   - Replace with a supported-language selector.
+2. **Language selector — COMPLETE**
+   - Uses canonical `en-US` and `es-419` options.
+   - Legacy labels normalize safely and forged values fail server validation.
 
-3. **Default timezone selector**
-   - Current field is free-form text.
-   - Replace with a validated IANA timezone selector.
+3. **Default timezone selector — COMPLETE**
+   - Uses supported IANA timezones with a deterministic fallback list.
+   - The server revalidates every saved timezone.
 
-## Missing Functional Modules
+## Functional Module Decisions
 
-4. **Notifications**
-   - Currently displays "Coming soon."
-   - Requires real implementation before removing placeholder.
+4. **Notifications — DELIVERED AS ACTIVITY CENTER**
+   - `/notifications` now shows bounded organization-scoped CRM, automation,
+     and safe integration events.
+   - It intentionally makes no unread-count or notification-preference claim.
 
-5. **Global Search**
-   - Currently displays "Soon."
-   - Requires real leads/contacts/global search behavior.
+5. **Global Search — DELIVERED**
+   - `Ctrl/Cmd+K` opens an accessible organization-scoped lead search.
+   - Queries are normalized, separately scoped by field, capped, ranked, and
+     projected to safe result DTOs.
 
-6. **Calendar**
-   - Sidebar marks it "Soon."
-   - Requires real calendar/meeting functionality.
+6. **Calendar — DELIVERED**
+   - `/calendar` shows a bounded 30-day primary-calendar agenda and an explicit
+     one-shot appointment form using the validated workspace timezone.
+   - Disconnected and provider-error states route safely to Integrations.
 
-7. **AI Insights**
-   - Sidebar marks it "Soon" despite existing qualification in lead detail.
-   - Determine intended standalone AI Insights product experience.
+7. **AI Insights — DELIVERED**
+   - `/insights` derives metrics and a priority queue from persisted
+     organization-scoped qualification metadata only.
+   - It performs no automatic model call.
 
-8. **Chat**
-   - Currently "Soon."
-   - Requires real functional definition and implementation.
+8. **Chat — EXPLICITLY DEFERRED**
+   - Removed from primary navigation instead of retaining a non-functional
+     promise.
+   - Requires a separately approved channel, consent/opt-out model, sender
+     identity, retention policy, and persistence design.
 
-## Sequencing
+## Closure
 
-Phase 14.6B — HubSpot + GoHighLevel real OAuth and CRM E2E — is complete.
-
-The integration roadmap now continues through Phase 14.6G. These Product UX
-items are explicitly scheduled as Phase 14.7 and must not be mixed into the
-provider implementation phases. The functional `Soon` modules require scoped
-designs before their placeholders are removed.
+Phase 14.7 passed deterministic product/integration gates plus authenticated
+visual QA at 375px, 768px, and 1440px in light and dark themes. The exact next
+global boundary is **Phase 14.8 — Production Infrastructure and Release
+Readiness**. Twilio messaging and other paid/mutating communication operations
+remain separately deferred.

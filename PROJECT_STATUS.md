@@ -2,14 +2,15 @@
 
 **Last updated:** 2026-08-21
 
-**Working branch:** local Phase 14.6G closure; no push or deployment
+**Working branch:** local Phase 14.7 closure; no push or deployment
 
-**Latest implementation checkpoint:** Phase 14.6G complete integration E2E audit
+**Latest implementation checkpoint:** Phase 14.7 Product UX Completion
 
-**Current status:** Phases 14.6A-14.6G are implemented and locally validated.
-The complete deterministic integration gate passes. Current external gates are
-blocked by incomplete credentials, public HTTPS/Supabase context, or explicit
-mutation authorization; no new live mutation was performed in 14.6G.
+**Current status:** Phases 14.6A-14.7 are implemented and locally validated.
+The deterministic integration and product-UX gates pass. Current external gates
+remain blocked by incomplete credentials, public HTTPS/Supabase context, or
+explicit mutation authorization; no live provider mutation was performed in
+14.7.
 
 ## Current Architecture
 
@@ -17,7 +18,7 @@ mutation authorization; no new live mutation was performed in 14.6G.
 - Supabase Auth and PostgreSQL with generated types and organization-scoped RLS.
 - Server actions and route handlers re-authorize organization permissions;
   provider credentials stay encrypted and server-only.
-- Immutable migrations `00001` through `00035`; 14.6G adds no migration. The
+- Immutable migrations `00001` through `00035`; 14.7 adds no migration. The
   current worktree is not linked to Supabase and its local database is stopped,
   so applied history remains an explicit external gate.
 
@@ -36,6 +37,9 @@ mutation authorization; no new live mutation was performed in 14.6G.
   read-only Tests, and bounded Calendar/Gmail operations.
 - Phase 14.6G: aggregate provider gate, OAuth/PKCE and CRM transport hardening,
   migration immutability, environment/live matrix, and full local regression.
+- Phase 14.7: trusted provider branding, validated preferences, real Search,
+  Activity Center, Calendar, persisted AI Insights, truthful navigation, and
+  cross-screen responsive/accessibility completion.
 
 ## Provider Status
 
@@ -111,12 +115,31 @@ purchase, and public callbacks remain out of scope.
 - No integration implementation phase remains. External live gates remain
   distinct from deterministic local completion.
 
+## Phase 14.7 Product UX Properties
+
+- All ten provider IDs have a package-local reviewed visual identity; providers
+  with restrictive public brand rules use neutral Revora-owned marks.
+- Global Search re-authorizes `leads.read`, derives the active organization on
+  the server, performs separately scoped field queries, and returns at most
+  eight allowlisted lead DTOs.
+- Activity Center reads bounded organization-scoped CRM, automation, and
+  integration events without raw payloads, provider bodies, or credentials.
+- Calendar lists at most 25 upcoming primary-calendar events and preserves the
+  existing one-shot, no-automatic-retry appointment mutation boundary.
+- AI Insights reads persisted organization-scoped qualification data only; it
+  performs no model call and never renders raw qualification metadata.
+- Workspace language is limited to canonical `en-US`/`es-419`, and timezone
+  values are validated IANA identifiers on both client and server boundaries.
+- Protected navigation has no `Soon` promise or dead Chat entry. Chat remains
+  explicitly deferred until its consent, delivery, retention, and persistence
+  model is approved.
+- Authenticated visual QA covered 375, 768, and 1440 pixel widths, light/dark
+  themes, keyboard search, mobile navigation, populated/empty/error/disconnected
+  states, and all eleven protected routes without global horizontal overflow.
+
 ## Remaining Global Product Plan
 
-1. **14.7 — Product UX Completion:** visual polish, provider logos, validated
-   settings selectors, and explicit delivery decisions for remaining `Soon`
-   modules.
-2. **14.8 — Production Infrastructure and Release Readiness:** production
+1. **14.8 — Production Infrastructure and Release Readiness:** production
    environment, deployment, SMTP, distributed rate limiting, monitoring,
    backups, security controls, credential rotation, legal review, and final
    global regression.

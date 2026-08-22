@@ -1,7 +1,7 @@
 # Revora Roadmap
 
-**Current checkpoint:** Phase 14.6G complete integration E2E audit locally
-validated; live credential and linked-migration gates remain (2026-08-21)
+**Current checkpoint:** Phase 14.7 Product UX Completion locally implemented
+and validated; no push or deployment performed (2026-08-21)
 
 ## Completed
 
@@ -24,19 +24,22 @@ validated; live credential and linked-migration gates remain (2026-08-21)
   mutations.
 - Phase 14.6G: cross-provider deterministic E2E gate, OAuth/PKCE replay and
   persistence hardening, bounded CRM transports, and honest live-status audit.
+- Phase 14.7: trusted provider branding, validated workspace preferences,
+  organization-scoped lead search and activity, bounded Calendar workspace,
+  persisted AI Insights, truthful navigation, and responsive/accessibility QA.
 
-## Next — Phase 14.7: Product UX Completion
+## Next — Phase 14.8: Production Infrastructure and Release Readiness
 
-Complete the visual and interaction pass: provider logos, responsive polish,
-accessibility/interaction states, validated language and timezone selectors,
-and explicit delivery decisions for every remaining `Soon` module.
+Prepare an explicitly authorized production environment: deployment, SMTP,
+distributed rate limiting, monitoring, backups, security controls, credential
+rotation, legal review, and a final global regression before any go-live claim.
 
 ## Product Completion
 
-- **14.7 — Product UX Completion:** provider logos, consistent responsive
-  polish, accessibility and interaction-state review, validated language and
-  timezone selectors, and explicit scoping of Notifications, Global Search,
-  Calendar, AI Insights, and Chat before removing any `Soon` placeholder.
+- **14.7 — Product UX Completion — COMPLETE LOCALLY:** provider branding,
+  responsive/accessibility polish, validated preferences, real Activity Center,
+  Global Search, Calendar, and AI Insights. Chat is explicitly deferred and
+  absent from primary navigation.
 - **14.8 — Production Infrastructure and Release Readiness:** production
   environment, deployment, SMTP, distributed rate limiting, monitoring,
   backups, security headers/WAF decisions, credential rotation, legal review,
