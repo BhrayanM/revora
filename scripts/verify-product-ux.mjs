@@ -429,6 +429,7 @@ async function testAIInsightsWorkspaceContracts() {
   assert.doesNotMatch(pageSource, /qualifyLead|generateText|openai|anthropic/i);
   assert.match(dashboardCardSource, /href="\/insights"/);
   assert.match(dashboardPageSource, /buildAIInsightSummary/);
+  assert.ok((dashboardPageSource.match(/grid-cols-1/g) ?? []).length >= 3);
   assert.doesNotMatch(dashboardCardSource, /Soon/);
 }
 
@@ -442,6 +443,8 @@ async function testCrossScreenPolishContracts() {
     toastSource,
     globalsSource,
     pageHeaderSource,
+    chartsSource,
+    teamSource,
   ] = await Promise.all([
     readFile("src/app/(dashboard)/leads/leads-table.tsx", "utf8"),
     readFile("src/app/(dashboard)/leads/[id]/page.tsx", "utf8"),
@@ -451,6 +454,8 @@ async function testCrossScreenPolishContracts() {
     readFile("src/components/ui/toast.tsx", "utf8"),
     readFile("src/app/globals.css", "utf8"),
     readFile("src/components/ui/page-header.tsx", "utf8"),
+    readFile("src/components/dashboard/charts.tsx", "utf8"),
+    readFile("src/components/team/team-management-content.tsx", "utf8"),
   ]);
   assert.doesNotMatch(leadsSource, /MoreHorizontal|onRowClick|router\.push/);
   assert.match(leadsSource, /aria-label="Search leads"/);
@@ -468,6 +473,11 @@ async function testCrossScreenPolishContracts() {
   assert.match(toastSource, /min-h-11|min-w-11|size-11/);
   assert.match(globalsSource, /transition-duration:\s*0\.01ms\s*!important/);
   assert.match(pageHeaderSource, /export function PageHeader/);
+  assert.match(
+    chartsSource,
+    /className="flex min-w-0 flex-1 flex-col items-center/,
+  );
+  assert.match(teamSource, /className="mx-auto w-full min-w-0 max-w-6xl/);
 
   const protectedSources = await Promise.all(
     [
