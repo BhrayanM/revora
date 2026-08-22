@@ -337,6 +337,45 @@ async function testNavigationAndSearchContracts() {
   assert.match(shellSource, /sidebarCollapsed/);
 }
 
+async function testActivityCenterSourceContracts() {
+  const [querySource, pageSource, settingsSource, profileSource] =
+    await Promise.all([
+      readFile("src/lib/queries/activity-center.ts", "utf8"),
+      readFile("src/app/(dashboard)/notifications/page.tsx", "utf8"),
+      readFile("src/app/(dashboard)/settings/settings-content.tsx", "utf8"),
+      readFile("src/app/(dashboard)/profile/profile-content.tsx", "utf8"),
+    ]);
+  for (const table of [
+    "conversations",
+    "automation_executions",
+    "integration_audit_events",
+  ]) {
+    assert.match(querySource, new RegExp(`\\.from\\("${table}"\\)`));
+  }
+  assert.ok(
+    (querySource.match(/\.eq\("organization_id", organizationId\)/g) ?? [])
+      .length >= 4,
+  );
+  assert.match(querySource, /buildActivityFeed/);
+  assert.doesNotMatch(
+    querySource,
+    /select\("[^"]*(content|error_message|response_metadata|actor_profile_id)/,
+  );
+  assert.match(
+    pageSource,
+    /requireCurrentOrganizationPermission\("dashboard\.read"\)/,
+  );
+  assert.match(pageSource, /Activity Center/);
+  assert.doesNotMatch(pageSource, /unread|No notifications yet/i);
+  assert.match(settingsSource, /\/notifications/);
+  assert.match(settingsSource, /tab=integrations/);
+  assert.doesNotMatch(settingsSource, /Coming soon/);
+  assert.doesNotMatch(
+    profileSource,
+    /Camera|Notification preferences coming soon/,
+  );
+}
+
 testPreferences();
 testSearchContracts();
 testActivityContracts();
@@ -344,5 +383,6 @@ testAIInsightContracts();
 await testSettingsSourceContracts();
 await testProviderBrandingContracts();
 await testNavigationAndSearchContracts();
+await testActivityCenterSourceContracts();
 
 console.log("Phase 14.7 product UX contract verification passed.");
