@@ -1,9 +1,10 @@
-import { ArrowRight, Brain, MessageSquare, UserPlus } from "lucide-react";
+import { ArrowRight, Brain, UserPlus, Webhook } from "lucide-react";
 import type { Metadata } from "next";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,21 +40,17 @@ export default async function AutomationPage() {
   const supabase = await createClient();
   const { data: executions } = await supabase
     .from("automation_executions")
-    .select("*")
+    .select("id, provider, action, status, attempts, created_at")
     .eq("organization_id", org.id)
     .order("created_at", { ascending: false })
     .limit(50);
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">
-          Automation Activity
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track webhook deliveries, CRM syncs, and AI operations.
-        </p>
-      </div>
+      <PageHeader
+        title="Automation Activity"
+        description="Track webhook deliveries, CRM syncs, and AI operations."
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -69,7 +66,7 @@ export default async function AutomationPage() {
                 </div>
                 <ArrowRight className="size-4 text-muted-foreground/40" />
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 ring-1 ring-success/10">
-                  <MessageSquare className="size-5 text-success" />
+                  <Webhook className="size-5 text-success" />
                 </div>
               </div>
               <h3 className="text-sm font-semibold text-foreground">
@@ -106,7 +103,7 @@ export default async function AutomationPage() {
                       Attempts
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-muted-foreground">
-                      Error
+                      Outcome
                     </th>
                   </tr>
                 </thead>
@@ -117,10 +114,10 @@ export default async function AutomationPage() {
                         {new Date(exec.created_at).toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-foreground">
-                        {exec.provider}
+                        {exec.provider.slice(0, 80)}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
-                        {exec.action}
+                        {exec.action.slice(0, 80)}
                       </td>
                       <td className="px-4 py-3">
                         <Badge
@@ -133,8 +130,12 @@ export default async function AutomationPage() {
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {exec.attempts}
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground max-w-[200px] truncate">
-                        {exec.error_message ?? "—"}
+                      <td className="max-w-[200px] truncate px-4 py-3 text-xs text-muted-foreground">
+                        {exec.status === "failed"
+                          ? "Needs attention"
+                          : exec.status === "success"
+                            ? "Completed"
+                            : "In progress"}
                       </td>
                     </tr>
                   ))}

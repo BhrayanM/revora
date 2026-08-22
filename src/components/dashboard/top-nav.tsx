@@ -40,9 +40,10 @@ export function TopNav({
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-canvas/90 backdrop-blur-xl px-4 sm:px-6">
       <button
+        type="button"
         ref={menuButtonRef}
         onClick={onMenuClick}
-        className="flex size-10 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:hidden"
+        className="flex size-11 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:hidden"
         aria-label="Open menu"
         aria-expanded={mobileMenuOpen}
         aria-controls="mobile-sidebar"
@@ -61,15 +62,15 @@ export function TopNav({
 
         <Link
           href="/notifications"
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-          aria-label="Notifications"
+          className="relative flex size-11 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          aria-label="Open Activity Center"
         >
           <Bell className="size-4" />
         </Link>
 
         <Link
           href="/profile"
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20 outline-none transition-all hover:ring-primary/30 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20 outline-none transition-all hover:ring-primary/30 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           aria-label="Open profile"
         >
           {initials}

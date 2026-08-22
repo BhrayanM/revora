@@ -154,16 +154,18 @@ export function Sidebar({
         >
           {isMobile ? (
             <button
+              type="button"
               onClick={onMobileClose}
-              className="flex size-10 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+              className="flex size-11 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
               aria-label="Close sidebar"
             >
               <X className="size-4" />
             </button>
           ) : (
             <button
+              type="button"
               onClick={() => onCollapsedChange(!isCollapsed)}
-              className="flex size-9 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+              className="flex size-11 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
@@ -252,8 +254,9 @@ export function Sidebar({
               </p>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-error focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+              className="flex size-11 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-error focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
               aria-label="Sign out"
               title="Sign out"
             >
@@ -266,8 +269,9 @@ export function Sidebar({
               {initials}
             </div>
             <button
+              type="button"
               onClick={handleLogout}
-              className="rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-error focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+              className="flex size-11 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-error focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
               aria-label="Sign out"
             >
               <LogOut className="size-3.5" />

@@ -19,7 +19,6 @@ export interface TableProps<T> {
   data: T[];
   keyField: keyof T;
   className?: string;
-  onRowClick?: (item: T) => void;
   emptyMessage?: string;
   isLoading?: boolean;
   pageSize?: number;
@@ -31,7 +30,6 @@ export function Table<T>({
   data,
   keyField,
   className,
-  onRowClick,
   emptyMessage = "No data found",
   isLoading = false,
   pageSize = 10,
@@ -63,11 +61,11 @@ export function Table<T>({
       })
     : data;
 
-  const paginatedData = showPagination
-    ? sortedData.slice(page * pageSize, (page + 1) * pageSize)
-    : sortedData;
-
   const totalPages = Math.ceil(data.length / pageSize);
+  const activePage = Math.min(page, Math.max(0, totalPages - 1));
+  const paginatedData = showPagination
+    ? sortedData.slice(activePage * pageSize, (activePage + 1) * pageSize)
+    : sortedData;
 
   return (
     <div
@@ -77,7 +75,10 @@ export function Table<T>({
       )}
     >
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full" aria-busy={isLoading}>
+          <caption className="sr-only">
+            {isLoading ? "Loading table data" : `${data.length} rows`}
+          </caption>
           <thead>
             <tr className="border-b border-border bg-surface-secondary">
               {columns.map((col) => (
@@ -146,11 +147,7 @@ export function Table<T>({
               paginatedData.map((item) => (
                 <tr
                   key={String(item[keyField])}
-                  className={cn(
-                    "border-b border-border transition-colors",
-                    onRowClick && "cursor-pointer hover:bg-surface-secondary",
-                  )}
-                  onClick={() => onRowClick?.(item)}
+                  className="border-b border-border transition-colors hover:bg-surface-secondary/50"
                 >
                   {columns.map((col) => (
                     <td
@@ -169,20 +166,22 @@ export function Table<T>({
       {showPagination && totalPages > 1 && (
         <div className="flex items-center justify-between border-t border-border px-4 py-3">
           <p className="text-sm text-muted-foreground">
-            Page {page + 1} of {totalPages}
+            Page {activePage + 1} of {totalPages}
           </p>
           <div className="flex gap-1">
             <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
-              className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-surface-secondary disabled:opacity-50"
+              type="button"
+              onClick={() => setPage(Math.max(0, activePage - 1))}
+              disabled={activePage === 0}
+              className="min-h-11 rounded-md border border-border px-3 py-1 text-sm outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
             >
               Previous
             </button>
             <button
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
-              className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-surface-secondary disabled:opacity-50"
+              type="button"
+              onClick={() => setPage(Math.min(totalPages - 1, activePage + 1))}
+              disabled={activePage >= totalPages - 1}
+              className="min-h-11 rounded-md border border-border px-3 py-1 text-sm outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
             >
               Next
             </button>

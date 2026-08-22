@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentOrganization } from "@/lib/auth";
 import { getLeads } from "@/lib/queries/leads";
 import { getPipelines, getPipelineStages } from "@/lib/queries/pipelines";
@@ -92,20 +93,18 @@ export default async function PipelinePage() {
 
   return (
     <Container className="max-w-none px-0 flex flex-1 flex-col min-h-0">
-      <div className="mb-6 flex shrink-0 items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {defaultPipeline.name}
-          </p>
-        </div>
-        <Link
-          href="/leads"
-          className="inline-flex h-8 items-center gap-2 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary-600 active:bg-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
-        >
-          <Plus className="size-3.5" /> Add Lead
-        </Link>
-      </div>
+      <PageHeader
+        title="Pipeline"
+        description={defaultPipeline.name}
+        actions={
+          <Link
+            href="/leads"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm outline-none transition-colors hover:bg-primary-600 active:bg-primary-700 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+          >
+            <Plus className="size-3.5" /> Add Lead
+          </Link>
+        }
+      />
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto overflow-y-hidden pb-4">
         {(stages ?? []).map((stage) => {
@@ -137,16 +136,16 @@ export default async function PipelinePage() {
                           86400000,
                       );
                       return (
-                        <Card
-                          key={lead.id}
-                          className="cursor-pointer transition-all hover:shadow-md"
-                        >
+                        <Card key={lead.id}>
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div>
-                                <p className="text-sm font-medium text-foreground">
+                                <Link
+                                  href={`/leads/${lead.id}`}
+                                  className="rounded text-sm font-medium text-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
+                                >
                                   {lead.first_name} {lead.last_name}
-                                </p>
+                                </Link>
                                 <p className="text-xs text-muted-foreground">
                                   {lead.company ?? "—"}
                                 </p>

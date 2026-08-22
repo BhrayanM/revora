@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { SelectField } from "@/components/ui/select-field";
 import {
   DEFAULT_LANGUAGE,
@@ -95,12 +96,11 @@ export function SettingsContent({
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Configure your organization workspace and personal preferences.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        description="Configure your organization workspace and personal preferences."
+        className="mb-8"
+      />
 
       <div className="grid gap-6 lg:grid-cols-4">
         <Card className="h-fit lg:col-span-1">
@@ -108,8 +108,10 @@ export function SettingsContent({
             <nav className="space-y-0.5">
               {sections.map((section) => (
                 <button
+                  type="button"
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
+                  aria-pressed={activeSection === section.id}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
                     "outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface",

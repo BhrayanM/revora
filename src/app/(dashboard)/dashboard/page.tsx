@@ -12,6 +12,7 @@ import Link from "next/link";
 import { AIInsights } from "@/components/dashboard/ai-insights";
 import { BarChart, DonutChart } from "@/components/dashboard/charts";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { getCurrentOrganization } from "@/lib/auth";
 import { buildAIInsightSummary } from "@/lib/product-ux/ai-insights";
 import {
@@ -82,12 +83,11 @@ export default async function DashboardPage() {
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Overview of your pipeline and leads.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Overview of your pipeline and leads."
+        className="mb-8"
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
@@ -138,7 +138,6 @@ export default async function DashboardPage() {
               label="AI Qualify"
               color="bg-secondary/10 ring-secondary/10"
             />
-            <ArrowRight className="size-3 text-muted-foreground/30 shrink-0" />
           </div>
           <p className="text-center text-xs text-muted-foreground">
             Lead creation, stage changes, and AI qualification are recorded in

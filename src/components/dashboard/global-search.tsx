@@ -99,7 +99,7 @@ export function GlobalSearch() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground shadow-sm outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:w-full sm:justify-start sm:px-3"
+        className="flex size-11 items-center justify-center rounded-xl border border-border bg-surface text-muted-foreground shadow-sm outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:w-full sm:justify-start sm:px-3"
         aria-label="Search leads"
       >
         <Search className="size-4 shrink-0" />
