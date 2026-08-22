@@ -13,6 +13,8 @@ import {
 } from "../src/lib/product-ux/search.ts";
 import { buildActivityFeed } from "../src/lib/product-ux/activity.ts";
 import { buildAIInsightSummary } from "../src/lib/product-ux/ai-insights.ts";
+import { PROVIDER_VISUALS } from "../src/lib/product-ux/provider-visuals.ts";
+import { INTEGRATION_PROVIDER_IDS } from "../src/lib/integrations/types.ts";
 
 function testPreferences() {
   assert.equal(normalizeLanguagePreference("en-US"), "en-US");
@@ -261,10 +263,39 @@ async function testSettingsSourceContracts() {
   assert.match(selectSource, /aria-invalid/);
 }
 
+async function testProviderBrandingContracts() {
+  assert.deepEqual(
+    Object.keys(PROVIDER_VISUALS).sort(),
+    [...INTEGRATION_PROVIDER_IDS].sort(),
+  );
+
+  const localAssets = Object.values(PROVIDER_VISUALS).flatMap((visual) =>
+    visual.assetPath ? [visual.assetPath] : [],
+  );
+  assert.ok(localAssets.length >= 8);
+  for (const assetPath of localAssets) {
+    assert.match(assetPath, /^\/integrations\//);
+    await readFile(`public${assetPath}`);
+  }
+
+  assert.equal(PROVIDER_VISUALS.gohighlevel.kind, "neutral");
+  assert.equal(PROVIDER_VISUALS.twilio.kind, "neutral");
+
+  const [panelSource, logoSource] = await Promise.all([
+    readFile("src/app/(dashboard)/settings/integrations-panel.tsx", "utf8"),
+    readFile("src/components/integrations/provider-logo.tsx", "utf8"),
+  ]);
+  assert.match(panelSource, /<ProviderLogo/);
+  assert.match(panelSource, /aria-live="polite"/);
+  assert.match(panelSource, /sm:flex-row/);
+  assert.doesNotMatch(logoSource, /https?:\/\//);
+}
+
 testPreferences();
 testSearchContracts();
 testActivityContracts();
 testAIInsightContracts();
 await testSettingsSourceContracts();
+await testProviderBrandingContracts();
 
 console.log("Phase 14.7 product UX contract verification passed.");

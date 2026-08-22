@@ -3,6 +3,7 @@
 import { CheckCircle, ExternalLink, Plug, XCircle } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
+import { ProviderLogo } from "@/components/integrations/provider-logo";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,8 @@ function IntegrationCard({
   const provider = getProviderById(providerId);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
+  const [testSucceeded, setTestSucceeded] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [deleting, startDelete] = useTransition();
 
   if (!provider) return null;
@@ -104,24 +107,30 @@ function IntegrationCard({
     (connection.status === "connected" || connection.status === "degraded");
 
   const handleConnect = async () => {
-    if (providerId === "hubspot") {
-      const result = await startHubSpotOAuth();
-      if (result.url) window.location.href = result.url;
-      else setTestResult(result.error ?? "OAuth setup failed");
-    } else if (providerId === "gohighlevel") {
-      const result = await startGHLOAuth();
-      if (result.url) window.location.href = result.url;
-      else setTestResult(result.error ?? "OAuth setup failed");
-    } else if (providerId === "slack") {
-      const result = await startSlackOAuth();
-      if (result.url) window.location.href = result.url;
-      else setTestResult(result.error ?? "OAuth setup failed");
-    } else if (providerId === "google-calendar" || providerId === "gmail") {
-      const result = await startGoogleWorkspaceOAuth();
-      if (result.url) window.location.href = result.url;
-      else setTestResult(result.error ?? "OAuth setup failed");
-    } else {
-      onConfigure();
+    setConnecting(true);
+    setTestSucceeded(false);
+    try {
+      if (providerId === "hubspot") {
+        const result = await startHubSpotOAuth();
+        if (result.url) window.location.href = result.url;
+        else setTestResult(result.error ?? "OAuth setup failed");
+      } else if (providerId === "gohighlevel") {
+        const result = await startGHLOAuth();
+        if (result.url) window.location.href = result.url;
+        else setTestResult(result.error ?? "OAuth setup failed");
+      } else if (providerId === "slack") {
+        const result = await startSlackOAuth();
+        if (result.url) window.location.href = result.url;
+        else setTestResult(result.error ?? "OAuth setup failed");
+      } else if (providerId === "google-calendar" || providerId === "gmail") {
+        const result = await startGoogleWorkspaceOAuth();
+        if (result.url) window.location.href = result.url;
+        else setTestResult(result.error ?? "OAuth setup failed");
+      } else {
+        onConfigure();
+      }
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -166,6 +175,7 @@ function IntegrationCard({
     setTestResult(
       success ? "Connection successful" : (errorMsg ?? "Connection failed"),
     );
+    setTestSucceeded(success);
     setTesting(false);
   };
 
@@ -177,14 +187,22 @@ function IntegrationCard({
       else if (providerId === "twilio") await disconnectTwilio();
       else if (providerId === "tally") {
         const result = await disconnectTally();
-        if (result.error) setTestResult(result.error);
-        else if ("warning" in result && result.warning) {
+        if (result.error) {
+          setTestSucceeded(false);
+          setTestResult(result.error);
+        } else if ("warning" in result && result.warning) {
+          setTestSucceeded(false);
           setTestResult(result.warning);
         }
       } else if (providerId === "google-calendar" || providerId === "gmail") {
         const result = await disconnectGoogleWorkspace();
-        if (result.error) setTestResult(result.error);
-        else if (result.warning) setTestResult(result.warning);
+        if (result.error) {
+          setTestSucceeded(false);
+          setTestResult(result.error);
+        } else if (result.warning) {
+          setTestSucceeded(false);
+          setTestResult(result.warning);
+        }
       } else await deleteIntegration(providerId);
       onRefresh();
     });
@@ -193,13 +211,11 @@ function IntegrationCard({
   return (
     <Card className={configured ? "border-success/30" : ""}>
       <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <Plug className="size-5 text-primary" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <ProviderLogo providerId={providerId} />
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">
                   {provider.displayName}
                 </p>
@@ -216,7 +232,7 @@ function IntegrationCard({
               )}
             </div>
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex w-full flex-wrap gap-1.5 sm:w-auto sm:justify-end">
             {configured && (
               <>
                 <Button
@@ -224,6 +240,8 @@ function IntegrationCard({
                   size="sm"
                   onClick={handleTest}
                   loading={testing}
+                  disabled={deleting || connecting}
+                  className="min-h-11 flex-1 sm:min-h-0 sm:flex-none"
                 >
                   Test
                 </Button>
@@ -232,21 +250,33 @@ function IntegrationCard({
                   size="sm"
                   onClick={handleDisconnect}
                   loading={deleting}
+                  disabled={testing || connecting}
+                  className="min-h-11 flex-1 sm:min-h-0 sm:flex-none"
                 >
                   Disconnect
                 </Button>
               </>
             )}
             {!configured && (
-              <Button variant="outline" size="sm" onClick={handleConnect}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleConnect}
+                loading={connecting}
+                className="min-h-11 w-full sm:min-h-0 sm:w-auto"
+              >
                 <Plug className="size-3.5" /> Connect
               </Button>
             )}
           </div>
         </div>
         {testResult && (
-          <div className="mt-3 flex items-center gap-1.5">
-            {testResult.startsWith("Connection") ? (
+          <div
+            className="mt-3 flex items-center gap-1.5"
+            role="status"
+            aria-live="polite"
+          >
+            {testSucceeded ? (
               <CheckCircle className="size-3.5 text-success" />
             ) : (
               <XCircle className="size-3.5 text-error" />
