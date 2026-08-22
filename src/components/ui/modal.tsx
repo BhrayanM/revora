@@ -2,7 +2,13 @@
 
 import { type VariantProps, cva } from "class-variance-authority";
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -49,6 +55,7 @@ export interface ModalProps extends VariantProps<typeof overlayVariants> {
   className?: string;
   size?: VariantProps<typeof panelVariants>["size"];
   showCloseButton?: boolean;
+  initialFocusRef?: RefObject<HTMLElement | null>;
 }
 
 export function Modal({
@@ -60,6 +67,7 @@ export function Modal({
   className,
   size = "md",
   showCloseButton = true,
+  initialFocusRef,
 }: ModalProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -81,6 +89,11 @@ export function Modal({
       '[tabindex]:not([tabindex="-1"])',
     ].join(",");
     const focusInitialElement = () => {
+      const preferred = initialFocusRef?.current;
+      if (preferred && dialog?.contains(preferred)) {
+        preferred.focus();
+        return;
+      }
       const focusable =
         dialog?.querySelectorAll<HTMLElement>(focusableSelector);
       (focusable?.[0] ?? dialog)?.focus();
@@ -123,7 +136,7 @@ export function Modal({
       document.body.style.overflow = "";
       previouslyFocusedElement.current?.focus();
     };
-  }, [open, onClose]);
+  }, [initialFocusRef, open, onClose]);
 
   if (!open) return null;
 

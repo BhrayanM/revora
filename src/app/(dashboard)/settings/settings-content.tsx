@@ -48,11 +48,13 @@ function isSettingsSection(
 
 export function SettingsContent({
   org,
+  canManageSettings,
   timezones,
   initialSection,
   marketplaceInstallRequiresAuthorization = false,
 }: {
   org: Organization | null;
+  canManageSettings: boolean;
   timezones: string[];
   initialSection?: string;
   marketplaceInstallRequiresAuthorization?: boolean;
@@ -84,6 +86,7 @@ export function SettingsContent({
     : DEFAULT_TIME_ZONE;
   const handleSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!canManageSettings) return;
     setMessage(null);
     setFieldErrors({});
     const formData = new FormData(e.currentTarget);
@@ -140,6 +143,12 @@ export function SettingsContent({
                 </p>
               </CardHeader>
               <CardContent>
+                {!canManageSettings && (
+                  <Alert variant="info" className="mb-4">
+                    You have read-only access to organization settings. Ask the
+                    organization owner to make workspace changes.
+                  </Alert>
+                )}
                 {message && (
                   <Alert
                     variant={
@@ -151,63 +160,72 @@ export function SettingsContent({
                   </Alert>
                 )}
                 <form onSubmit={handleSave} className="space-y-6">
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <fieldset
+                    disabled={!canManageSettings}
+                    className="space-y-6 disabled:opacity-70"
+                  >
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Input
+                        label="Organization Name"
+                        name="org_name"
+                        defaultValue={
+                          (orgSettings.org_name as string) ?? org?.name ?? ""
+                        }
+                        error={fieldErrors.organizationName}
+                      />
+                      <Input
+                        label="Website"
+                        name="website"
+                        defaultValue={(orgSettings.website as string) ?? ""}
+                        placeholder="https://example.com"
+                        error={fieldErrors.website}
+                      />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <SelectField
+                        label="Default Timezone"
+                        name="timezone"
+                        defaultValue={timezone}
+                        error={fieldErrors.timezone}
+                        helperText="Used for appointments and workspace dates."
+                      >
+                        {timezones.map((value) => (
+                          <option key={value} value={value}>
+                            {value.replace(/_/g, " ")}
+                          </option>
+                        ))}
+                      </SelectField>
+                      <SelectField
+                        label="Language"
+                        name="language"
+                        defaultValue={language}
+                        error={fieldErrors.language}
+                        helperText="Controls workspace formatting preferences."
+                      >
+                        {SUPPORTED_LANGUAGES.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </SelectField>
+                    </div>
                     <Input
-                      label="Organization Name"
-                      name="org_name"
-                      defaultValue={
-                        (orgSettings.org_name as string) ?? org?.name ?? ""
-                      }
-                      error={fieldErrors.organizationName}
+                      label="Contact Email"
+                      name="email"
+                      type="email"
+                      defaultValue={(orgSettings.email as string) ?? ""}
+                      error={fieldErrors.contactEmail}
                     />
-                    <Input
-                      label="Website"
-                      name="website"
-                      defaultValue={(orgSettings.website as string) ?? ""}
-                      placeholder="https://example.com"
-                      error={fieldErrors.website}
-                    />
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <SelectField
-                      label="Default Timezone"
-                      name="timezone"
-                      defaultValue={timezone}
-                      error={fieldErrors.timezone}
-                      helperText="Used for appointments and workspace dates."
-                    >
-                      {timezones.map((value) => (
-                        <option key={value} value={value}>
-                          {value.replace(/_/g, " ")}
-                        </option>
-                      ))}
-                    </SelectField>
-                    <SelectField
-                      label="Language"
-                      name="language"
-                      defaultValue={language}
-                      error={fieldErrors.language}
-                      helperText="Controls workspace formatting preferences."
-                    >
-                      {SUPPORTED_LANGUAGES.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </SelectField>
-                  </div>
-                  <Input
-                    label="Contact Email"
-                    name="email"
-                    type="email"
-                    defaultValue={(orgSettings.email as string) ?? ""}
-                    error={fieldErrors.contactEmail}
-                  />
-                  <div className="flex justify-end">
-                    <Button type="submit" loading={isPending}>
-                      Save Changes
-                    </Button>
-                  </div>
+                    <div className="flex justify-end">
+                      <Button
+                        type="submit"
+                        loading={isPending}
+                        disabled={!canManageSettings}
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </fieldset>
                 </form>
                 <ThemeAppearance />
               </CardContent>

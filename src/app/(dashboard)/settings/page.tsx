@@ -1,4 +1,5 @@
-import { getCurrentOrganization } from "@/lib/auth";
+import { getActiveOrganizationContext } from "@/lib/auth";
+import { hasOrganizationPermission } from "@/lib/auth/permissions";
 import { getSupportedTimeZones } from "@/lib/product-ux/preferences";
 
 import { SettingsContent } from "./settings-content";
@@ -14,7 +15,14 @@ export default async function SettingsPage({
   searchParams: SettingsSearchParams;
 }) {
   const params = await searchParams;
-  const org = await getCurrentOrganization();
+  const context = await getActiveOrganizationContext();
+  const org = context?.organization ?? null;
+  const canManageSettings = context
+    ? hasOrganizationPermission(
+        context.membership.role,
+        "organization.settings.manage",
+      )
+    : false;
   const initialSection =
     typeof params.tab === "string" ? params.tab : undefined;
   const marketplaceInstallRequiresAuthorization =
@@ -23,6 +31,7 @@ export default async function SettingsPage({
   return (
     <SettingsContent
       org={org}
+      canManageSettings={canManageSettings}
       timezones={getSupportedTimeZones()}
       initialSection={initialSection}
       marketplaceInstallRequiresAuthorization={

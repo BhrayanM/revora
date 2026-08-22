@@ -2,6 +2,7 @@ import { Alert } from "@/components/ui/alert";
 import { Container } from "@/components/ui/container";
 import { PageHeader } from "@/components/ui/page-header";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import { hasOrganizationPermission } from "@/lib/auth/permissions";
 import { listUpcomingGoogleCalendarEvents } from "@/lib/integrations/adapters/google-workspace";
 import {
   DEFAULT_TIME_ZONE,
@@ -27,7 +28,11 @@ export default async function CalendarPage({
     );
   }
 
-  const { organization } = authorization.data;
+  const { membership, organization } = authorization.data;
+  const canCreateAppointments = hasOrganizationPermission(
+    membership.role,
+    "leads.write",
+  );
   const rawSettings = organization.settings;
   const settings =
     rawSettings &&
@@ -39,16 +44,17 @@ export default async function CalendarPage({
     ? settings.timezone
     : DEFAULT_TIME_ZONE;
   const supabase = await createClient();
-  const [calendar, leadResponse] = await Promise.all([
-    listUpcomingGoogleCalendarEvents(organization.id),
-    supabase
-      .from("leads")
-      .select("id, first_name, last_name, email")
-      .eq("organization_id", organization.id)
-      .not("email", "is", null)
-      .order("updated_at", { ascending: false })
-      .limit(100),
-  ]);
+  const calendarPromise = listUpcomingGoogleCalendarEvents(organization.id);
+  const leadResponse = canCreateAppointments
+    ? await supabase
+        .from("leads")
+        .select("id, first_name, last_name, email")
+        .eq("organization_id", organization.id)
+        .not("email", "is", null)
+        .order("updated_at", { ascending: false })
+        .limit(100)
+    : { data: [], error: null };
+  const calendar = await calendarPromise;
   if (leadResponse.error) {
     console.error(
       "[Calendar] Lead options failed:",
@@ -80,6 +86,7 @@ export default async function CalendarPage({
         timezone={timezone}
         calendarError={calendar.success ? null : calendar.error}
         initialLeadId={initialLeadId}
+        canCreateAppointments={canCreateAppointments}
       />
     </Container>
   );

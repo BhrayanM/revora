@@ -19,6 +19,9 @@ import {
 } from "@/lib/product-ux/ai-insights";
 import { createClient } from "@/lib/supabase/server";
 
+const INSIGHT_PAGE_SIZE = 500;
+const MAX_ANALYZED_LEADS = 5_000;
+
 function temperatureVariant(temperature: InsightTemperature) {
   if (temperature === "HOT") return "error" as const;
   if (temperature === "WARM") return "warning" as const;
@@ -38,20 +41,50 @@ export default async function InsightsPage() {
 
   const { organization } = authorization.data;
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const countResponse = await supabase
     .from("leads")
-    .select("id, first_name, last_name, company, score, updated_at, metadata")
-    .eq("organization_id", organization.id)
-    .order("updated_at", { ascending: false })
-    .limit(500);
-  if (error) {
-    console.error("[AIInsights] Lead query failed:", error.message);
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", organization.id);
+  if (countResponse.error || countResponse.count === null) {
+    console.error("[AIInsights] Lead count failed");
     return (
       <Container className="max-w-none px-0">
         <Alert variant="error">AI Insights is temporarily unavailable.</Alert>
       </Container>
     );
   }
+
+  const totalAvailable = countResponse.count;
+  const analyzedCount = Math.min(totalAvailable, MAX_ANALYZED_LEADS);
+  const pageStarts = Array.from(
+    { length: Math.ceil(analyzedCount / INSIGHT_PAGE_SIZE) },
+    (_, index) => index * INSIGHT_PAGE_SIZE,
+  );
+  const pageResponses = await Promise.all(
+    pageStarts.map((start) =>
+      supabase
+        .from("leads")
+        .select(
+          "id, first_name, last_name, company, score, updated_at, metadata",
+        )
+        .eq("organization_id", organization.id)
+        .order("updated_at", { ascending: false })
+        .range(
+          start,
+          Math.min(start + INSIGHT_PAGE_SIZE - 1, analyzedCount - 1),
+        ),
+    ),
+  );
+  if (pageResponses.some((response) => response.error)) {
+    console.error("[AIInsights] Lead page query failed");
+    return (
+      <Container className="max-w-none px-0">
+        <Alert variant="error">AI Insights is temporarily unavailable.</Alert>
+      </Container>
+    );
+  }
+  const data = pageResponses.flatMap((response) => response.data ?? []);
+  const isSample = totalAvailable > MAX_ANALYZED_LEADS;
 
   const summary = buildAIInsightSummary(
     (data ?? []).map((lead) => ({
@@ -73,6 +106,15 @@ export default async function InsightsPage() {
         title="AI Insights"
         description="A read-only view of qualification results already persisted on your organization's leads."
       />
+
+      {isSample && (
+        <Alert variant="info" className="mb-4">
+          This workspace has {totalAvailable.toLocaleString("en-US")} leads.
+          Metrics and ranking use a newest-
+          {MAX_ANALYZED_LEADS.toLocaleString("en-US")} sample to keep this view
+          bounded.
+        </Alert>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <InsightMetric

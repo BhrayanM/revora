@@ -95,9 +95,12 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const firstMobileLinkRef = useRef<HTMLAnchorElement>(null);
+  const mobileDialogRef = useRef<HTMLElement>(null);
+  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!mobileOpen) return;
+    previouslyFocusedElement.current = document.activeElement as HTMLElement;
     const frame = window.requestAnimationFrame(() =>
       firstMobileLinkRef.current?.focus(),
     );
@@ -105,12 +108,42 @@ export function Sidebar({
       if (event.key === "Escape") {
         event.preventDefault();
         onMobileClose?.();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const dialog = mobileDialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (!dialog.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
+    document.body.style.overflow = "hidden";
     return () => {
       window.cancelAnimationFrame(frame);
       document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+      previouslyFocusedElement.current?.focus();
     };
   }, [mobileOpen, onMobileClose]);
 
@@ -300,8 +333,10 @@ export function Sidebar({
             aria-hidden="true"
           />
           <aside
+            ref={mobileDialogRef}
             id="mobile-sidebar"
             role="dialog"
+            tabIndex={-1}
             aria-modal="true"
             aria-label="Main navigation"
             className="fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-sidebar-border bg-sidebar lg:hidden"

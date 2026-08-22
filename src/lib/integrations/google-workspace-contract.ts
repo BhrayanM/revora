@@ -53,7 +53,6 @@ export interface GoogleCalendarEventSummary {
   end: string;
   allDay: boolean;
   location?: string;
-  attendeeCount: number;
 }
 
 export interface NormalizedGoogleCalendarAppointment {
@@ -401,10 +400,7 @@ export function buildGoogleCalendarListRequest(
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
   url.searchParams.set("maxResults", String(maxResults));
-  url.searchParams.set(
-    "fields",
-    "kind,items(id,summary,start,end,location,attendees)",
-  );
+  url.searchParams.set("fields", "kind,items(id,summary,start,end,location)");
   return url.toString();
 }
 
@@ -467,7 +463,6 @@ export function parseGoogleCalendarListResponse(
     const summary =
       nonEmptyBoundedString(item["summary"], 200) ?? "Untitled event";
     const location = nonEmptyBoundedString(item["location"], 500);
-    const attendees = item["attendees"];
     return [
       {
         id,
@@ -476,9 +471,6 @@ export function parseGoogleCalendarListResponse(
         end,
         allDay,
         ...(location ? { location } : {}),
-        attendeeCount: Array.isArray(attendees)
-          ? Math.min(attendees.length, 100)
-          : 0,
       },
     ];
   });

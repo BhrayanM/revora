@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarDays, Clock, MapPin, UserRound } from "lucide-react";
+import { CalendarDays, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 
@@ -47,12 +47,14 @@ export function CalendarContent({
   timezone,
   calendarError,
   initialLeadId,
+  canCreateAppointments,
 }: {
   events: GoogleCalendarEventSummary[];
   leads: CalendarLeadOption[];
   timezone: string;
   calendarError: string | null;
   initialLeadId?: string;
+  canCreateAppointments: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(
@@ -127,13 +129,6 @@ export function CalendarContent({
                         {event.location}
                       </p>
                     )}
-                    {event.attendeeCount > 0 && (
-                      <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <UserRound className="size-3.5" />
-                        {event.attendeeCount} attendee
-                        {event.attendeeCount === 1 ? "" : "s"}
-                      </p>
-                    )}
                   </div>
                 </li>
               ))}
@@ -152,58 +147,66 @@ export function CalendarContent({
           </p>
         </CardHeader>
         <CardContent>
+          {!canCreateAppointments && (
+            <Alert variant="info" className="mb-4">
+              You have read-only access. Ask an owner or workspace manager to
+              create appointments.
+            </Alert>
+          )}
           <form ref={formRef} action={formAction} className="space-y-4">
-            <Input label="Title" name="summary" maxLength={200} required />
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <Input
-                label="Start"
-                name="start"
-                type="datetime-local"
-                required
-              />
-              <Input label="End" name="end" type="datetime-local" required />
-            </div>
-            <input type="hidden" name="timezone" value={timezone} />
-            <SelectField
-              label="Invite a lead"
-              name="lead_id"
-              defaultValue={initialLeadId ?? ""}
-              helperText="Optional. Revora rechecks the selected lead before using its email."
-            >
-              <option value="">No attendee</option>
-              {leads.map((lead) => (
-                <option key={lead.id} value={lead.id}>
-                  {lead.name} · {lead.email}
-                </option>
-              ))}
-            </SelectField>
-            <Input label="Location" name="location" maxLength={500} />
-            <label className="block space-y-1.5 text-sm font-medium text-foreground">
-              Description
-              <textarea
-                name="description"
-                maxLength={2000}
-                rows={4}
-                className="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm font-normal text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
-              />
-            </label>
-            {state.message && (
-              <div aria-live="polite">
-                <Alert
-                  variant={state.status === "success" ? "success" : "error"}
-                >
-                  {state.message}
-                </Alert>
+            <fieldset disabled={!canCreateAppointments} className="space-y-4">
+              <Input label="Title" name="summary" maxLength={200} required />
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                <Input
+                  label="Start"
+                  name="start"
+                  type="datetime-local"
+                  required
+                />
+                <Input label="End" name="end" type="datetime-local" required />
               </div>
-            )}
-            <Button
-              type="submit"
-              loading={pending}
-              disabled={Boolean(calendarError)}
-              className="w-full"
-            >
-              Create appointment
-            </Button>
+              <input type="hidden" name="timezone" value={timezone} />
+              <SelectField
+                label="Invite a lead"
+                name="lead_id"
+                defaultValue={initialLeadId ?? ""}
+                helperText="Optional. Revora rechecks the selected lead before using its email."
+              >
+                <option value="">No attendee</option>
+                {leads.map((lead) => (
+                  <option key={lead.id} value={lead.id}>
+                    {lead.name} · {lead.email}
+                  </option>
+                ))}
+              </SelectField>
+              <Input label="Location" name="location" maxLength={500} />
+              <label className="block space-y-1.5 text-sm font-medium text-foreground">
+                Description
+                <textarea
+                  name="description"
+                  maxLength={2000}
+                  rows={4}
+                  className="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm font-normal text-foreground outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </label>
+              {state.message && (
+                <div aria-live="polite">
+                  <Alert
+                    variant={state.status === "success" ? "success" : "error"}
+                  >
+                    {state.message}
+                  </Alert>
+                </div>
+              )}
+              <Button
+                type="submit"
+                loading={pending}
+                disabled={Boolean(calendarError) || !canCreateAppointments}
+                className="w-full"
+              >
+                Create appointment
+              </Button>
+            </fieldset>
           </form>
         </CardContent>
       </Card>
