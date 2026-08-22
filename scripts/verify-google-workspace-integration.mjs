@@ -377,6 +377,10 @@ assert.equal(
 assert.equal(calendarListRequest.searchParams.get("singleEvents"), "true");
 assert.equal(calendarListRequest.searchParams.get("orderBy"), "startTime");
 assert.equal(calendarListRequest.searchParams.get("maxResults"), "25");
+assert.doesNotMatch(
+  calendarListRequest.searchParams.get("fields") ?? "",
+  /attendees/,
+);
 assert.throws(() => buildGoogleCalendarListRequest(fixedNow, 30, 26));
 
 const upcomingPayload = {
@@ -413,7 +417,6 @@ assert.deepEqual(parseGoogleCalendarListResponse(upcomingPayload), [
     end: "2026-08-22T10:30:00-05:00",
     allDay: false,
     location: "Video call",
-    attendeeCount: 1,
   },
   {
     id: "all-day-1",
@@ -421,12 +424,11 @@ assert.deepEqual(parseGoogleCalendarListResponse(upcomingPayload), [
     start: "2026-08-23",
     end: "2026-08-24",
     allDay: true,
-    attendeeCount: 0,
   },
 ]);
 assert.doesNotMatch(
   JSON.stringify(parseGoogleCalendarListResponse(upcomingPayload)),
-  /must-not-leak|conferenceData|description/,
+  /must-not-leak|conferenceData|description|attendees|lead@example\.com/,
 );
 assert.throws(() =>
   parseGoogleCalendarListResponse({

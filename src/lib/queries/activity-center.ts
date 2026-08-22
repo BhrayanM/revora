@@ -23,7 +23,7 @@ export async function getOrganizationActivity(
     await Promise.all([
       supabase
         .from("conversations")
-        .select("id, lead_id, subject, metadata, created_at")
+        .select("id, lead_id, subject, created_at")
         .eq("organization_id", organizationId)
         .eq("type", "note")
         .order("created_at", { ascending: false })
@@ -36,7 +36,7 @@ export async function getOrganizationActivity(
         .limit(SOURCE_LIMIT),
       supabase
         .from("integration_audit_events")
-        .select("id, provider, event_type, metadata, created_at")
+        .select("id, provider, event_type, created_at")
         .eq("organization_id", organizationId)
         .order("created_at", { ascending: false })
         .limit(SOURCE_LIMIT),
@@ -47,8 +47,8 @@ export async function getOrganizationActivity(
     automationResponse.error,
     integrationResponse.error,
   ].filter(Boolean);
-  for (const error of sourceErrors) {
-    console.error("[ActivityCenter] Source query failed:", error?.message);
+  if (sourceErrors.length > 0) {
+    console.error("[ActivityCenter] Source query failed");
   }
   if (sourceErrors.length === 3) {
     return {
@@ -64,7 +64,6 @@ export async function getOrganizationActivity(
     id: row.id,
     leadId: row.lead_id,
     subject: row.subject,
-    metadata: row.metadata,
     createdAt: row.created_at,
   }));
   const leadIds = [...new Set(conversationRows.map((row) => row.leadId))];
@@ -81,7 +80,7 @@ export async function getOrganizationActivity(
       leadLookupFailed = true;
       console.error(
         "[ActivityCenter] Lead lookup failed:",
-        leadResponse.error.message,
+        "Lead lookup unavailable",
       );
     } else {
       for (const lead of leadResponse.data ?? []) {
@@ -107,7 +106,6 @@ export async function getOrganizationActivity(
     id: row.id,
     provider: row.provider,
     eventType: row.event_type,
-    metadata: row.metadata,
     createdAt: row.created_at,
   }));
 

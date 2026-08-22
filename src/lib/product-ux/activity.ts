@@ -2,7 +2,6 @@ export interface ConversationActivityRow {
   id: string;
   leadId: string;
   subject: string | null;
-  metadata: unknown;
   createdAt: string;
 }
 
@@ -20,7 +19,6 @@ export interface IntegrationActivityRow {
   id: string;
   provider: string;
   eventType: string;
-  metadata: unknown;
   createdAt: string;
 }
 
@@ -102,14 +100,6 @@ function safeLabel(value: string, fallback: string): string {
 }
 
 function getConversationEventType(row: ConversationActivityRow): string | null {
-  if (
-    row.metadata &&
-    typeof row.metadata === "object" &&
-    !Array.isArray(row.metadata) &&
-    typeof (row.metadata as Record<string, unknown>)["event_type"] === "string"
-  ) {
-    return (row.metadata as Record<string, string>)["event_type"] ?? null;
-  }
   return row.subject;
 }
 

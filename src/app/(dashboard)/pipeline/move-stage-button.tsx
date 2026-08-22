@@ -19,14 +19,24 @@ export function MoveStageButton({
   stages: PipelineStage[];
 }) {
   const [open, setOpen] = useState(false);
+  const [feedback, setFeedback] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
   const menuId = useId();
 
   const availableStages = stages.filter((s) => s.id !== currentStageId);
 
   const handleMove = (stageId: string) => {
+    setFeedback(null);
     startTransition(async () => {
-      await moveLeadStage(leadId, stageId, pipelineId);
+      const result = await moveLeadStage(leadId, stageId, pipelineId);
+      if (result.error) {
+        setFeedback({ tone: "error", message: result.error });
+        return;
+      }
+      setFeedback({ tone: "success", message: "Lead moved successfully." });
       setOpen(false);
     });
   };
@@ -78,6 +88,19 @@ export function MoveStageButton({
             )}
           </div>
         </>
+      )}
+      {feedback && (
+        <p
+          aria-live="polite"
+          role="status"
+          className={
+            feedback.tone === "success"
+              ? "sr-only text-success"
+              : "mt-1 max-w-44 text-xs text-error"
+          }
+        >
+          {feedback.message}
+        </p>
       )}
     </div>
   );

@@ -23,6 +23,14 @@ export interface LeadSearchResult {
   href: string;
 }
 
+export type LeadSearchField =
+  "first_name" | "last_name" | "email" | "phone" | "company";
+
+export interface LeadSearchFilter {
+  field: LeadSearchField;
+  term: string;
+}
+
 export function normalizeSearchQuery(value: unknown): string | null {
   if (typeof value !== "string") return null;
   const normalized = value.normalize("NFKC").trim().replace(/\s+/g, " ");
@@ -34,6 +42,27 @@ export function normalizeSearchQuery(value: unknown): string | null {
     return null;
   }
   return normalized;
+}
+
+export function buildLeadSearchFilters(query: string): LeadSearchFilter[] {
+  const normalized = normalizeSearchQuery(query);
+  if (!normalized) return [];
+
+  const filters: LeadSearchFilter[] = [
+    { field: "first_name", term: normalized },
+    { field: "last_name", term: normalized },
+    { field: "email", term: normalized },
+    { field: "phone", term: normalized },
+    { field: "company", term: normalized },
+  ];
+  const nameParts = normalized.split(" ");
+  if (nameParts.length > 1) {
+    filters.push(
+      { field: "first_name", term: nameParts[0]! },
+      { field: "last_name", term: nameParts[nameParts.length - 1]! },
+    );
+  }
+  return filters;
 }
 
 function textScore(value: string | null, query: string): number {

@@ -1,4 +1,5 @@
 import {
+  buildLeadSearchFilters,
   normalizeSearchQuery,
   rankLeadSearchResults,
   type LeadSearchCandidate,
@@ -45,7 +46,6 @@ export async function searchOrganizationLeads(
   if (!query) return { data: [], error: null };
 
   const supabase = await createClient();
-  const pattern = `%${escapeIlike(query)}%`;
   const base = () =>
     supabase
       .from("leads")
@@ -53,18 +53,16 @@ export async function searchOrganizationLeads(
       .eq("organization_id", organizationId)
       .limit(PER_FILTER_LIMIT);
 
-  const responses = await Promise.all([
-    base().ilike("first_name", pattern),
-    base().ilike("last_name", pattern),
-    base().ilike("email", pattern),
-    base().ilike("phone", pattern),
-    base().ilike("company", pattern),
-  ]);
+  const responses = await Promise.all(
+    buildLeadSearchFilters(query).map((filter) =>
+      base().ilike(filter.field, `%${escapeIlike(filter.term)}%`),
+    ),
+  );
 
   if (responses.some(({ error }) => error)) {
     for (const response of responses) {
       if (response.error) {
-        console.error("[GlobalSearch] Query failed:", response.error.message);
+        console.error("[GlobalSearch] Query failed");
       }
     }
     return { data: [], error: "Search is temporarily unavailable" };

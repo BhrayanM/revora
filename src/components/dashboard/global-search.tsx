@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 export function GlobalSearch() {
   const router = useRouter();
   const requestSequence = useRef(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<LeadSearchResult[]>([]);
@@ -116,11 +117,12 @@ export function GlobalSearch() {
         description="Search by name, company, email, or phone."
         size="lg"
         className="mx-4"
+        initialFocusRef={searchInputRef}
       >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
-            autoFocus
+            ref={searchInputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleInputKeyDown}
@@ -164,35 +166,31 @@ export function GlobalSearch() {
                   id={`lead-search-${index}`}
                   role="option"
                   aria-selected={activeIndex === index}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onClick={() => navigateToResult(result)}
+                  className={cn(
+                    "flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left outline-none",
+                    activeIndex === index
+                      ? "bg-primary/10"
+                      : "hover:bg-surface-secondary",
+                  )}
                 >
-                  <button
-                    type="button"
-                    onMouseEnter={() => setActiveIndex(index)}
-                    onClick={() => navigateToResult(result)}
-                    className={cn(
-                      "flex min-h-14 w-full items-center gap-3 rounded-xl px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                      activeIndex === index
-                        ? "bg-primary/10"
-                        : "hover:bg-surface-secondary",
-                    )}
-                  >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-secondary text-muted-foreground">
-                      <UserRound className="size-4" />
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-secondary text-muted-foreground">
+                    <UserRound className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-foreground">
+                      {result.name}
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium text-foreground">
-                        {result.name}
-                      </span>
-                      <span className="block truncate text-xs text-muted-foreground">
-                        {[result.company, result.email, result.phone]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {[result.company, result.email, result.phone]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
-                    <span className="shrink-0 text-xs capitalize text-muted-foreground">
-                      {result.pipelineStage ?? result.status}
-                    </span>
-                  </button>
+                  </span>
+                  <span className="shrink-0 text-xs capitalize text-muted-foreground">
+                    {result.pipelineStage ?? result.status}
+                  </span>
                 </li>
               ))}
             </ul>

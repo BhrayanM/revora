@@ -181,29 +181,34 @@ function IntegrationCard({
 
   const handleDisconnect = () => {
     startDelete(async () => {
-      if (providerId === "hubspot") await disconnectHubSpot();
-      else if (providerId === "gohighlevel") await disconnectGHL();
-      else if (providerId === "slack") await disconnectSlack();
-      else if (providerId === "twilio") await disconnectTwilio();
-      else if (providerId === "tally") {
-        const result = await disconnectTally();
-        if (result.error) {
-          setTestSucceeded(false);
-          setTestResult(result.error);
-        } else if ("warning" in result && result.warning) {
-          setTestSucceeded(false);
-          setTestResult(result.warning);
-        }
-      } else if (providerId === "google-calendar" || providerId === "gmail") {
-        const result = await disconnectGoogleWorkspace();
-        if (result.error) {
-          setTestSucceeded(false);
-          setTestResult(result.error);
-        } else if (result.warning) {
-          setTestSucceeded(false);
-          setTestResult(result.warning);
-        }
-      } else await deleteIntegration(providerId);
+      setTestResult(null);
+      let result: unknown;
+      try {
+        if (providerId === "hubspot") result = await disconnectHubSpot();
+        else if (providerId === "gohighlevel") result = await disconnectGHL();
+        else if (providerId === "slack") result = await disconnectSlack();
+        else if (providerId === "twilio") result = await disconnectTwilio();
+        else if (providerId === "tally") result = await disconnectTally();
+        else if (providerId === "google-calendar" || providerId === "gmail") {
+          result = await disconnectGoogleWorkspace();
+        } else result = await deleteIntegration(providerId);
+      } catch {
+        result = { error: "Integration could not be disconnected." };
+      }
+      const feedback =
+        result && typeof result === "object"
+          ? (result as { error?: unknown; warning?: unknown })
+          : {};
+      if (typeof feedback.error === "string" && feedback.error) {
+        setTestSucceeded(false);
+        setTestResult(feedback.error);
+      } else if (typeof feedback.warning === "string" && feedback.warning) {
+        setTestSucceeded(false);
+        setTestResult(feedback.warning);
+      } else {
+        setTestSucceeded(true);
+        setTestResult("Disconnected successfully");
+      }
       onRefresh();
     });
   };

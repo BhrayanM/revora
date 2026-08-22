@@ -8,6 +8,7 @@ import {
   validateWorkspaceSettings,
 } from "../src/lib/product-ux/preferences.ts";
 import {
+  buildLeadSearchFilters,
   normalizeSearchQuery,
   rankLeadSearchResults,
 } from "../src/lib/product-ux/search.ts";
@@ -72,6 +73,15 @@ function testSearchContracts() {
   assert.equal(normalizeSearchQuery("x"), null);
   assert.equal(normalizeSearchQuery("x".repeat(81)), null);
   assert.equal(normalizeSearchQuery("ok\u0000bad"), null);
+  assert.deepEqual(buildLeadSearchFilters("María López"), [
+    { field: "first_name", term: "María López" },
+    { field: "last_name", term: "María López" },
+    { field: "email", term: "María López" },
+    { field: "phone", term: "María López" },
+    { field: "company", term: "María López" },
+    { field: "first_name", term: "María" },
+    { field: "last_name", term: "López" },
+  ]);
 
   const candidates = [
     {
@@ -235,6 +245,21 @@ function testAIInsightContracts() {
   assert.equal(summary.averageScore, 57);
   assert.equal(summary.prioritized[0]?.id, "lead-hot");
   assert.doesNotMatch(JSON.stringify(summary), /hiddenPrompt|must-not-leak/);
+
+  const largeSummary = buildAIInsightSummary(
+    Array.from({ length: 501 }, (_, index) => ({
+      id: `lead-${index}`,
+      firstName: "Lead",
+      lastName: String(index),
+      company: null,
+      email: null,
+      score: null,
+      updatedAt: "2026-08-21T10:00:00.000Z",
+      metadata: {},
+    })),
+  );
+  assert.equal(largeSummary.total, 501);
+  assert.equal(largeSummary.unqualified, 501);
 }
 
 async function testSettingsSourceContracts() {
@@ -255,6 +280,11 @@ async function testSettingsSourceContracts() {
   assert.match(settingsSource, /<SelectField/);
   assert.match(settingsSource, /SUPPORTED_LANGUAGES/);
   assert.match(settingsPageSource, /getSupportedTimeZones/);
+  assert.match(settingsPageSource, /hasOrganizationPermission/);
+  assert.match(settingsPageSource, /organization\.settings\.manage/);
+  assert.match(settingsSource, /canManageSettings/);
+  assert.match(settingsSource, /read-only access/i);
+  assert.match(settingsSource, /disabled=\{!canManageSettings\}/);
   assert.match(settingsSource, /timezones\.map/);
   assert.doesNotMatch(
     settingsSource,
@@ -288,6 +318,7 @@ async function testProviderBrandingContracts() {
   ]);
   assert.match(panelSource, /<ProviderLogo/);
   assert.match(panelSource, /aria-live="polite"/);
+  assert.match(panelSource, /Disconnected successfully/);
   assert.match(panelSource, /sm:flex-row/);
   assert.doesNotMatch(logoSource, /https?:\/\//);
 }
@@ -310,16 +341,8 @@ async function testNavigationAndSearchContracts() {
   ]);
 
   assert.match(querySource, /\.eq\("organization_id", organizationId\)/);
-  assert.ok((querySource.match(/base\(\)\.ilike/g) ?? []).length >= 5);
-  for (const field of [
-    "first_name",
-    "last_name",
-    "email",
-    "phone",
-    "company",
-  ]) {
-    assert.match(querySource, new RegExp(`\\.ilike\\("${field}"`));
-  }
+  assert.match(querySource, /buildLeadSearchFilters/);
+  assert.match(querySource, /\.ilike\(filter\.field/);
   assert.doesNotMatch(querySource, /\.or\(/);
   assert.match(querySource, /rankLeadSearchResults/);
   assert.match(
@@ -331,6 +354,10 @@ async function testNavigationAndSearchContracts() {
   assert.match(searchSource, /ArrowDown/);
   assert.match(searchSource, /ArrowUp/);
   assert.match(searchSource, /aria-activedescendant/);
+  assert.match(searchSource, /initialFocusRef=\{searchInputRef\}/);
+  assert.doesNotMatch(searchSource, /role="option"[\s\S]{0,180}<button/);
+  assert.match(sidebarSource, /event\.key !== "Tab"/);
+  assert.match(sidebarSource, /mobileDialogRef/);
   assert.match(sidebarSource, /href: "\/calendar"/);
   assert.match(sidebarSource, /href: "\/insights"/);
   assert.doesNotMatch(sidebarSource, /label: "Chat"|Soon/);
@@ -360,7 +387,7 @@ async function testActivityCenterSourceContracts() {
   assert.match(querySource, /buildActivityFeed/);
   assert.doesNotMatch(
     querySource,
-    /select\("[^"]*(content|error_message|response_metadata|actor_profile_id)/,
+    /select\("[^"]*(content|error_message|response_metadata|actor_profile_id|metadata)/,
   );
   assert.match(
     pageSource,
@@ -408,9 +435,13 @@ async function testCalendarWorkspaceContracts() {
     /requireCurrentOrganizationPermission\("leads\.read"\)/,
   );
   assert.match(pageSource, /listUpcomingGoogleCalendarEvents/);
+  assert.match(pageSource, /hasOrganizationPermission/);
+  assert.match(pageSource, /canCreateAppointments/);
   assert.match(contentSource, /useActionState/);
   assert.match(contentSource, /aria-live="polite"/);
   assert.match(contentSource, /type="datetime-local"/);
+  assert.match(contentSource, /read-only access/i);
+  assert.doesNotMatch(contentSource, /attendeeCount/);
 }
 
 async function testAIInsightsWorkspaceContracts() {
@@ -426,6 +457,10 @@ async function testAIInsightsWorkspaceContracts() {
   );
   assert.match(pageSource, /\.eq\("organization_id", organization\.id\)/);
   assert.match(pageSource, /buildAIInsightSummary/);
+  assert.match(pageSource, /\.range\(/);
+  assert.doesNotMatch(pageSource, /\.limit\(500\)/);
+  assert.match(pageSource, /MAX_ANALYZED_LEADS/);
+  assert.match(pageSource, /sample/i);
   assert.doesNotMatch(pageSource, /qualifyLead|generateText|openai|anthropic/i);
   assert.match(dashboardCardSource, /href="\/insights"/);
   assert.match(dashboardPageSource, /buildAIInsightSummary/);
@@ -445,6 +480,9 @@ async function testCrossScreenPolishContracts() {
     pageHeaderSource,
     chartsSource,
     teamSource,
+    modalSource,
+    globalSearchSource,
+    moveStageSource,
   ] = await Promise.all([
     readFile("src/app/(dashboard)/leads/leads-table.tsx", "utf8"),
     readFile("src/app/(dashboard)/leads/[id]/page.tsx", "utf8"),
@@ -456,6 +494,9 @@ async function testCrossScreenPolishContracts() {
     readFile("src/components/ui/page-header.tsx", "utf8"),
     readFile("src/components/dashboard/charts.tsx", "utf8"),
     readFile("src/components/team/team-management-content.tsx", "utf8"),
+    readFile("src/components/ui/modal.tsx", "utf8"),
+    readFile("src/components/dashboard/global-search.tsx", "utf8"),
+    readFile("src/app/(dashboard)/pipeline/move-stage-button.tsx", "utf8"),
   ]);
   assert.doesNotMatch(leadsSource, /MoreHorizontal|onRowClick|router\.push/);
   assert.match(leadsSource, /aria-label="Search leads"/);
@@ -478,6 +519,10 @@ async function testCrossScreenPolishContracts() {
     /className="flex min-w-0 flex-1 flex-col items-center/,
   );
   assert.match(teamSource, /className="mx-auto w-full min-w-0 max-w-6xl/);
+  assert.match(modalSource, /initialFocusRef/);
+  assert.match(globalSearchSource, /initialFocusRef=\{searchInputRef\}/);
+  assert.match(moveStageSource, /result\.error/);
+  assert.match(moveStageSource, /aria-live="polite"/);
 
   const protectedSources = await Promise.all(
     [
