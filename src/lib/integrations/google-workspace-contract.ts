@@ -16,9 +16,11 @@ const MAX_TOKEN_LENGTH = 4096;
 const MAX_TOKEN_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 const MAX_SUBJECT_LENGTH = 255;
 const MAX_EMAIL_LENGTH = 320;
+const MAX_CALENDAR_LIST_RESULTS = 25;
 const RFC3339_WITH_OFFSET =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/;
 const EMAIL_PATTERN = /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/;
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -42,6 +44,16 @@ export interface GoogleCalendarAppointmentInput {
   end: string;
   timeZone: string;
   attendee?: string;
+}
+
+export interface GoogleCalendarEventSummary {
+  id: string;
+  summary: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  location?: string;
+  attendeeCount: number;
 }
 
 export interface NormalizedGoogleCalendarAppointment {
@@ -364,6 +376,112 @@ export function buildGoogleCalendarEventRequest(
         : {}),
     },
   };
+}
+
+export function buildGoogleCalendarListRequest(
+  now = new Date(),
+  horizonDays = 30,
+  maxResults = MAX_CALENDAR_LIST_RESULTS,
+): string {
+  if (
+    !Number.isFinite(now.getTime()) ||
+    !Number.isInteger(horizonDays) ||
+    horizonDays < 1 ||
+    horizonDays > 90 ||
+    !Number.isInteger(maxResults) ||
+    maxResults < 1 ||
+    maxResults > MAX_CALENDAR_LIST_RESULTS
+  ) {
+    throw new Error("Calendar list request is invalid.");
+  }
+  const timeMax = new Date(now.getTime() + horizonDays * 24 * 60 * 60 * 1000);
+  const url = new URL(GOOGLE_CALENDAR_EVENTS_URL);
+  url.searchParams.set("timeMin", now.toISOString());
+  url.searchParams.set("timeMax", timeMax.toISOString());
+  url.searchParams.set("singleEvents", "true");
+  url.searchParams.set("orderBy", "startTime");
+  url.searchParams.set("maxResults", String(maxResults));
+  url.searchParams.set(
+    "fields",
+    "kind,items(id,summary,start,end,location,attendees)",
+  );
+  return url.toString();
+}
+
+function isValidDateOnly(value: unknown): value is string {
+  if (typeof value !== "string" || !DATE_ONLY_PATTERN.test(value)) {
+    return false;
+  }
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return (
+    Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value
+  );
+}
+
+export function parseGoogleCalendarListResponse(
+  payload: unknown,
+): GoogleCalendarEventSummary[] {
+  if (
+    !isRecord(payload) ||
+    payload["kind"] !== "calendar#events" ||
+    !Array.isArray(payload["items"]) ||
+    payload["items"].length > MAX_CALENDAR_LIST_RESULTS
+  ) {
+    throw new Error("Google Calendar returned an unexpected response.");
+  }
+
+  return payload["items"].flatMap((item): GoogleCalendarEventSummary[] => {
+    if (!isRecord(item) || !isRecord(item["start"]) || !isRecord(item["end"])) {
+      return [];
+    }
+    const id = nonEmptyBoundedString(item["id"], 1024);
+    if (!id) return [];
+    const startDateTime = item["start"]["dateTime"];
+    const endDateTime = item["end"]["dateTime"];
+    const startDate = item["start"]["date"];
+    const endDate = item["end"]["date"];
+    let start: string;
+    let end: string;
+    let allDay: boolean;
+
+    if (typeof startDateTime === "string" && typeof endDateTime === "string") {
+      try {
+        const parsedStart = parseBoundedRfc3339(startDateTime, "Event start");
+        const parsedEnd = parseBoundedRfc3339(endDateTime, "Event end");
+        if (parsedEnd.getTime() <= parsedStart.getTime()) return [];
+      } catch {
+        return [];
+      }
+      start = startDateTime;
+      end = endDateTime;
+      allDay = false;
+    } else if (isValidDateOnly(startDate) && isValidDateOnly(endDate)) {
+      if (endDate <= startDate) return [];
+      start = startDate;
+      end = endDate;
+      allDay = true;
+    } else {
+      return [];
+    }
+
+    const summary =
+      nonEmptyBoundedString(item["summary"], 200) ?? "Untitled event";
+    const location = nonEmptyBoundedString(item["location"], 500);
+    const attendees = item["attendees"];
+    return [
+      {
+        id,
+        summary,
+        start,
+        end,
+        allDay,
+        ...(location ? { location } : {}),
+        attendeeCount: Array.isArray(attendees)
+          ? Math.min(attendees.length, 100)
+          : 0,
+      },
+    ];
+  });
 }
 
 export function parseGoogleCalendarEventResponse(payload: unknown): {
