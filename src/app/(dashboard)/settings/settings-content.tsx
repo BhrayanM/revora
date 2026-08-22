@@ -10,6 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import { SelectField } from "@/components/ui/select-field";
+import {
+  DEFAULT_LANGUAGE,
+  DEFAULT_TIME_ZONE,
+  isValidIanaTimeZone,
+  normalizeLanguagePreference,
+  SUPPORTED_LANGUAGES,
+} from "@/lib/product-ux/preferences";
 import type { Database } from "@/lib/supabase/types";
 import { cn } from "@/lib/utils";
 
@@ -38,10 +46,12 @@ function isSettingsSection(
 
 export function SettingsContent({
   org,
+  timezones,
   initialSection,
   marketplaceInstallRequiresAuthorization = false,
 }: {
   org: Organization | null;
+  timezones: string[];
   initialSection?: string;
   marketplaceInstallRequiresAuthorization?: boolean;
 }) {
@@ -50,15 +60,34 @@ export function SettingsContent({
   );
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<
+      Record<
+        | "organizationName"
+        | "website"
+        | "contactEmail"
+        | "language"
+        | "timezone",
+        string
+      >
+    >
+  >({});
 
   const orgSettings = (org?.settings as Record<string, unknown>) ?? {};
-
+  const language =
+    normalizeLanguagePreference(orgSettings.language) ?? DEFAULT_LANGUAGE;
+  const storedTimezone = orgSettings.timezone;
+  const timezone = isValidIanaTimeZone(storedTimezone)
+    ? storedTimezone
+    : DEFAULT_TIME_ZONE;
   const handleSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
+    setFieldErrors({});
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
       const result = await updateOrgSettings(formData);
+      setFieldErrors(result.fieldErrors ?? {});
       setMessage(result.error ? result.error : "Settings saved.");
     });
   };
@@ -126,33 +155,50 @@ export function SettingsContent({
                       defaultValue={
                         (orgSettings.org_name as string) ?? org?.name ?? ""
                       }
+                      error={fieldErrors.organizationName}
                     />
                     <Input
                       label="Website"
                       name="website"
                       defaultValue={(orgSettings.website as string) ?? ""}
+                      placeholder="https://example.com"
+                      error={fieldErrors.website}
                     />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Input
+                    <SelectField
                       label="Default Timezone"
                       name="timezone"
-                      defaultValue={
-                        (orgSettings.timezone as string) ?? "America/New_York"
-                      }
-                    />
-                    <Input
+                      defaultValue={timezone}
+                      error={fieldErrors.timezone}
+                      helperText="Used for appointments and workspace dates."
+                    >
+                      {timezones.map((value) => (
+                        <option key={value} value={value}>
+                          {value.replace(/_/g, " ")}
+                        </option>
+                      ))}
+                    </SelectField>
+                    <SelectField
                       label="Language"
                       name="language"
-                      defaultValue={
-                        (orgSettings.language as string) ?? "English (US)"
-                      }
-                    />
+                      defaultValue={language}
+                      error={fieldErrors.language}
+                      helperText="Controls workspace formatting preferences."
+                    >
+                      {SUPPORTED_LANGUAGES.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </SelectField>
                   </div>
                   <Input
                     label="Contact Email"
                     name="email"
+                    type="email"
                     defaultValue={(orgSettings.email as string) ?? ""}
+                    error={fieldErrors.contactEmail}
                   />
                   <div className="flex justify-end">
                     <Button type="submit" loading={isPending}>

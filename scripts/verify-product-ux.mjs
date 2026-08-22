@@ -1,0 +1,270 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+
+import {
+  getSupportedTimeZones,
+  isValidIanaTimeZone,
+  normalizeLanguagePreference,
+  validateWorkspaceSettings,
+} from "../src/lib/product-ux/preferences.ts";
+import {
+  normalizeSearchQuery,
+  rankLeadSearchResults,
+} from "../src/lib/product-ux/search.ts";
+import { buildActivityFeed } from "../src/lib/product-ux/activity.ts";
+import { buildAIInsightSummary } from "../src/lib/product-ux/ai-insights.ts";
+
+function testPreferences() {
+  assert.equal(normalizeLanguagePreference("en-US"), "en-US");
+  assert.equal(normalizeLanguagePreference("English (US)"), "en-US");
+  assert.equal(normalizeLanguagePreference("es-419"), "es-419");
+  assert.equal(
+    normalizeLanguagePreference("Español (Latinoamérica)"),
+    "es-419",
+  );
+  assert.equal(normalizeLanguagePreference("fr-FR"), null);
+
+  assert.equal(isValidIanaTimeZone("America/Chicago"), true);
+  assert.equal(isValidIanaTimeZone("Mars/Olympus"), false);
+  assert.ok(getSupportedTimeZones().includes("America/Chicago"));
+
+  const valid = validateWorkspaceSettings({
+    organizationName: " Revora Labs ",
+    website: "https://example.com/growth",
+    contactEmail: " OPS@EXAMPLE.COM ",
+    language: "es-419",
+    timezone: "America/Chicago",
+  });
+  assert.equal(valid.ok, true);
+  if (valid.ok) {
+    assert.deepEqual(valid.value, {
+      organizationName: "Revora Labs",
+      website: "https://example.com/growth",
+      contactEmail: "ops@example.com",
+      language: "es-419",
+      timezone: "America/Chicago",
+    });
+  }
+
+  const forged = validateWorkspaceSettings({
+    organizationName: "Revora",
+    website: "javascript:alert(1)",
+    contactEmail: "not-an-email",
+    language: "forged",
+    timezone: "Etc/Definitely-Not-Real",
+  });
+  assert.equal(forged.ok, false);
+  if (!forged.ok) {
+    assert.deepEqual(Object.keys(forged.fieldErrors).sort(), [
+      "contactEmail",
+      "language",
+      "timezone",
+      "website",
+    ]);
+  }
+}
+
+function testSearchContracts() {
+  assert.equal(normalizeSearchQuery("  María   López  "), "María López");
+  assert.equal(normalizeSearchQuery("x"), null);
+  assert.equal(normalizeSearchQuery("x".repeat(81)), null);
+  assert.equal(normalizeSearchQuery("ok\u0000bad"), null);
+
+  const candidates = [
+    {
+      id: "lead-2",
+      firstName: "Sam",
+      lastName: "Stone",
+      email: "sam@example.com",
+      phone: "+1 555 0102",
+      company: "Northstar",
+      status: "qualified",
+      pipelineStage: "Qualified",
+      metadata: { secret: "must-not-leak" },
+    },
+    {
+      id: "lead-1",
+      firstName: "Samantha",
+      lastName: "Rivera",
+      email: "samantha@revora.test",
+      phone: null,
+      company: "Revora",
+      status: "new",
+      pipelineStage: "New Lead",
+      metadata: { access_token: "must-not-leak" },
+    },
+    {
+      id: "lead-2",
+      firstName: "Sam",
+      lastName: "Stone",
+      email: "sam@example.com",
+      phone: "+1 555 0102",
+      company: "Northstar",
+      status: "qualified",
+      pipelineStage: "Qualified",
+    },
+  ];
+  const results = rankLeadSearchResults(candidates, "sam", 8);
+  assert.equal(results.length, 2);
+  assert.equal(results[0]?.id, "lead-2");
+  assert.deepEqual(Object.keys(results[0] ?? {}).sort(), [
+    "company",
+    "email",
+    "href",
+    "id",
+    "name",
+    "phone",
+    "pipelineStage",
+    "status",
+  ]);
+  assert.doesNotMatch(JSON.stringify(results), /must-not-leak|access_token/);
+  assert.equal(rankLeadSearchResults(candidates, "sam", 1).length, 1);
+}
+
+function testActivityContracts() {
+  const feed = buildActivityFeed(
+    {
+      conversations: [
+        {
+          id: "conversation-1",
+          leadId: "lead-1",
+          subject: "lead.qualified",
+          metadata: {
+            event_type: "lead.qualified",
+            raw_payload: "never-return-this",
+          },
+          createdAt: "2026-08-21T10:00:00.000Z",
+        },
+      ],
+      automations: [
+        {
+          id: "execution-1",
+          provider: "make",
+          action: "lead.created",
+          status: "failed",
+          attempts: 2,
+          errorMessage: "secret provider response",
+          createdAt: "2026-08-21T11:00:00.000Z",
+        },
+      ],
+      integrations: [
+        {
+          id: "audit-1",
+          provider: "slack",
+          eventType: "connection_failed",
+          metadata: { webhook_url: "https://secret.invalid" },
+          createdAt: "2026-08-21T12:00:00.000Z",
+        },
+      ],
+      leadNames: new Map([["lead-1", "Avery Stone"]]),
+    },
+    20,
+  );
+
+  assert.deepEqual(
+    feed.map((item) => item.id),
+    ["integration:audit-1", "automation:execution-1", "lead:conversation-1"],
+  );
+  assert.equal(feed[2]?.href, "/leads/lead-1");
+  assert.doesNotMatch(
+    JSON.stringify(feed),
+    /never-return-this|secret provider response|secret\.invalid|raw_payload/,
+  );
+}
+
+function testAIInsightContracts() {
+  const summary = buildAIInsightSummary([
+    {
+      id: "lead-cold",
+      firstName: "Casey",
+      lastName: "Cold",
+      company: null,
+      email: null,
+      score: 20,
+      updatedAt: "2026-08-20T10:00:00.000Z",
+      metadata: {
+        qualification: {
+          score: 20,
+          temperature: "COLD",
+          summary: "Early research.",
+          buyingSignals: [],
+          risks: ["No timeline"],
+          recommendedAction: "Nurture",
+        },
+      },
+    },
+    {
+      id: "lead-hot",
+      firstName: "Harper",
+      lastName: "Hot",
+      company: "Acme",
+      email: "harper@example.com",
+      score: 94,
+      updatedAt: "2026-08-21T10:00:00.000Z",
+      metadata: {
+        qualification: {
+          score: 94,
+          temperature: "HOT",
+          summary: "Ready to evaluate.",
+          buyingSignals: ["Requested demo"],
+          risks: [],
+          recommendedAction: "Book discovery",
+          hiddenPrompt: "must-not-leak",
+        },
+      },
+    },
+    {
+      id: "lead-invalid",
+      firstName: "Invalid",
+      lastName: "Metadata",
+      company: null,
+      email: null,
+      score: 88,
+      updatedAt: "2026-08-21T12:00:00.000Z",
+      metadata: { qualification: { temperature: "BOILING" } },
+    },
+  ]);
+
+  assert.equal(summary.total, 3);
+  assert.equal(summary.qualified, 2);
+  assert.equal(summary.unqualified, 1);
+  assert.deepEqual(summary.temperatures, { hot: 1, warm: 0, cold: 1 });
+  assert.equal(summary.averageScore, 57);
+  assert.equal(summary.prioritized[0]?.id, "lead-hot");
+  assert.doesNotMatch(JSON.stringify(summary), /hiddenPrompt|must-not-leak/);
+}
+
+async function testSettingsSourceContracts() {
+  const [actionsSource, settingsPageSource, settingsSource, selectSource] =
+    await Promise.all([
+      readFile("src/app/(dashboard)/settings/actions.ts", "utf8"),
+      readFile("src/app/(dashboard)/settings/page.tsx", "utf8"),
+      readFile("src/app/(dashboard)/settings/settings-content.tsx", "utf8"),
+      readFile("src/components/ui/select-field.tsx", "utf8"),
+    ]);
+  assert.match(actionsSource, /validateWorkspaceSettings/);
+  assert.match(actionsSource, /organization\.settings\.manage/);
+  assert.match(actionsSource, /fieldErrors/);
+  assert.doesNotMatch(
+    actionsSource,
+    /timezone:\s*formData\.get\("timezone"\)\s+as string|language:\s*formData\.get\("language"\)\s+as string/,
+  );
+  assert.match(settingsSource, /<SelectField/);
+  assert.match(settingsSource, /SUPPORTED_LANGUAGES/);
+  assert.match(settingsPageSource, /getSupportedTimeZones/);
+  assert.match(settingsSource, /timezones\.map/);
+  assert.doesNotMatch(
+    settingsSource,
+    /label="Default Timezone"[\s\S]{0,120}<Input/,
+  );
+  assert.match(selectSource, /aria-describedby/);
+  assert.match(selectSource, /aria-invalid/);
+}
+
+testPreferences();
+testSearchContracts();
+testActivityContracts();
+testAIInsightContracts();
+await testSettingsSourceContracts();
+
+console.log("Phase 14.7 product UX contract verification passed.");
