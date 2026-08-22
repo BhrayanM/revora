@@ -54,6 +54,11 @@ const INTEGRATION_EVENTS: Record<
 > = {
   connected: { label: "Integration connected", tone: "success" },
   disconnected: { label: "Integration disconnected", tone: "neutral" },
+  reconnected: { label: "Integration reconnected", tone: "success" },
+  credentials_rotated: {
+    label: "Integration credentials updated",
+    tone: "success",
+  },
   connection_failed: { label: "Integration connection failed", tone: "error" },
   test_succeeded: { label: "Integration test passed", tone: "success" },
   test_failed: { label: "Integration test failed", tone: "error" },
@@ -62,7 +67,26 @@ const INTEGRATION_EVENTS: Record<
     label: "Integration authorization refreshed",
     tone: "success",
   },
+  token_refresh_failed: {
+    label: "Integration authorization refresh failed",
+    tone: "error",
+  },
   webhook_verified: { label: "Webhook verified", tone: "success" },
+  webhook_delivered: { label: "Webhook delivered", tone: "success" },
+  webhook_delivery_failed: {
+    label: "Webhook delivery failed",
+    tone: "error",
+  },
+  contact_synced: { label: "Contact synchronized", tone: "success" },
+  webhook_received: { label: "Webhook received", tone: "neutral" },
+  webhook_duplicate: { label: "Duplicate webhook ignored", tone: "neutral" },
+  webhook_rejected: { label: "Webhook rejected", tone: "warning" },
+  lead_captured: { label: "Lead captured", tone: "success" },
+  calendar_event_created: {
+    label: "Calendar event created",
+    tone: "success",
+  },
+  gmail_message_sent: { label: "Gmail message sent", tone: "success" },
   resource_cleanup_failed: {
     label: "Remote integration cleanup needs attention",
     tone: "warning",

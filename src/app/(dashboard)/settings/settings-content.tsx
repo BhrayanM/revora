@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, Key, Plug, Shield, User } from "lucide-react";
+import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
@@ -254,15 +255,37 @@ export function SettingsContent({
           )}
 
           {activeSection === "notifications" && (
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-secondary ring-1 ring-border mb-4">
-                <Bell className="size-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium text-foreground">
-                Notification preferences
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
-            </CardContent>
+            <>
+              <CardHeader>
+                <h3 className="text-base font-semibold text-foreground">
+                  Activity and alerts
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Revora records verified workspace activity and can route exact
+                  HOT-lead alerts through Slack.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Link
+                  href="/notifications"
+                  className="flex min-h-12 items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Bell className="size-4 text-primary" />
+                  Open Activity Center
+                </Link>
+                <Link
+                  href="/settings?tab=integrations"
+                  className="flex min-h-12 items-center gap-3 rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground outline-none transition-colors hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Plug className="size-4 text-primary" />
+                  Configure Slack alerts
+                </Link>
+                <p className="text-xs text-muted-foreground">
+                  Revora does not claim email digests, unread counters, or
+                  per-event switches until those states are persisted.
+                </p>
+              </CardContent>
+            </>
           )}
 
           {activeSection === "security" && <SecurityPanel />}

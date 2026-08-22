@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Camera, User } from "lucide-react";
+import { User } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
@@ -63,15 +63,10 @@ export function ProfileContent({
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1 h-fit">
           <CardContent className="flex flex-col items-center p-6 text-center">
-            <div className="relative">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
-                <span className="text-3xl font-bold text-primary">
-                  {initials}
-                </span>
-              </div>
-              <button className="absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-surface bg-primary text-primary-foreground hover:bg-primary-600 transition-colors">
-                <Camera className="size-4" />
-              </button>
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
+              <span className="text-3xl font-bold text-primary">
+                {initials}
+              </span>
             </div>
             <h2 className="mt-4 text-lg font-semibold text-foreground">
               {profile.full_name}
@@ -116,35 +111,12 @@ export function ProfileContent({
                   />
                   <Input label="Email" defaultValue={profile.email} disabled />
                 </div>
-                <Input
-                  label="Phone"
-                  name="phone"
-                  placeholder="Add your phone number"
-                />
                 <div className="flex justify-end">
                   <Button type="submit" loading={isPending}>
                     Update Profile
                   </Button>
                 </div>
               </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <h3 className="text-base font-semibold">Preferences</h3>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Bell className="size-8 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Notification preferences coming soon
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Email and AI digest settings will be available in a future
-                  update.
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
