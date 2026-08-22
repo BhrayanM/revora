@@ -34,6 +34,7 @@ Canonical evidence:
 - `b4ae5a9 feat(ai): add persisted lead insights workspace`
 - `bf0ae2e fix(ux): complete responsive accessibility pass`
 - `6c15012 fix(ux): resolve responsive visual qa defects`
+- `10b9dbf fix(ux): address phase 14.7 review findings`
 
 The documentation closure commit is the commit containing this handoff.
 
@@ -57,6 +58,10 @@ The documentation closure commit is the commit containing this handoff.
 - Dashboard, Analytics, Leads, Pipeline, Automation, Settings, Team, Profile,
   Activity Center, Calendar, and AI Insights passed responsive and keyboard QA.
 - Two QA-found mobile overflow defects were fixed with RED/GREEN regressions.
+- Independent review findings were closed: full-name database retrieval,
+  least-data Calendar projection, explicit modal focus, mobile focus trapping,
+  permission-aware mutation controls, bounded/paginated Insight metrics,
+  pipeline feedback, and smaller Activity Center projections.
 
 ## Fresh Verification Evidence
 
@@ -76,6 +81,12 @@ Authenticated browser QA passed at 375px, 768px, and 1440px in light and dark
 themes. Search keyboard navigation, mobile-sidebar focus/escape behavior,
 populated/empty/error/disconnected states, and global page overflow were checked.
 No data-creating form or integration lifecycle action was submitted.
+
+After independent review, authenticated QA was repeated at 375px. A real
+two-token full-name query returned the expected organization-scoped lead;
+initial focus, arrow selection, Escape, trigger focus restoration, mobile focus
+wrapping, and Calendar/Insights/Settings overflow were verified. Browser console
+errors remained empty.
 
 ## Migration and Repository Boundaries
 

@@ -93,6 +93,28 @@ Additional interaction evidence:
 Both regressions were rechecked in the browser at 375px and added to
 `test:product-ux`.
 
+## Independent Review Closure
+
+An independent post-implementation code review reported no critical findings.
+Its important and minor findings were corrected and regression-covered before
+integration:
+
+- multi-token full-name searches now fetch database candidates by bounded name
+  tokens before ranking the complete name;
+- Calendar list responses no longer request or expose attendees;
+- Search declares its initial focus target, and the mobile navigation traps and
+  restores focus;
+- Calendar creation and organization-setting controls reflect server-derived
+  caller capabilities while retaining server-side authorization;
+- AI Insights pages through up to 5,000 current-organization leads and clearly
+  labels the view as a newest-lead sample if that bound is exceeded;
+- pipeline stage movement and integration disconnects expose accessible success
+  or failure feedback;
+- Activity Center no longer selects unused conversation or integration metadata;
+- listbox options use one semantic option element without nested controls.
+
+The review correction is commit `10b9dbf`.
+
 ## Fresh Local Gate
 
 The following passed after visual QA and the responsive corrections:
@@ -107,9 +129,14 @@ The following passed after visual QA and the responsive corrections:
 - targeted Prettier check for all Phase 14.7 changed code/assets/docs
 - `git diff --check`
 - base/working-tree migration comparison for `00001`-`00035`
-- high-confidence credential scan across 59 changed files — zero hit files
+- high-confidence credential scan across 66 changed files — zero hit files
 - private personal-email scan across changed files — zero hit files
 - tracked temporary/sensitive-artifact scan — zero paths
+
+The same test, lint, typecheck, build, audit, formatting, and diff checks passed
+again after independent-review corrections. Targeted authenticated QA then
+confirmed full-name results, search focus/arrow/Escape behavior, mobile focus
+wrapping/restoration, 375px route containment, and an empty browser error log.
 
 The webpack build is used inside the worktree because its dependency directory
 is a local junction. The default Turbopack build is reserved for the normal
