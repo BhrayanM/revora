@@ -413,6 +413,25 @@ async function testCalendarWorkspaceContracts() {
   assert.match(contentSource, /type="datetime-local"/);
 }
 
+async function testAIInsightsWorkspaceContracts() {
+  const [pageSource, dashboardCardSource, dashboardPageSource] =
+    await Promise.all([
+      readFile("src/app/(dashboard)/insights/page.tsx", "utf8"),
+      readFile("src/components/dashboard/ai-insights.tsx", "utf8"),
+      readFile("src/app/(dashboard)/dashboard/page.tsx", "utf8"),
+    ]);
+  assert.match(
+    pageSource,
+    /requireCurrentOrganizationPermission\("analytics\.read"\)/,
+  );
+  assert.match(pageSource, /\.eq\("organization_id", organization\.id\)/);
+  assert.match(pageSource, /buildAIInsightSummary/);
+  assert.doesNotMatch(pageSource, /qualifyLead|generateText|openai|anthropic/i);
+  assert.match(dashboardCardSource, /href="\/insights"/);
+  assert.match(dashboardPageSource, /buildAIInsightSummary/);
+  assert.doesNotMatch(dashboardCardSource, /Soon/);
+}
+
 testPreferences();
 testSearchContracts();
 testActivityContracts();
@@ -422,5 +441,6 @@ await testProviderBrandingContracts();
 await testNavigationAndSearchContracts();
 await testActivityCenterSourceContracts();
 await testCalendarWorkspaceContracts();
+await testAIInsightsWorkspaceContracts();
 
 console.log("Phase 14.7 product UX contract verification passed.");

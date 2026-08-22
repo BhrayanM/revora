@@ -1,4 +1,5 @@
 import { Brain, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
@@ -29,10 +30,13 @@ export function AIInsights({
             ? `${qualifiedCount} lead${qualifiedCount === 1 ? " has" : "s have"} persisted AI qualification results. Review each lead for signals, risks, and next actions.`
             : "Qualify a lead to store its score, signals, risks, and recommended next action."}
         </p>
-        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary">
+        <Link
+          href="/insights"
+          className="mt-4 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-primary"
+        >
           <Sparkles className="size-3" />
-          {qualifiedCount > 0 ? "Results available" : "Ready to qualify"}
-        </div>
+          {qualifiedCount > 0 ? "Review insights" : "Open AI Insights"}
+        </Link>
       </div>
     </div>
   );
