@@ -13,16 +13,19 @@ import {
 import {
   GOOGLE_WORKSPACE_SCOPES,
   buildGoogleCalendarEventRequest,
+  buildGoogleCalendarListRequest,
   buildGoogleRawEmail,
   buildGoogleWorkspaceAuthorizationUrl,
   normalizeGoogleCalendarAppointment,
   normalizeGoogleEmailInput,
   normalizeGoogleError,
   parseGoogleCalendarEventResponse,
+  parseGoogleCalendarListResponse,
   parseGoogleTokenPayload,
   parseGoogleUserInfo,
   parseGmailSendResponse,
   type GoogleCalendarAppointmentInput,
+  type GoogleCalendarEventSummary,
   type GoogleEmailInput,
   type GoogleIdentity,
   type NormalizedGoogleCalendarAppointment,
@@ -357,6 +360,51 @@ export async function verifyGoogleCalendarReadOnly(
       };
     }
     return { ok: true };
+  } catch {
+    return networkFailure();
+  }
+}
+
+export async function listGoogleCalendarEventsWithAccessToken(
+  accessToken: string,
+  now = new Date(),
+  fetchImplementation: FetchImplementation = fetch,
+): Promise<
+  { ok: true; events: GoogleCalendarEventSummary[] } | GoogleProviderFailure
+> {
+  let url: string;
+  try {
+    url = buildGoogleCalendarListRequest(now, 30, 25);
+  } catch {
+    return { ok: false, errorCode: "CONFIGURATION_ERROR", status: null };
+  }
+  try {
+    const response = await requestGoogle(
+      url,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      },
+      fetchImplementation,
+    );
+    if (response.status < 200 || response.status >= 300) {
+      return responseFailure(response);
+    }
+    try {
+      return {
+        ok: true,
+        events: parseGoogleCalendarListResponse(response.data),
+      };
+    } catch {
+      return {
+        ok: false,
+        errorCode: "INVALID_RESPONSE",
+        status: response.status,
+      };
+    }
   } catch {
     return networkFailure();
   }
@@ -728,6 +776,32 @@ export async function testGmailConnection(
   }
   await markGoogleWorkspaceHealthy(organizationId);
   return { success: true };
+}
+
+export async function listUpcomingGoogleCalendarEvents(
+  organizationId: string,
+  now = new Date(),
+): Promise<
+  | { success: true; events: GoogleCalendarEventSummary[] }
+  | { success: false; error: string }
+> {
+  const token = await getValidGoogleWorkspaceAccessToken(organizationId);
+  if (!token.ok) {
+    return failGoogleWorkspaceTest(organizationId, token.errorCode);
+  }
+  const result = await listGoogleCalendarEventsWithAccessToken(
+    token.accessToken,
+    now,
+  );
+  if (!result.ok) {
+    await markGoogleWorkspaceError(organizationId, result.errorCode);
+    return {
+      success: false,
+      error: getSafeIntegrationError(result.errorCode).userMessage,
+    };
+  }
+  await markGoogleWorkspaceHealthy(organizationId);
+  return { success: true, events: result.events };
 }
 
 export async function createGoogleCalendarAppointment(

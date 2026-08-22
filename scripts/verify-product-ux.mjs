@@ -15,6 +15,7 @@ import { buildActivityFeed } from "../src/lib/product-ux/activity.ts";
 import { buildAIInsightSummary } from "../src/lib/product-ux/ai-insights.ts";
 import { PROVIDER_VISUALS } from "../src/lib/product-ux/provider-visuals.ts";
 import { INTEGRATION_PROVIDER_IDS } from "../src/lib/integrations/types.ts";
+import { zonedLocalDateTimeToIso } from "../src/lib/product-ux/datetime.ts";
 
 function testPreferences() {
   assert.equal(normalizeLanguagePreference("en-US"), "en-US");
@@ -376,6 +377,42 @@ async function testActivityCenterSourceContracts() {
   );
 }
 
+async function testCalendarWorkspaceContracts() {
+  assert.equal(
+    zonedLocalDateTimeToIso("2026-08-22T10:00", "America/Chicago"),
+    "2026-08-22T15:00:00.000Z",
+  );
+  assert.equal(
+    zonedLocalDateTimeToIso("2026-08-22T10:00", "UTC"),
+    "2026-08-22T10:00:00.000Z",
+  );
+  assert.throws(() =>
+    zonedLocalDateTimeToIso("2026-03-08T02:30", "America/Chicago"),
+  );
+  assert.throws(() => zonedLocalDateTimeToIso("invalid", "UTC"));
+
+  const [actionSource, pageSource, contentSource] = await Promise.all([
+    readFile("src/app/(dashboard)/calendar/actions.ts", "utf8"),
+    readFile("src/app/(dashboard)/calendar/page.tsx", "utf8"),
+    readFile("src/app/(dashboard)/calendar/calendar-content.tsx", "utf8"),
+  ]);
+  assert.match(
+    actionSource,
+    /requireCurrentOrganizationPermission\("leads\.write"\)/,
+  );
+  assert.match(actionSource, /\.eq\("organization_id", organization\.id\)/);
+  assert.doesNotMatch(actionSource, /organizationId\s*:/);
+  assert.match(actionSource, /revalidatePath\("\/calendar"\)/);
+  assert.match(
+    pageSource,
+    /requireCurrentOrganizationPermission\("leads\.read"\)/,
+  );
+  assert.match(pageSource, /listUpcomingGoogleCalendarEvents/);
+  assert.match(contentSource, /useActionState/);
+  assert.match(contentSource, /aria-live="polite"/);
+  assert.match(contentSource, /type="datetime-local"/);
+}
+
 testPreferences();
 testSearchContracts();
 testActivityContracts();
@@ -384,5 +421,6 @@ await testSettingsSourceContracts();
 await testProviderBrandingContracts();
 await testNavigationAndSearchContracts();
 await testActivityCenterSourceContracts();
+await testCalendarWorkspaceContracts();
 
 console.log("Phase 14.7 product UX contract verification passed.");

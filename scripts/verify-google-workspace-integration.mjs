@@ -8,6 +8,7 @@ import {
   createGoogleCalendarAppointmentWithAccessToken,
   exchangeGoogleAuthorizationCode,
   fetchGoogleUserIdentity,
+  listGoogleCalendarEventsWithAccessToken,
   refreshGoogleAccessToken,
   revokeGoogleGrant,
   sendGoogleWorkspaceEmailWithAccessToken,
@@ -15,6 +16,7 @@ import {
 } from "../src/lib/integrations/adapters/google-workspace.ts";
 import {
   GOOGLE_WORKSPACE_SCOPES,
+  buildGoogleCalendarListRequest,
   buildGoogleCalendarEventRequest,
   buildGoogleRawEmail,
   buildGoogleWorkspaceAuthorizationUrl,
@@ -22,6 +24,7 @@ import {
   normalizeGoogleEmailInput,
   normalizeGoogleError,
   parseGoogleCalendarEventResponse,
+  parseGoogleCalendarListResponse,
   parseGoogleTokenPayload,
   parseGoogleUserInfo,
   parseGmailSendResponse,
@@ -354,6 +357,103 @@ assert.equal(
 );
 assert.equal(calendarTestRequest.init.method, "GET");
 assert.equal(calendarTestRequest.init.body, undefined);
+
+const calendarListRequest = new URL(
+  buildGoogleCalendarListRequest(fixedNow, 30, 25),
+);
+assert.equal(calendarListRequest.origin, "https://www.googleapis.com");
+assert.equal(
+  calendarListRequest.pathname,
+  "/calendar/v3/calendars/primary/events",
+);
+assert.equal(
+  calendarListRequest.searchParams.get("timeMin"),
+  fixedNow.toISOString(),
+);
+assert.equal(
+  calendarListRequest.searchParams.get("timeMax"),
+  "2026-09-20T12:00:00.000Z",
+);
+assert.equal(calendarListRequest.searchParams.get("singleEvents"), "true");
+assert.equal(calendarListRequest.searchParams.get("orderBy"), "startTime");
+assert.equal(calendarListRequest.searchParams.get("maxResults"), "25");
+assert.throws(() => buildGoogleCalendarListRequest(fixedNow, 30, 26));
+
+const upcomingPayload = {
+  kind: "calendar#events",
+  items: [
+    {
+      id: "timed-1",
+      summary: "Discovery call",
+      location: "Video call",
+      start: { dateTime: "2026-08-22T10:00:00-05:00" },
+      end: { dateTime: "2026-08-22T10:30:00-05:00" },
+      attendees: [{ email: "lead@example.com" }],
+      conferenceData: { secret: "must-not-leak" },
+    },
+    {
+      id: "all-day-1",
+      start: { date: "2026-08-23" },
+      end: { date: "2026-08-24" },
+      description: "must-not-leak",
+    },
+    {
+      id: "bad-1",
+      summary: "Malformed",
+      start: {},
+      end: {},
+    },
+  ],
+};
+assert.deepEqual(parseGoogleCalendarListResponse(upcomingPayload), [
+  {
+    id: "timed-1",
+    summary: "Discovery call",
+    start: "2026-08-22T10:00:00-05:00",
+    end: "2026-08-22T10:30:00-05:00",
+    allDay: false,
+    location: "Video call",
+    attendeeCount: 1,
+  },
+  {
+    id: "all-day-1",
+    summary: "Untitled event",
+    start: "2026-08-23",
+    end: "2026-08-24",
+    allDay: true,
+    attendeeCount: 0,
+  },
+]);
+assert.doesNotMatch(
+  JSON.stringify(parseGoogleCalendarListResponse(upcomingPayload)),
+  /must-not-leak|conferenceData|description/,
+);
+assert.throws(() =>
+  parseGoogleCalendarListResponse({
+    kind: "calendar#events",
+    items: Array.from({ length: 26 }, (_, index) => ({
+      id: `event-${index}`,
+      start: { date: "2026-08-23" },
+      end: { date: "2026-08-24" },
+    })),
+  }),
+);
+
+let upcomingRequest;
+assert.deepEqual(
+  await listGoogleCalendarEventsWithAccessToken(
+    "access-token",
+    fixedNow,
+    async (url, init) => {
+      upcomingRequest = { url: new URL(String(url)), init };
+      return googleJsonResponse(upcomingPayload);
+    },
+  ),
+  { ok: true, events: parseGoogleCalendarListResponse(upcomingPayload) },
+);
+assert.equal(upcomingRequest.init.method, "GET");
+assert.equal(upcomingRequest.init.body, undefined);
+assert.equal(upcomingRequest.url.searchParams.get("maxResults"), "25");
 
 let revokeRequest;
 assert.deepEqual(
