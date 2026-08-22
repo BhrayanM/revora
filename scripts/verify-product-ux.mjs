@@ -291,11 +291,58 @@ async function testProviderBrandingContracts() {
   assert.doesNotMatch(logoSource, /https?:\/\//);
 }
 
+async function testNavigationAndSearchContracts() {
+  const [
+    querySource,
+    actionSource,
+    searchSource,
+    sidebarSource,
+    topNavSource,
+    shellSource,
+  ] = await Promise.all([
+    readFile("src/lib/queries/global-search.ts", "utf8"),
+    readFile("src/app/(dashboard)/search-actions.ts", "utf8"),
+    readFile("src/components/dashboard/global-search.tsx", "utf8"),
+    readFile("src/components/dashboard/sidebar.tsx", "utf8"),
+    readFile("src/components/dashboard/top-nav.tsx", "utf8"),
+    readFile("src/components/dashboard/dashboard-shell.tsx", "utf8"),
+  ]);
+
+  assert.match(querySource, /\.eq\("organization_id", organizationId\)/);
+  assert.ok((querySource.match(/base\(\)\.ilike/g) ?? []).length >= 5);
+  for (const field of [
+    "first_name",
+    "last_name",
+    "email",
+    "phone",
+    "company",
+  ]) {
+    assert.match(querySource, new RegExp(`\\.ilike\\("${field}"`));
+  }
+  assert.doesNotMatch(querySource, /\.or\(/);
+  assert.match(querySource, /rankLeadSearchResults/);
+  assert.match(
+    actionSource,
+    /requireCurrentOrganizationPermission\("leads\.read"\)/,
+  );
+  assert.doesNotMatch(actionSource, /organizationId\s*:/);
+  assert.match(searchSource, /ctrlKey|metaKey/);
+  assert.match(searchSource, /ArrowDown/);
+  assert.match(searchSource, /ArrowUp/);
+  assert.match(searchSource, /aria-activedescendant/);
+  assert.match(sidebarSource, /href: "\/calendar"/);
+  assert.match(sidebarSource, /href: "\/insights"/);
+  assert.doesNotMatch(sidebarSource, /label: "Chat"|Soon/);
+  assert.match(topNavSource, /aria-controls="mobile-sidebar"/);
+  assert.match(shellSource, /sidebarCollapsed/);
+}
+
 testPreferences();
 testSearchContracts();
 testActivityContracts();
 testAIInsightContracts();
 await testSettingsSourceContracts();
 await testProviderBrandingContracts();
+await testNavigationAndSearchContracts();
 
 console.log("Phase 14.7 product UX contract verification passed.");
