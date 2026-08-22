@@ -1,13 +1,17 @@
 "use client";
 
 import type { User } from "@supabase/supabase-js";
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, Menu } from "lucide-react";
 import Link from "next/link";
+import type { RefObject } from "react";
 
+import { GlobalSearch } from "@/components/dashboard/global-search";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 interface TopNavProps {
   onMenuClick?: () => void;
+  menuButtonRef?: RefObject<HTMLButtonElement | null>;
+  mobileMenuOpen?: boolean;
   user: User | null;
 }
 
@@ -24,37 +28,33 @@ function getInitials(
   return "??";
 }
 
-export function TopNav({ onMenuClick, user }: TopNavProps) {
+export function TopNav({
+  onMenuClick,
+  menuButtonRef,
+  mobileMenuOpen = false,
+  user,
+}: TopNavProps) {
   const userMeta = user?.user_metadata as { full_name?: string } | undefined;
   const initials = getInitials(userMeta?.full_name, user?.email);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-canvas/90 backdrop-blur-xl px-4 sm:px-6">
       <button
+        ref={menuButtonRef}
         onClick={onMenuClick}
-        className="rounded-lg p-1.5 text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:hidden"
+        className="flex size-10 items-center justify-center rounded-lg text-muted-foreground outline-none transition-colors hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas lg:hidden"
         aria-label="Open menu"
+        aria-expanded={mobileMenuOpen}
+        aria-controls="mobile-sidebar"
       >
         <Menu className="size-5" />
       </button>
 
       <div className="flex-1" />
 
-      <div className="hidden sm:flex sm:flex-1 sm:max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/50" />
-          <div className="flex h-9 w-full items-center rounded-xl border border-border bg-surface pl-9 pr-3 shadow-sm">
-            <span className="text-xs text-muted-foreground">
-              Search leads, contacts...
-            </span>
-            <span className="ml-auto rounded border border-border px-1.5 py-0.5 text-[0.625rem] text-muted-foreground">
-              Soon
-            </span>
-          </div>
-        </div>
+      <div className="flex sm:flex-1 sm:max-w-md">
+        <GlobalSearch />
       </div>
-
-      <div className="flex-1 sm:hidden" />
 
       <div className="flex items-center gap-1.5">
         <ThemeToggle />

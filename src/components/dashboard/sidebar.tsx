@@ -11,7 +11,6 @@ import {
   Layers,
   LayoutDashboard,
   LogOut,
-  MessageSquare,
   Settings,
   User as UserIcon,
   Users,
@@ -19,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 
 import { RevoraMark } from "@/components/brand/revora-mark";
 import { OrganizationSwitcher } from "@/components/dashboard/organization-switcher";
@@ -40,27 +39,12 @@ const navigation = [
     items: [
       { label: "Leads", href: "/leads", icon: Users },
       { label: "Pipeline", href: "/pipeline", icon: Layers },
-      {
-        label: "Calendar",
-        href: "/dashboard#calendar",
-        icon: Calendar,
-        disabled: true,
-        badge: "Soon",
-      },
+      { label: "Calendar", href: "/calendar", icon: Calendar },
     ],
   },
   {
     section: "AI",
-    items: [
-      { label: "AI Insights", href: "/dashboard#ai", icon: Bot, badge: "Soon" },
-      {
-        label: "Chat",
-        href: "/dashboard#chat",
-        icon: MessageSquare,
-        disabled: true,
-        badge: "Soon",
-      },
-    ],
+    items: [{ label: "AI Insights", href: "/insights", icon: Bot }],
   },
   {
     section: "Automation",
@@ -79,6 +63,8 @@ const navigation = [
 interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
   user: User | null;
   activeOrganization: ActiveOrganizationOption | null;
   organizations: ActiveOrganizationOption[];
@@ -100,13 +86,33 @@ function getInitials(
 export function Sidebar({
   mobileOpen = false,
   onMobileClose,
+  collapsed,
+  onCollapsedChange,
   user,
   activeOrganization,
   organizations,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [collapsed, setCollapsed] = useState(false);
+  const firstMobileLinkRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const frame = window.requestAnimationFrame(() =>
+      firstMobileLinkRef.current?.focus(),
+    );
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onMobileClose?.();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileOpen, onMobileClose]);
 
   const userMeta = user?.user_metadata as { full_name?: string } | undefined;
   const displayName =
@@ -120,10 +126,10 @@ export function Sidebar({
     router.refresh();
   };
 
-  const sidebarContent = (
+  const renderSidebarContent = (isCollapsed: boolean, isMobile: boolean) => (
     <>
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        {!collapsed && (
+        {!isCollapsed && (
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sidebar-active shadow-sm shadow-sidebar-active/25">
               <RevoraMark className="size-3.5 text-primary-foreground" />
@@ -133,7 +139,7 @@ export function Sidebar({
             </span>
           </Link>
         )}
-        {collapsed && (
+        {isCollapsed && (
           <div className="flex w-full justify-center">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sidebar-active shadow-sm shadow-sidebar-active/25">
               <RevoraMark className="size-3.5 text-primary-foreground" />
@@ -143,28 +149,31 @@ export function Sidebar({
         <div
           className={cn(
             "flex items-center gap-1",
-            collapsed && "w-full justify-center",
+            isCollapsed && "w-full justify-center",
           )}
         >
-          <button
-            onClick={onMobileClose}
-            className="rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar lg:hidden"
-            aria-label="Close sidebar"
-          >
-            <X className="size-4" />
-          </button>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden rounded-md p-1.5 text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar lg:block"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? (
-              <ChevronRight className="size-3.5" />
-            ) : (
-              <ChevronLeft className="size-3.5" />
-            )}
-          </button>
+          {isMobile ? (
+            <button
+              onClick={onMobileClose}
+              className="flex size-10 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+              aria-label="Close sidebar"
+            >
+              <X className="size-4" />
+            </button>
+          ) : (
+            <button
+              onClick={() => onCollapsedChange(!isCollapsed)}
+              className="flex size-9 items-center justify-center rounded-md text-sidebar-muted outline-none transition-colors hover:bg-sidebar-hover hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-sidebar-active focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {isCollapsed ? (
+                <ChevronRight className="size-3.5" />
+              ) : (
+                <ChevronLeft className="size-3.5" />
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -172,52 +181,33 @@ export function Sidebar({
         <OrganizationSwitcher
           activeOrganization={activeOrganization}
           organizations={organizations}
-          compact={collapsed}
+          compact={isCollapsed}
         />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3">
         {navigation.map((group) => (
           <div key={group.section} className="mb-5">
-            {!collapsed && (
+            {!isCollapsed && (
               <h3 className="mb-1.5 px-3 text-[0.625rem] font-semibold uppercase tracking-wider text-sidebar-muted">
                 {group.section}
               </h3>
             )}
             <div className="space-y-0.5">
               {group.items.map((item) => {
-                const isActive = pathname === item.href;
-                const isDisabled = "disabled" in item && item.disabled;
-
-                if (isDisabled) {
-                  return (
-                    <span
-                      key={item.href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm cursor-not-allowed select-none",
-                        "text-sidebar-muted/50",
-                        collapsed && "justify-center px-2",
-                      )}
-                      aria-disabled="true"
-                    >
-                      <item.icon className="size-4 shrink-0" />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1">{item.label}</span>
-                          {"badge" in item && item.badge && (
-                            <span className="rounded-full bg-sidebar-border px-1.5 py-0.5 text-[0.625rem] font-medium text-sidebar-muted">
-                              {item.badge}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </span>
-                  );
-                }
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" &&
+                    pathname.startsWith(`${item.href}/`));
 
                 return (
                   <Link
                     key={item.href}
+                    ref={
+                      isMobile && item.href === "/dashboard"
+                        ? firstMobileLinkRef
+                        : undefined
+                    }
                     href={item.href}
                     onClick={onMobileClose}
                     className={cn(
@@ -225,7 +215,7 @@ export function Sidebar({
                       isActive
                         ? "bg-sidebar-active-surface text-sidebar-active"
                         : "text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-foreground",
-                      collapsed && "justify-center px-2",
+                      isCollapsed && "justify-center px-2",
                     )}
                   >
                     <item.icon
@@ -236,15 +226,8 @@ export function Sidebar({
                           : "text-sidebar-muted group-hover:text-sidebar-foreground",
                       )}
                     />
-                    {!collapsed && (
-                      <>
-                        <span className="flex-1">{item.label}</span>
-                        {"badge" in item && item.badge && !isDisabled && (
-                          <span className="rounded-full bg-sidebar-active/10 px-1.5 py-0.5 text-[0.625rem] font-semibold text-sidebar-active">
-                            {item.badge}
-                          </span>
-                        )}
-                      </>
+                    {!isCollapsed && (
+                      <span className="flex-1">{item.label}</span>
                     )}
                   </Link>
                 );
@@ -255,7 +238,7 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-sidebar-border p-3">
-        {!collapsed ? (
+        {!isCollapsed ? (
           <div className="flex items-center gap-3 rounded-lg p-1.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-active/15 text-xs font-semibold text-sidebar-active ring-1 ring-sidebar-active/20">
               {initials}
@@ -297,22 +280,32 @@ export function Sidebar({
 
   return (
     <>
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={onMobileClose}
-          aria-hidden="true"
-        />
-      )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 flex flex-col border-r border-sidebar-border bg-sidebar transition-transform duration-300 lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-300 lg:flex",
           collapsed ? "w-[68px]" : "w-60",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        {sidebarContent}
+        {renderSidebarContent(collapsed, false)}
       </aside>
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={onMobileClose}
+            aria-hidden="true"
+          />
+          <aside
+            id="mobile-sidebar"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Main navigation"
+            className="fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-sidebar-border bg-sidebar lg:hidden"
+          >
+            {renderSidebarContent(false, true)}
+          </aside>
+        </>
+      )}
     </>
   );
 }
