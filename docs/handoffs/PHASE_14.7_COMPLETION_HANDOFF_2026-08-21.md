@@ -109,9 +109,15 @@ errors remained empty.
 
 ## Final Master Readback
 
-Pending the verified local fast-forward. Record the final `master` commit,
-default Turbopack build, worktree cleanup, and clean-tree result in a follow-up
-readback commit. Do not push or deploy.
+- Feature tip `d955dd4` was integrated into local `master` by verified
+  fast-forward.
+- The isolated Phase 14.7 worktree and local feature branch were removed after
+  integration. One Windows long-path cache residue required a scoped
+  `core.longPaths=true` cleanup; the verified worktree path is now absent.
+- `npm.cmd run build` passed from the normal `master` checkout using default
+  Turbopack and generated all 39 routes.
+- The repository is clean after the readback commit containing this section.
+- No push or deployment was performed.
 
 ## Exact Next Boundary
 
