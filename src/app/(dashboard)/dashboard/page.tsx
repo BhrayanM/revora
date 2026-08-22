@@ -13,11 +13,13 @@ import { AIInsights } from "@/components/dashboard/ai-insights";
 import { BarChart, DonutChart } from "@/components/dashboard/charts";
 import { Container } from "@/components/ui/container";
 import { getCurrentOrganization } from "@/lib/auth";
+import { buildAIInsightSummary } from "@/lib/product-ux/ai-insights";
 import {
   getLeadMetrics,
   getPipelineMetrics,
   getRecentActivity,
 } from "@/lib/queries/analytics";
+import { getLeads } from "@/lib/queries/leads";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -28,20 +30,36 @@ export default async function DashboardPage() {
   const org = await getCurrentOrganization();
   const orgId = org?.id;
 
-  const { data: metrics } = orgId
-    ? await getLeadMetrics(orgId)
-    : { data: null };
-  const { data: pipeline } = orgId
-    ? await getPipelineMetrics(orgId)
-    : { data: null };
-  const { data: activities } = orgId
-    ? await getRecentActivity(orgId, 5)
-    : { data: null };
+  const [metricsResult, pipelineResult, activityResult, insightLeadResult] =
+    orgId
+      ? await Promise.all([
+          getLeadMetrics(orgId),
+          getPipelineMetrics(orgId),
+          getRecentActivity(orgId, 5),
+          getLeads(orgId),
+        ])
+      : [{ data: null }, { data: null }, { data: null }, { data: null }];
+  const metrics = metricsResult.data;
+  const pipeline = pipelineResult.data;
+  const activities = activityResult.data;
+  const insightLeads = insightLeadResult.data;
 
   const totalLeads = metrics?.total ?? 0;
   const qualified = metrics?.qualified ?? 0;
   const conversionRate = metrics?.conversionRate ?? 0;
   const avgScore = metrics?.avgScore ?? 0;
+  const insightSummary = buildAIInsightSummary(
+    (insightLeads ?? []).map((lead) => ({
+      id: lead.id,
+      firstName: lead.first_name,
+      lastName: lead.last_name,
+      company: lead.company,
+      email: null,
+      score: lead.score,
+      updatedAt: lead.updated_at,
+      metadata: lead.metadata,
+    })),
+  );
 
   const stageColors: Record<string, string> = {
     "New Lead": "var(--color-primary)",
@@ -210,7 +228,7 @@ export default async function DashboardPage() {
               Actionable intelligence
             </p>
           </div>
-          <AIInsights qualifiedCount={qualified} />
+          <AIInsights qualifiedCount={insightSummary.qualified} />
         </div>
       </div>
 
