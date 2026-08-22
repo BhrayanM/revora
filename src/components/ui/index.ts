@@ -2,6 +2,8 @@ export { Button } from "./button";
 export type { ButtonProps } from "./button";
 export { Input } from "./input";
 export type { InputProps } from "./input";
+export { SelectField } from "./select-field";
+export type { SelectFieldProps } from "./select-field";
 export { Card, CardHeader, CardContent, CardFooter } from "./card";
 export type { CardProps } from "./card";
 export { Badge } from "./badge";

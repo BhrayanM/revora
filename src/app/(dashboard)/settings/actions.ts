@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
+import { validateWorkspaceSettings } from "@/lib/product-ux/preferences";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updateOrgSettings(formData: FormData) {
@@ -16,14 +17,28 @@ export async function updateOrgSettings(formData: FormData) {
   const supabase = await createClient();
 
   const currentSettings = (org.settings as Record<string, unknown>) ?? {};
+  const validation = validateWorkspaceSettings({
+    organizationName: formData.get("org_name"),
+    website: formData.get("website"),
+    contactEmail: formData.get("email"),
+    language: formData.get("language"),
+    timezone: formData.get("timezone"),
+  });
+
+  if (!validation.ok) {
+    return {
+      error: validation.error,
+      fieldErrors: validation.fieldErrors,
+    };
+  }
 
   const newSettings = {
     ...currentSettings,
-    org_name: (formData.get("org_name") as string) || org.name,
-    website: formData.get("website") as string,
-    timezone: formData.get("timezone") as string,
-    language: formData.get("language") as string,
-    email: formData.get("email") as string,
+    org_name: validation.value.organizationName,
+    website: validation.value.website,
+    timezone: validation.value.timezone,
+    language: validation.value.language,
+    email: validation.value.contactEmail,
   };
 
   const { error } = await supabase
@@ -31,10 +46,16 @@ export async function updateOrgSettings(formData: FormData) {
     .update({ name: newSettings.org_name as string, settings: newSettings })
     .eq("id", org.id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error(
+      "[Settings] Failed to update organization settings:",
+      error.message,
+    );
+    return { error: "Unable to save workspace settings." };
+  }
 
   revalidatePath("/settings");
-  return { error: null };
+  return { error: null, fieldErrors: {} };
 }
 
 export async function changePassword(formData: FormData) {

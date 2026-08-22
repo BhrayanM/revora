@@ -1,4 +1,5 @@
 import { getCurrentOrganization } from "@/lib/auth";
+import { getSupportedTimeZones } from "@/lib/product-ux/preferences";
 
 import { SettingsContent } from "./settings-content";
 
@@ -22,6 +23,7 @@ export default async function SettingsPage({
   return (
     <SettingsContent
       org={org}
+      timezones={getSupportedTimeZones()}
       initialSection={initialSection}
       marketplaceInstallRequiresAuthorization={
         marketplaceInstallRequiresAuthorization

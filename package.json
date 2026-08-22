@@ -15,6 +15,7 @@
     "test:google-workspace": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-google-workspace-integration.mjs",
     "test:integration-e2e": "npm run test:crm-integrations && npm run test:integrations && npm run test:communications && npm run test:tally && npm run test:google-workspace && node --no-warnings scripts/verify-integration-e2e-audit.mjs",
     "test:integrations": "node --no-warnings --conditions=react-server --experimental-strip-types scripts/verify-automation-webhooks.mjs",
+    "test:product-ux": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-product-ux.mjs",
     "test:tally": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-tally-integration.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "prepare": "husky"
