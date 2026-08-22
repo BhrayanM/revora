@@ -15,16 +15,25 @@ export async function updateProfile(formData: FormData) {
     return { error: "Current legal consent is required" };
   }
 
-  const full_name = formData.get("full_name") as string;
-
-  if (!full_name) return { error: "Name is required" };
+  const rawName = formData.get("full_name");
+  const full_name = typeof rawName === "string" ? rawName.trim() : "";
+  if (
+    !full_name ||
+    full_name.length > 120 ||
+    /[\u0000-\u001f\u007f]/.test(full_name)
+  ) {
+    return { error: "Enter a valid name." };
+  }
 
   const { error } = await supabase
     .from("profiles")
     .update({ full_name })
     .eq("id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("[Profile] Update failed:", error.message);
+    return { error: "Unable to update profile." };
+  }
 
   revalidatePath("/profile");
   revalidatePath("/dashboard");
@@ -44,7 +53,7 @@ export async function changeEmail(formData: FormData) {
   const newEmail = (formData.get("new_email") as string)?.trim().toLowerCase();
   if (!newEmail) return { error: "Email is required" };
 
-  if (!newEmail.includes("@") || newEmail.length > 254) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail) || newEmail.length > 254) {
     return { error: "Invalid email format" };
   }
 
@@ -59,7 +68,10 @@ export async function changeEmail(formData: FormData) {
     },
   );
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.error("[Profile] Email update failed:", error.message);
+    return { error: "Unable to start the email change." };
+  }
 
   return { error: null };
 }

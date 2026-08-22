@@ -432,6 +432,62 @@ async function testAIInsightsWorkspaceContracts() {
   assert.doesNotMatch(dashboardCardSource, /Soon/);
 }
 
+async function testCrossScreenPolishContracts() {
+  const [
+    leadsSource,
+    leadDetailSource,
+    pipelineSource,
+    automationSource,
+    tableSource,
+    toastSource,
+    globalsSource,
+    pageHeaderSource,
+  ] = await Promise.all([
+    readFile("src/app/(dashboard)/leads/leads-table.tsx", "utf8"),
+    readFile("src/app/(dashboard)/leads/[id]/page.tsx", "utf8"),
+    readFile("src/app/(dashboard)/pipeline/page.tsx", "utf8"),
+    readFile("src/app/(dashboard)/automation/page.tsx", "utf8"),
+    readFile("src/components/ui/table.tsx", "utf8"),
+    readFile("src/components/ui/toast.tsx", "utf8"),
+    readFile("src/app/globals.css", "utf8"),
+    readFile("src/components/ui/page-header.tsx", "utf8"),
+  ]);
+  assert.doesNotMatch(leadsSource, /MoreHorizontal|onRowClick|router\.push/);
+  assert.match(leadsSource, /aria-label="Search leads"/);
+  assert.doesNotMatch(pipelineSource, /cursor-pointer/);
+  assert.match(leadDetailSource, /href=\{`mailto:/);
+  assert.match(leadDetailSource, /href=\{`tel:/);
+  assert.match(leadDetailSource, /href=\{`\/calendar\?lead=/);
+  assert.doesNotMatch(
+    automationSource,
+    /select\("\*"\)|error_message|MessageSquare/,
+  );
+  assert.doesNotMatch(tableSource, /onRowClick|cursor-pointer/);
+  assert.match(tableSource, /aria-busy=\{isLoading\}/);
+  assert.match(toastSource, /aria-live=/);
+  assert.match(toastSource, /min-h-11|min-w-11|size-11/);
+  assert.match(globalsSource, /transition-duration:\s*0\.01ms\s*!important/);
+  assert.match(pageHeaderSource, /export function PageHeader/);
+
+  const protectedSources = await Promise.all(
+    [
+      "src/app/(dashboard)/dashboard/page.tsx",
+      "src/app/(dashboard)/analytics/page.tsx",
+      "src/app/(dashboard)/automation/page.tsx",
+      "src/app/(dashboard)/notifications/page.tsx",
+      "src/app/(dashboard)/calendar/page.tsx",
+      "src/app/(dashboard)/insights/page.tsx",
+      "src/app/(dashboard)/settings/settings-content.tsx",
+      "src/app/(dashboard)/profile/profile-content.tsx",
+    ].map((path) => readFile(path, "utf8")),
+  );
+  assert.ok(
+    protectedSources.filter((source) => source.includes("<PageHeader"))
+      .length >= 8,
+  );
+  assert.doesNotMatch(protectedSources.join("\n"), /Soon|Coming soon/i);
+}
+
 testPreferences();
 testSearchContracts();
 testActivityContracts();
@@ -442,5 +498,6 @@ await testNavigationAndSearchContracts();
 await testActivityCenterSourceContracts();
 await testCalendarWorkspaceContracts();
 await testAIInsightsWorkspaceContracts();
+await testCrossScreenPolishContracts();
 
 console.log("Phase 14.7 product UX contract verification passed.");

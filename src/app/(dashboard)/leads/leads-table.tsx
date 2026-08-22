@@ -1,8 +1,7 @@
 "use client";
 
-import { MoreHorizontal, Plus, Search, UserPlus, X } from "lucide-react";
+import { Plus, Search, UserPlus, X } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState, useTransition } from "react";
 
@@ -10,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import { Table, type TableColumn } from "@/components/ui/table";
 import type { Lead } from "@/lib/queries/leads";
 
@@ -58,13 +58,19 @@ function AddLeadForm({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold text-foreground">Add Lead</h2>
         <button
+          type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-muted-foreground hover:text-foreground"
+          className="flex size-11 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-surface-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label="Close add lead form"
         >
           <X className="size-4" />
         </button>
       </div>
-      {error && <p className="text-sm text-error mb-3">{error}</p>}
+      {error && (
+        <p className="mb-3 text-sm text-error" role="alert">
+          {error}
+        </p>
+      )}
       <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
         <Input
           label="First Name"
@@ -111,7 +117,6 @@ interface LeadsTableProps {
 }
 
 export function LeadsTable({ leads }: LeadsTableProps) {
-  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -135,7 +140,7 @@ export function LeadsTable({ leads }: LeadsTableProps) {
       accessor: (lead) => (
         <Link
           href={`/leads/${lead.id}`}
-          className="font-medium text-foreground hover:text-primary"
+          className="rounded font-medium text-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-primary"
         >
           {lead.first_name} {lead.last_name}
         </Link>
@@ -218,68 +223,64 @@ export function LeadsTable({ leads }: LeadsTableProps) {
         </span>
       ),
     },
-    {
-      key: "actions",
-      header: "",
-      accessor: () => (
-        <Button variant="ghost" size="sm" className="size-8 p-0">
-          <MoreHorizontal className="size-4" />
-        </Button>
-      ),
-    },
   ];
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Leads</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage and track all your leads.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search leads..."
-              className="pl-9"
-              inputSize="sm"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-lg border border-input-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-          >
-            <option value="all">All Status</option>
-            <option value="new">New</option>
-            <option value="contacted">Contacted</option>
-            <option value="qualified">Qualified</option>
-            <option value="proposal">Proposal</option>
-            <option value="negotiation">Negotiation</option>
-            <option value="won">Won</option>
-            <option value="lost">Lost</option>
-          </select>
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="size-3.5" /> Add Lead
-          </Button>
-          {(search || statusFilter !== "all") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-              }}
+      <PageHeader
+        title="Leads"
+        description="Manage and track all your leads."
+        actions={
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <div className="relative min-w-52 flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search leads..."
+                aria-label="Search leads"
+                className="min-h-11 pl-9"
+                inputSize="sm"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <select
+              aria-label="Filter leads by status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="min-h-11 rounded-lg border border-input-border bg-input px-3 py-2 text-sm text-foreground outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
             >
-              Clear
+              <option value="all">All Status</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="qualified">Qualified</option>
+              <option value="proposal">Proposal</option>
+              <option value="negotiation">Negotiation</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+            <Button
+              size="sm"
+              onClick={() => setShowForm(true)}
+              className="min-h-11"
+            >
+              <Plus className="size-3.5" /> Add Lead
             </Button>
-          )}
-        </div>
-      </div>
+            {(search || statusFilter !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+                className="min-h-11"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {showForm && <AddLeadForm onClose={() => setShowForm(false)} />}
 
@@ -295,7 +296,11 @@ export function LeadsTable({ leads }: LeadsTableProps) {
             Add your first lead manually or connect a lead source to start
             building your pipeline.
           </p>
-          <Button size="sm" className="mt-5" onClick={() => setShowForm(true)}>
+          <Button
+            size="sm"
+            className="mt-5 min-h-11"
+            onClick={() => setShowForm(true)}
+          >
             <Plus className="size-3.5" /> Add Lead
           </Button>
         </div>
@@ -304,7 +309,6 @@ export function LeadsTable({ leads }: LeadsTableProps) {
           columns={columns}
           data={filtered}
           keyField="id"
-          onRowClick={(lead) => router.push(`/leads/${lead.id}`)}
           showPagination
           pageSize={8}
           emptyMessage={

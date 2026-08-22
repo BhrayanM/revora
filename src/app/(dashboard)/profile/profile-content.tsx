@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/page-header";
 import type { OrganizationRole } from "@/lib/auth/permissions";
 import type { Database } from "@/lib/supabase/types";
 
@@ -53,12 +54,11 @@ export function ProfileContent({
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Profile</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your personal information.
-        </p>
-      </div>
+      <PageHeader
+        title="Profile"
+        description="Manage your personal information."
+        className="mb-8"
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-1 h-fit">

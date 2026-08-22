@@ -1,5 +1,6 @@
 import { Alert } from "@/components/ui/alert";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { listUpcomingGoogleCalendarEvents } from "@/lib/integrations/adapters/google-workspace";
 import {
@@ -10,7 +11,12 @@ import { createClient } from "@/lib/supabase/server";
 
 import { CalendarContent, type CalendarLeadOption } from "./calendar-content";
 
-export default async function CalendarPage() {
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lead?: string | string[] }>;
+}) {
+  const params = await searchParams;
   const authorization =
     await requireCurrentOrganizationPermission("leads.read");
   if (!authorization.data) {
@@ -56,20 +62,24 @@ export default async function CalendarPage() {
       return [{ id: lead.id, name: name || "Unnamed lead", email: lead.email }];
     },
   );
+  const requestedLeadId =
+    typeof params.lead === "string" ? params.lead : undefined;
+  const initialLeadId = leads.some((lead) => lead.id === requestedLeadId)
+    ? requestedLeadId
+    : undefined;
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Calendar</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Review the next 30 days and schedule a bounded Google Calendar event.
-        </p>
-      </div>
+      <PageHeader
+        title="Calendar"
+        description="Review the next 30 days and schedule a bounded Google Calendar event."
+      />
       <CalendarContent
         events={calendar.success ? calendar.events : []}
         leads={leads}
         timezone={timezone}
         calendarError={calendar.success ? null : calendar.error}
+        initialLeadId={initialLeadId}
       />
     </Container>
   );

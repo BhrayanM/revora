@@ -11,6 +11,7 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import {
   buildAIInsightSummary,
@@ -68,13 +69,10 @@ export default async function InsightsPage() {
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">AI Insights</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A read-only view of qualification results already persisted on your
-          organization&apos;s leads.
-        </p>
-      </div>
+      <PageHeader
+        title="AI Insights"
+        description="A read-only view of qualification results already persisted on your organization's leads."
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <InsightMetric

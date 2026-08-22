@@ -7,6 +7,7 @@ import { StatWidget } from "@/components/dashboard/stat-widget";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import { getLeadMetrics, getPipelineMetrics } from "@/lib/queries/analytics";
 import { getLeads } from "@/lib/queries/leads";
@@ -105,12 +106,11 @@ export default async function AnalyticsPage() {
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Track performance, conversions, and lead sources.
-        </p>
-      </div>
+      <PageHeader
+        title="Analytics"
+        description="Track performance, conversions, and lead sources."
+        className="mb-8"
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (

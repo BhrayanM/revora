@@ -46,11 +46,13 @@ export function CalendarContent({
   leads,
   timezone,
   calendarError,
+  initialLeadId,
 }: {
   events: GoogleCalendarEventSummary[];
   leads: CalendarLeadOption[];
   timezone: string;
   calendarError: string | null;
+  initialLeadId?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(
@@ -165,6 +167,7 @@ export function CalendarContent({
             <SelectField
               label="Invite a lead"
               name="lead_id"
+              defaultValue={initialLeadId ?? ""}
               helperText="Optional. Revora rechecks the selected lead before using its email."
             >
               <option value="">No attendee</option>

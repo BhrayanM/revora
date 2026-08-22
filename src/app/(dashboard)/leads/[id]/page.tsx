@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
@@ -82,16 +81,29 @@ export default async function LeadDetailPage({
             </h1>
             <p className="text-sm text-muted-foreground">Lead ID: {lead.id}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Mail className="size-3.5" /> Email
-            </Button>
-            <Button variant="outline" size="sm">
-              <Phone className="size-3.5" /> Call
-            </Button>
-            <Button size="sm">
+          <div className="flex flex-wrap gap-2">
+            {lead.email && (
+              <a
+                href={`mailto:${encodeURIComponent(lead.email)}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground outline-none hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Mail className="size-3.5" /> Email
+              </a>
+            )}
+            {lead.phone && (
+              <a
+                href={`tel:${encodeURIComponent(lead.phone)}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium text-foreground outline-none hover:bg-surface-secondary focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <Phone className="size-3.5" /> Call
+              </a>
+            )}
+            <Link
+              href={`/calendar?lead=${encodeURIComponent(lead.id)}`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground outline-none hover:bg-primary-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
               <Calendar className="size-3.5" /> Book Meeting
-            </Button>
+            </Link>
           </div>
         </div>
       </div>

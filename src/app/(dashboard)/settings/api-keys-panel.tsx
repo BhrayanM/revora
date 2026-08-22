@@ -97,8 +97,10 @@ export function APIKeysPanel() {
               <Key className="size-4 text-muted-foreground shrink-0" />
               <span className="text-foreground break-all">{newKey}</span>
               <button
+                type="button"
                 onClick={() => navigator.clipboard.writeText(newKey)}
-                className="ml-auto rounded p-1 text-muted-foreground hover:text-foreground shrink-0"
+                className="ml-auto flex size-11 shrink-0 items-center justify-center rounded text-muted-foreground outline-none hover:bg-surface hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="Copy API key"
               >
                 <Copy className="size-3.5" />
               </button>

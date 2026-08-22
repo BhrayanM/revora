@@ -82,6 +82,7 @@ export function Toast({
   return (
     <div
       role={variant === "error" ? "alert" : "status"}
+      aria-live={variant === "error" ? "assertive" : "polite"}
       aria-atomic="true"
       className={cn(
         toastVariants({ variant }),
@@ -103,8 +104,9 @@ export function Toast({
         )}
       </div>
       <button
+        type="button"
         onClick={() => setIsVisible(false)}
-        className="ml-auto shrink-0 rounded-md p-0.5 text-subtle opacity-70 transition-opacity hover:opacity-100"
+        className="-m-2 ml-auto flex size-11 shrink-0 items-center justify-center rounded-md text-subtle opacity-70 outline-none transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary"
         aria-label="Dismiss"
       >
         <X className="size-4" />

@@ -21,3 +21,4 @@ export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
 export { FadeIn, SlideUp, ScaleIn, StaggerChildren } from "./motion";
 export { Container } from "./container";
+export { PageHeader } from "./page-header";

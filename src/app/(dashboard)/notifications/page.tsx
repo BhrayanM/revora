@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { PageHeader } from "@/components/ui/page-header";
 import { requireCurrentOrganizationPermission } from "@/lib/auth";
 import type { ActivityItem } from "@/lib/product-ux/activity";
 import {
@@ -62,12 +63,10 @@ export default async function NotificationsPage() {
 
   return (
     <Container className="max-w-none px-0">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Activity Center</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Recent lead, automation, and integration events for this organization.
-        </p>
-      </div>
+      <PageHeader
+        title="Activity Center"
+        description="Recent lead, automation, and integration events for this organization."
+      />
 
       {activity.partial && (
         <Alert variant="warning" className="mb-4">
