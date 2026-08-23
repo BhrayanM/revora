@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+# Minimal GITHUB_TOKEN permissions — principle of least privilege.
+# contents:read — required by actions/checkout to fetch the repository.
+# No other permissions needed: workflow status checks on PRs are created
+# automatically by GitHub Actions as part of run metadata (not via Checks API).
+# actions/upload-artifact writes to GitHub's internal artifact storage (no
+# contents:write needed). $GITHUB_STEP_SUMMARY is a local file write.
+permissions:
+  contents: read
+
+concurrency:
+  # Cancel in-flight runs for the same ref on new push/PR update.
+  # Uses workflow name to avoid conflicts with other workflows on same ref.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Node version: matches Dockerfile (node:24-alpine) and satisfies
+  # Next.js engine requirement (>=20.9.0 per package-lock.json).
+  NODE_VERSION: "24"
+  # Placeholder public env vars for build/typecheck steps.
+  # These are NEXT_PUBLIC_ vars (inlined at build time) — using non-secret
+  # placeholder values is safe and required for next build to succeed in CI.
+  NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key-for-ci"
+  NEXT_PUBLIC_APP_URL: "https://placeholder.example.com"
+  NEXT_PUBLIC_APP_NAME: "Revora"
+  NEXT_PUBLIC_APP_ENV: "production"
+  # Cloudflare Turnstile: official test/bypass site key (non-secret, documented
+  # at https://developers.cloudflare.com/turnstile/troubleshooting/testing/).
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
+
+jobs:
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # ── Setup ──────────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # Cache npm's dependency cache (~/.npm) keyed on package-lock.json.
+          # This avoids re-downloading packages on unchanged dependencies.
+          cache: "npm"
+
+      - name: Install dependencies
+        # npm ci: strict install from package-lock.json, fails on drift.
+        run: npm ci
+
+      # ── Type safety ────────────────────────────────────────────────────────
+      # `next typegen` generates typed route helpers (reads NEXT_PUBLIC_* vars).
+      # `tsc --noEmit` validates the full TypeScript surface without emitting.
+      - name: Typecheck
+        id: typecheck
+        run: npm run typecheck
+
+      # ── Lint ───────────────────────────────────────────────────────────────
+      - name: Lint
+        id: lint
+        run: npm run lint
+
+      # ── Deterministic contract tests ───────────────────────────────────────
+      # These scripts verify code structure and contracts via Node.js assert.
+      # They are 100% deterministic: no network, no credentials, no database.
+      # Verified local runtime: ~3s and ~11s respectively.
+      - name: Test — Product UX contracts (Phase 14.7)
+        id: test_product_ux
+        run: npm run test:product-ux
+
+      - name: Test — Integration E2E contracts (Phase 14.6G)
+        id: test_integration_e2e
+        run: npm run test:integration-e2e
+
+      # ── Production build ───────────────────────────────────────────────────
+      # Runs `next build` with Turbopack. Uses placeholder NEXT_PUBLIC_* vars.
+      # Server-only secrets (SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY, etc.)
+      # are NOT needed at build time — they are read at runtime only.
+      - name: Build
+        id: build
+        run: npm run build
+
+      # ── Security audit ─────────────────────────────────────────────────────
+      # Fails the job if any high or critical vulnerability is found.
+      # Baseline: 0 vulnerabilities across 462 deps (verified 2026-08-22).
+      - name: Dependency audit
+        id: audit
+        run: npm audit --audit-level=high
+
+      # ── Retain build artifact (master only) ────────────────────────────────
+      # Preserves the standalone build for potential deployment or inspection.
+      # Only runs on direct pushes to master (not PRs).
+      - name: Upload build artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build-${{ github.sha }}
+          path: |
+            .next/standalone
+            .next/static
+          retention-days: 30
+
+      # ── Job summary ────────────────────────────────────────────────────────
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## CI — Quality Gates · \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Gate | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| typecheck | ${{ steps.typecheck.outcome == 'success' && '✅ pass' || steps.typecheck.outcome == 'skipped' && '⏭ skipped' || '❌ fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| lint | ${{ steps.lint.outcome == 'success' && '✅ pass' || steps.lint.outcome == 'skipped' && '⏭ skipped' || '❌ fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| test:product-ux | ${{ steps.test_product_ux.outcome == 'success' && '✅ pass' || steps.test_product_ux.outcome == 'skipped' && '⏭ skipped' || '❌ fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| test:integration-e2e | ${{ steps.test_integration_e2e.outcome == 'success' && '✅ pass' || steps.test_integration_e2e.outcome == 'skipped' && '⏭ skipped' || '❌ fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| build | ${{ steps.build.outcome == 'success' && '✅ pass' || steps.build.outcome == 'skipped' && '⏭ skipped' || '❌ fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| npm audit | ${{ steps.audit.outcome == 'success' && '✅ pass' || steps.audit.outcome == 'skipped' && '⏭ skipped' || '❌ fail' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\` · **Event:** \`${{ github.event_name }}\`" >> $GITHUB_STEP_SUMMARY

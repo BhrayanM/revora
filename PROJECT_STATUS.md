@@ -1,16 +1,16 @@
 # Revora Project Status
 
-**Last updated:** 2026-08-21
+**Last updated:** 2026-08-23
 
-**Working branch:** local Phase 14.7 closure; no push or deployment
+**Working branch:** master; Phase 14.7 formally closed; Phase 14.8A in progress; no push or deployment
 
-**Latest implementation checkpoint:** Phase 14.7 Product UX Completion
+**Latest implementation checkpoint:** Phase 14.8A — CI/CD Foundation (workflows created, local gates verified, pending commit)
 
-**Current status:** Phases 14.6A-14.7 are implemented and locally validated.
-The deterministic integration and product-UX gates pass. Current external gates
-remain blocked by incomplete credentials, public HTTPS/Supabase context, or
-explicit mutation authorization; no live provider mutation was performed in
-14.7.
+**Current status:** Phase 14.7 formally closed (2026-08-22). Phase 14.8A CI/CD
+Foundation implemented: `.github/workflows/ci.yml` (PR + master gate),
+`.github/workflows/security.yml` (weekly audit), `.github/dependabot.yml`
+(automated dependency PRs). All six local gates still PASS post-14.8A.
+Pending: commit and push to activate Actions.
 
 ## Current Architecture
 

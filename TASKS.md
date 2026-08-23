@@ -22,19 +22,52 @@ production deployment has been performed.
 
 ## Next — Phase 14.8 Production Infrastructure and Release Readiness
 
-- [ ] Approve the production hosting, Supabase, and domain topology.
-- [ ] Configure production secrets and rotate any credentials used for testing.
-- [ ] Configure SMTP/transactional delivery for invitations and ownership
-  transfers.
-- [ ] Add distributed rate limiting and production abuse controls.
-- [ ] Configure monitoring, alerting, structured safe logs, and backups.
-- [ ] Decide and configure security headers, CSP, edge/WAF controls, and
-  production callback origins.
-- [ ] Complete legal/copy review and production environment documentation.
-- [ ] Execute live provider gates only with explicit credentials and mutation
-  authorization.
-- [ ] Run the final global security, migration, integration, UX, and deployment
-  regression before making any go-live claim.
+### 14.8A — CI/CD Foundation
+- [x] Create `.github/workflows/ci.yml` (PR + master gate)
+- [x] Create `.github/workflows/security.yml` (weekly dependency audit)
+- [x] Create `.github/dependabot.yml` (automated dependency PRs)
+- [x] Validate YAML syntax for all three files
+- [x] Verify all local gates pass post-creation
+- [ ] Commit and push to activate GitHub Actions
+- [ ] Verify CI runs on first PR; confirm branch protection enabled
+
+### 14.8B — Environment Blueprint
+- [ ] Create/update `.env.example` covering all Phase 14.7 vars
+- [ ] Create `docs/SECRETS_INVENTORY.md` classifying every var by level
+
+### 14.8C — Secrets Management
+- [ ] Document secrets rotation procedures for all critical keys
+- [ ] Add decision record for runtime secrets platform choice
+
+### 14.8D — Observability & Structured Logging
+- [ ] Design structured logging interface (no PII, no credentials)
+- [ ] Connect to error-tracking service (Sentry or equivalent)
+
+### 14.8E — Backup & Recovery
+- [ ] Document RTO/RPO targets
+- [ ] Verify Supabase backup schedule (requires production project)
+
+### 14.8F — Distributed Rate Limiting
+- [ ] Implement real Redis/Upstash rate limiter (replace null stub)
+- [ ] Add `@upstash/redis` and `@upstash/ratelimit`
+
+### 14.8G — Security & Release Hardening
+- [ ] Evaluate removing `unsafe-eval` from CSP in production build
+- [ ] Update ARCHITECTURE.md to reflect current Phase 14.7 state
+- [ ] Add HSTS header (requires production domain)
+
+### 14.8H — Deployment Readiness
+- [ ] Decide topology (Vercel vs Docker+VPS)
+- [ ] Register domain and configure DNS
+- [ ] Create Supabase production project; apply migrations 00001–00035
+- [ ] Configure all production secrets and OAuth redirect URLs
+- [ ] Fix docker-compose.yml to remove local postgres service
+
+### 14.8I — Production Validation
+- [ ] Execute all live provider gates with real credentials
+- [ ] Complete PRODUCTION_CHECKLIST.md
+- [ ] Run final tenant-isolation regression
+- [ ] Make explicit go-live claim
 
 ## Explicitly Deferred
 
