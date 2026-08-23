@@ -1,3 +1,12 @@
+# =============================================================================
+# Revora / AI Growth Platform — Production Docker Compose
+# =============================================================================
+# Architecture Note:
+# Database, Auth, Storage, and Realtime are managed by Supabase (Cloud / Managed).
+# The production containerized service is the Next.js standalone application only.
+# No local raw PostgreSQL database is spun up in production.
+# =============================================================================
+
 services:
   app:
     build:
@@ -8,37 +17,12 @@ services:
       - "3000:3000"
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: ai-growth-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: ai_growth_platform
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
+      - NODE_ENV=production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-volumes:
-  postgres_data:
-    driver: local
-
-networks:
-  app-network:
-    driver: bridge
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', (r) => { process.exit(r.statusCode === 200 || r.statusCode === 307 || r.statusCode === 308 ? 0 : 1); })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
