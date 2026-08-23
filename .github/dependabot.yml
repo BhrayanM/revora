@@ -1,0 +1,59 @@
+version: 2
+
+updates:
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    target-branch: "master"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Chicago"
+    # Group all non-major updates into a single PR to reduce noise
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Open individual PRs for major version bumps (breaking changes)
+    # Limit concurrent open PRs
+    open-pull-requests-limit: 5
+    # Auto-label all dependency PRs
+    labels:
+      - "dependencies"
+      - "automated"
+    # Commit message prefix
+    commit-message:
+      prefix: "chore(deps)"
+    # Ignore major bumps for these — require manual review
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@supabase/supabase-js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@supabase/ssr"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions versions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "master"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "America/Chicago"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "chore(actions)"
+    open-pull-requests-limit: 3
