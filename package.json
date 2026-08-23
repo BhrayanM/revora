@@ -18,7 +18,8 @@
     "test:product-ux": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-product-ux.mjs",
     "test:tally": "node --no-warnings --conditions=react-server --experimental-strip-types --import ./scripts/register-ts-paths.mjs scripts/verify-tally-integration.mjs",
     "typecheck": "next typegen && tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release:check": "npm run typecheck && npm run lint && npm run test:integration-e2e && npm run test:product-ux && npm run build"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.5",
