@@ -1,3 +1,11 @@
+# =============================================================================
+# Revora / AI Growth Platform — Local Development Docker Compose (Auxiliary)
+# =============================================================================
+# Used for running local containerized Next.js with hot reload.
+# Note: For full local Supabase services (Auth, PostgREST, Realtime, Storage),
+# prefer the official Supabase CLI (`supabase start`).
+# =============================================================================
+
 services:
   app:
     build:
