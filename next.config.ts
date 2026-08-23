@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
-// Note: 'unsafe-eval' is retained for development/Turbopack compatibility.
-// Hardening and evaluating removal of 'unsafe-eval' in production is tracked for Phase 14.8G.
+const isDev = process.env.NODE_ENV !== "production";
+
 const CSP_DIRECTIVES = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",

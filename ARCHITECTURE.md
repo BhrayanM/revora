@@ -5,64 +5,64 @@
 AI Growth Platform follows a layered architecture with clear separation of concerns.
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  Presentation                    │
-│  (Landing Pages, Dashboard, UI Components)      │
-├─────────────────────────────────────────────────┤
-│                 Application Logic                │
-│     (Hooks, Context, State Management)           │
-├─────────────────────────────────────────────────┤
-│                  Data Layer                      │
-│     (API Routes, Services, Database)             │
-├─────────────────────────────────────────────────┤
-│               External Integrations              │
-│  (OpenAI, GoHighLevel, HubSpot, Twilio, Slack)  │
-└─────────────────────────────────────────────────┘
++--------------------------------------------------+
+|                  Presentation                    |
+|  (Landing Pages, Dashboard, UI Components)       |
++--------------------------------------------------+
+|                 Application Logic                |
+|     (Hooks, Context, State Management)           |
++--------------------------------------------------+
+|                  Data Layer                      |
+|     (API Routes, Services, Database)             |
++--------------------------------------------------+
+|               External Integrations              |
+|  (OpenAI, GoHighLevel, HubSpot, Twilio, Slack)   |
++--------------------------------------------------+
 ```
 
 ## Directory Structure
 
 ```
 ai-growth-platform/
-├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── (landing)/         # Landing page route group
-│   │   │   └── page.tsx
-│   │   ├── (dashboard)/       # Dashboard route group
-│   │   │   ├── dashboard/
-│   │   │   ├── analytics/
-│   │   │   ├── leads/
-│   │   │   ├── pipeline/
-│   │   │   ├── settings/
-│   │   │   ├── profile/
-│   │   │   ├── notifications/
-│   │   │   └── layout.tsx
-│   │   ├── globals.css
-│   │   └── layout.tsx
-│   ├── components/
-│   │   ├── ui/                # Design System primitives
-│   │   ├── landing/           # Landing page sections
-│   │   ├── dashboard/         # Dashboard components
-│   │   └── shared/            # Cross-cutting components
-│   ├── hooks/                 # Custom React hooks
-│   ├── lib/                   # Utilities and helpers
-│   │   ├── supabase/          # Supabase clients and types
-│   │   │   ├── client.ts      # Browser client
-│   │   │   ├── server.ts      # Server + service role clients
-│   │   │   └── types.ts       # Database type definitions
-│   │   └── utils.ts           # cn() helper
-│   ├── types/                 # TypeScript definitions
-│   └── styles/                # Additional styles (if needed)
-├── supabase/                  # Supabase configuration
-│   ├── migrations/            # SQL migration files
-│   └── seed.sql               # Development seed data
-├── public/                    # Static assets
-├── .husky/                    # Git hooks
-├── docker-compose.yml         # Production Docker
-├── docker-compose.dev.yml     # Development Docker
-├── Dockerfile                 # Production build
-├── Dockerfile.dev             # Development build
-└── docs/                      # Architecture diagrams (future)
++-- src/
+|   +-- app/                    # Next.js App Router pages
+|   |   +-- (landing)/         # Landing page route group
+|   |   |   +-- page.tsx
+|   |   +-- (dashboard)/       # Dashboard route group
+|   |   |   +-- dashboard/
+|   |   |   +-- analytics/
+|   |   |   +-- leads/
+|   |   |   +-- pipeline/
+|   |   |   +-- settings/
+|   |   |   +-- profile/
+|   |   |   +-- notifications/
+|   |   |   +-- layout.tsx
+|   |   +-- globals.css
+|   |   +-- layout.tsx
+|   +-- components/
+|   |   +-- ui/                # Design System primitives
+|   |   +-- landing/           # Landing page sections
+|   |   +-- dashboard/         # Dashboard components
+|   |   +-- shared/            # Cross-cutting components
+|   +-- hooks/                 # Custom React hooks
+|   +-- lib/                   # Utilities and helpers
+|   |   +-- supabase/          # Supabase clients and types
+|   |   |   +-- client.ts      # Browser client
+|   |   |   +-- server.ts      # Server + service role clients
+|   |   |   +-- types.ts       # Database type definitions
+|   |   +-- utils.ts           # cn() helper
+|   +-- types/                 # TypeScript definitions
+|   +-- styles/                # Additional styles (if needed)
++-- supabase/                  # Supabase configuration
+|   +-- migrations/            # SQL migration files
+|   +-- seed.sql               # Development seed data
++-- public/                    # Static assets
++-- .husky/                    # Git hooks
++-- docker-compose.yml         # Production Docker
++-- docker-compose.dev.yml     # Development Docker
++-- Dockerfile                 # Production build
++-- Dockerfile.dev             # Development build
++-- docs/                      # Architecture diagrams (future)
 ```
 
 ## Data Flow
@@ -84,11 +84,11 @@ User → Browser → Next.js (SSR/RSC) → Supabase Client → PostgreSQL
 
 ```
 Browser (Client Component)
-  └── createClient()        → @supabase/ssr browser client (src/lib/supabase/client.ts)
+  +-- createClient()        → @supabase/ssr browser client (src/lib/supabase/client.ts)
 
 Server (Server Component / Route Handler)
-  └── createClient()        → @supabase/ssr server client  (src/lib/supabase/server.ts)
-  └── createServiceClient() → Service role bypass RLS      (src/lib/supabase/server.ts)
+  +-- createClient()        → @supabase/ssr server client  (src/lib/supabase/server.ts)
+  +-- createServiceClient() → Service role bypass RLS      (src/lib/supabase/server.ts)
 ```
 
 No Prisma ORM — direct Supabase JS client with generated TypeScript types.
@@ -97,14 +97,14 @@ No Prisma ORM — direct Supabase JS client with generated TypeScript types.
 
 ```
 organizations (tenant)
-  ├── memberships (profile ↔ org with role)
-  ├── workspaces (org sub-divisions)
-  ├── leads (CRM core)
-  │     └── conversations (email, SMS, call log, AI notes)
-  ├── pipelines
-  │     └── pipeline_stages
-  ├── automations (trigger + action workflows)
-  └── integrations (external service credentials)
+  +-- memberships (profile ↔ org with role)
+  +-- workspaces (org sub-divisions)
+  +-- leads (CRM core)
+  |     +-- conversations (email, SMS, call log, AI notes)
+  +-- pipelines
+  |     +-- pipeline_stages
+  +-- automations (trigger + action workflows)
+  +-- integrations (external service credentials)
 
 profiles (extends auth.users 1:1 via trigger)
 ```
