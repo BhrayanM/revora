@@ -1,13 +1,11 @@
 # Revora
 
-Multi-tenant AI revenue automation platform built with Next.js, Supabase, and secure third-party integrations.
+![CI Status](https://github.com/BhrayanM/revora/actions/workflows/ci.yml/badge.svg?branch=master)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)
 
-<!-- 
-## Product Preview
-[SPACE RESERVED FOR REAL SCREENSHOTS]
-- Login screenshot with Turnstile
-- Integrations overview
--->
+Multi-tenant AI revenue automation platform built with Next.js, Supabase, and secure third-party integrations.
 
 ## Overview
 
@@ -22,19 +20,15 @@ Revora is an enterprise-grade SaaS application designed for AI-assisted lead man
 - **Multi-tenant Architecture:** Organization and workspace scoping with strict row-level security.
 - **Secure Authentication:** MFA/TOTP, Turnstile bot protection, PKCE OAuth, and authenticated legal consents.
 
-## Integrations
+## Product Preview
 
-Seamless integrations with external providers using standardized interfaces and HMAC-verified webhooks:
-- HubSpot
-- GoHighLevel
-- n8n
-- Zapier
-- Make
-- Slack
-- Twilio
-- Tally
-- Google Calendar
-- Gmail
+### Authentication
+Secure login with robust authentication methods and Cloudflare Turnstile protection.
+![Revora Login](./docs/assets/screenshots/revora-login.png)
+
+### Integrations
+Seamless multi-tenant connections to external CRMs, workflows, and automation tools.
+![Revora Integrations](./docs/assets/screenshots/revora-integrations.png)
 
 ## Architecture
 
@@ -116,6 +110,6 @@ graph TD
 - [Deployment Readiness](./docs/DEPLOYMENT_READINESS.md)
 - [Backup and Recovery](./docs/BACKUP_RECOVERY.md)
 
-## License / Contact
+## Contact / License
 
 Private - All rights reserved.
