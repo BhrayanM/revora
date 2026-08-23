@@ -1,7 +1,7 @@
-# Phase 14.8H - Deployment Readiness
+# Deployment Readiness
 
 ## Overview
-This document serves as the master checklist to take Revora from **PRE-PRODUCTION COMPLETE** to **PRODUCTION ACTIVE** when the first client is acquired. Following these steps converts a local repository into a highly available, robustly configured production application.
+This document serves as the master checklist to take Revora from **PRE-PRODUCTION COMPLETE** to **PRODUCTION ACTIVE** when the production ready is acquired. Following these steps converts a local repository into a highly available, robustly configured production application.
 
 ## Minimum Cost Architecture Recommendation
 - **Hosting:** Vercel (Hobby to start, Pro when traffic dictates) or Docker Compose on a $5/mo VPS.
@@ -27,7 +27,7 @@ This document serves as the master checklist to take Revora from **PRE-PRODUCTIO
 - [ ] Obtain the Supabase connection string.
 - [ ] Run `npm run supabase migration up` pointing to the production database to apply schemas `00001` through `00035+`.
 - [ ] Validate Row Level Security (RLS) is active on all public tables via Supabase Studio.
-- [ ] Verify `source_api_keys` have been properly seeded for the first client.
+- [ ] Verify `source_api_keys` have been properly seeded for the production ready.
 
 ### 4. Background Jobs & Automation (n8n)
 - [ ] Deploy n8n via Docker Compose (using provided `docker-compose.yml`) or provision n8n Cloud.

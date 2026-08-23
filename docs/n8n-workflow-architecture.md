@@ -1,4 +1,4 @@
-# n8n Workflow Architecture — Revora Phase 14.6C
+# n8n Workflow Architecture — Revora the implementation
 
 Revora owns lead persistence, AI qualification, CRM synchronization, delivery
 state, and retries. n8n is an organization-scoped outbound event destination;

@@ -323,7 +323,7 @@ persisted qualification.
    `IncomingPhoneNumbers.json`.
 4. Click **Test** to repeat only this read-only validation.
 
-Phase 14.6D does not send SMS or WhatsApp messages, place calls, buy numbers,
+the implementation does not send SMS or WhatsApp messages, place calls, buy numbers,
 or register Twilio callbacks.
 
 ## 8B. Tally Setup (Organization-Scoped)

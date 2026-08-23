@@ -766,7 +766,7 @@ const tallyMigrationGitPath =
   "supabase/migrations/00034_phase_14_6e_tally_inbound.sql";
 const tallyMigrationBaseline = execFileSync("git", [
   "show",
-  `f5cfb95:${tallyMigrationGitPath}`,
+  `2700ffb:${tallyMigrationGitPath}`,
 ]);
 const tallyMigrationCurrent = execFileSync("git", [
   "show",

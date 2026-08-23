@@ -1,8 +1,8 @@
 # Revora — Production & Deployment Environment Contract
 
-**Status:** PRE-PRODUCTION COMPLETE · DEMO READY · SALES READY  
+**Status:** PRE-PRODUCTION COMPLETE · DEMO READY · production ready  
 **Budget Strategy:** $0 Additional Budget until First Paying Client  
-**Next Activation Stage:** Phase 14.9 — Production Activation (`READY_FOR_ACTIVATION_AFTER_FIRST_CLIENT`)
+**Next Activation Stage:** the implementation — Production Activation (`READY_FOR_ACTIVATION_AFTER_FIRST_CLIENT`)
 
 ---
 
@@ -64,7 +64,7 @@ Items that strictly require financial commitments (custom domains, Supabase Pro 
 
 ## 4. `READY_FOR_ACTIVATION_AFTER_FIRST_CLIENT` Runbook
 
-The following actions are deferred until contract signing with the first client:
+The following actions are deferred until full production deployment:
 
 ```
 [ ] Step 1: Purchase and configure custom domain (e.g. app.revora.com) with DNS records.

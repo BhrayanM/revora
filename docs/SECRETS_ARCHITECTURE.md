@@ -1,4 +1,4 @@
-# Phase 14.8C - Secrets Architecture
+# Secrets Architecture
 
 ## Overview
 This document outlines the architecture for managing secrets in the Revora / AI Growth Platform. Our strategy is designed to be secure, cost-effective (starting at $0), and ready for production without relying on paid external secret managers during the initial stages.
@@ -32,7 +32,7 @@ This module includes the directive `import "server-only";` at the top, which cau
 
 ## Sanitization in Logs & Error Handling
 - Never log full HTTP request objects or `process.env` directly.
-- The observability layer (implemented in Phase 14.8D) will actively sanitize logs to strip any values matching known secret patterns (e.g., Bearer tokens, API keys).
+- The observability layer (implemented in the implementation) will actively sanitize logs to strip any values matching known secret patterns (e.g., Bearer tokens, API keys).
 - Errors returned to the client must genericize database or third-party API errors to avoid leaking table structures or connection strings.
 
 ## Dev vs CI vs Production Separation

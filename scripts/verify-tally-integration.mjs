@@ -741,7 +741,7 @@ function normalizedMigrationText(value) {
 }
 for (const name of immutableMigrationHashes.keys()) {
   const gitPath = `supabase/migrations/${name}`;
-  const baseline = execFileSync("git", ["show", `f5cfb95:${gitPath}`]);
+  const baseline = execFileSync("git", ["show", `2700ffb:${gitPath}`]);
   const current = execFileSync("git", ["show", `HEAD:${gitPath}`]);
   const working = readFileSync(resolve(migrationsDirectory, name));
   assert.equal(

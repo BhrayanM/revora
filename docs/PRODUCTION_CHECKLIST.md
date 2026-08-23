@@ -17,7 +17,7 @@
 - [x] `npm.cmd run build`
 - [x] `npm.cmd audit` reports zero vulnerabilities
 - [x] `git diff --check`
-- [x] Migrations `00001`-`00035` remain unchanged from the 14.6F checkpoint;
+- [x] Migrations `00001`-`00035` remain unchanged from the 14.6F production ready;
       14.6G adds no migration
 - [ ] Migration `00034` applied and verified in the authorized linked project
 - [ ] Migration `00035` applied and verified in the authorized linked project
@@ -129,13 +129,13 @@ Re-run each live gate after production-domain or credential rotation.
 - [ ] Database backups configured
 - [ ] Monitoring and security-event logging configured without secrets
 - [ ] WAF/HSTS/rate-limiter decisions completed
-- [x] Phase 14.6G deterministic local E2E audit completed
+- [x] the implementation deterministic local E2E audit completed
 - [ ] External provider and tenant gates repeated on the production candidate
       before final go-live claim
 
 ## Remaining Roadmap
 
-- [x] Phase 14.6F — Google Calendar + Gmail (local implementation)
-- [x] Phase 14.6G — Complete integration E2E audit (local)
-- [ ] Phase 14.7 — Product UX Completion
-- [ ] Phase 14.8 — Production Infrastructure and Release Readiness
+- [x] the implementation — Google Calendar + Gmail (local implementation)
+- [x] the implementation — Complete integration E2E audit (local)
+- [ ] the implementation — Product UX Completion
+- [ ] the implementation — Production Infrastructure and Release Readiness

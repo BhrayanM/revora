@@ -1,4 +1,4 @@
-# Phase 14.8D - Observability & Logging
+# Observability & Logging
 
 ## Overview
 This document outlines the observability strategy for the Revora / AI Growth Platform. To adhere to a $0 initial budget constraint, we rely on a structured JSON logging strategy (stdout/stderr) rather than deploying an external observability SaaS (like Datadog or Sentry). 
@@ -35,7 +35,7 @@ requestLogger.info("Processing webhook");
 ```
 
 ## Connecting External Monitoring (Post-Activation)
-When the first client is acquired or the budget expands, we can activate external monitoring (e.g., Sentry) by extending the logger class:
+When scaling or the budget expands, we can activate external monitoring (e.g., Sentry) by extending the logger class:
 
 1. Install `@sentry/nextjs`.
 2. Update `src/lib/logger/index.ts` to forward `logger.error` calls to `Sentry.captureException()`.

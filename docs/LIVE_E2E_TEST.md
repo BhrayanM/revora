@@ -33,12 +33,12 @@ migration `00035`. Therefore
 `GOOGLE_WORKSPACE_LIVE_GATE=BLOCKED_CREDENTIALS` and no message or event was
 created.
 
-## Local Phase 14.6G Gate
+## Local the implementation Gate
 
 Final local run on 2026-08-21: **PASS** for the aggregate ten-provider audit,
 CRM transport, automation, communications, Tally and Google Workspace suites,
 lint, self-contained typecheck, production build, npm audit, and whitespace.
-Migrations `00001`-`00035` are statically unchanged from the 14.6F checkpoint;
+Migrations `00001`-`00035` are statically unchanged from the 14.6F production ready;
 linked verification is pending because this worktree has no Supabase project
 link.
 
@@ -64,7 +64,7 @@ Expected:
 - Tally API/lifecycle/signature/ingestion/tenant contracts pass.
 - HubSpot/GoHighLevel bounded transport and CRM failure contracts pass.
 - Slack/Twilio behavioral contracts pass.
-- The Phase 14.6C automation regression passes.
+- The the implementation automation regression passes.
 - Lint, strict types, and the production build pass.
 - Audit reports zero vulnerabilities.
 - Migrations `00001`-`00035` remain unchanged; 14.6G adds no migration and
@@ -107,7 +107,7 @@ report.
 4. Click **Test** and verify the same read-only validation succeeds.
 5. Disconnect and verify credentials are cleared.
 
-Phase 14.6D must not send SMS, WhatsApp messages, place calls, buy numbers,
+the implementation must not send SMS, WhatsApp messages, place calls, buy numbers,
 configure callbacks, or invoke any mutating Twilio endpoint.
 
 ## Tally Live Gate
@@ -133,7 +133,7 @@ Procedure:
    paginated `GET /webhooks`; it must not create a submission or lead.
 5. Submit one unique response in Tally. Expect one Revora lead with source
    `other`, source external ID `tally:{formId}:{submissionId}`, and only the safe
-   Tally metadata documented for Phase 14.6E.
+   Tally metadata documented for the implementation.
 6. Confirm an identical provider retry returns 2xx and creates no second lead.
    Confirm a conflicting payload for the same event ID returns 409.
 7. Verify a missing/invalid signature returns 401, an unknown routing token 404,
@@ -196,7 +196,7 @@ For Slack, Twilio, Tally, and Google Workspace, use Org A and Org B:
 
 ## Next Product Boundary
 
-Phase 14.7 performs Product UX Completion. It must preserve the complete 14.6G
+the implementation performs Product UX Completion. It must preserve the complete 14.6G
 integration gate while improving visual consistency, accessibility, responsive
 behavior, provider identity, settings selectors, and the explicit scope of each
 remaining `Soon` module.
