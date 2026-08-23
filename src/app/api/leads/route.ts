@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { getRateLimiter } from "@/lib/automation/rate-limiter";
 import { dispatchOutboundEvent } from "@/lib/automation/webhook-dispatcher";
 import { buildLeadOutboundEvent } from "@/lib/integrations/outbound-events";
 import { hashApiKey } from "@/lib/lead-ingestion/api-keys";
 import { normalizeLead } from "@/lib/lead-ingestion/normalize";
-import { checkRateLimit } from "@/lib/lead-ingestion/rate-limit";
 import { validateInboundPayload } from "@/lib/lead-ingestion/validate";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/types";
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   const ip =
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const limitKey = `leads-api:${ip}`;
-  const rateLimit = checkRateLimit(limitKey);
+  const rateLimit = await getRateLimiter().checkLimit(limitKey, 30, 60000);
 
   if (!rateLimit.allowed) {
     return NextResponse.json(
